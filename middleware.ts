@@ -2,12 +2,15 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
+  // 1. On prépare la réponse par défaut (continuer la requête)
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
 
+  // 2. On configure le client Supabase pour ce middleware
+  // C'est nécessaire pour lire/écrire les cookies de session et rafraîchir le token si besoin
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,6 +20,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          // On met à jour les cookies dans la requête ET la réponse
           cookiesToSet.forEach(({ name, value, options }) =>
             request.cookies.set(name, value)
           );
@@ -31,35 +35,36 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Rafraîchir la session si elle est expirée
+  // 3. On vérifie l'utilisateur (cela rafraîchit le token automatiquement si expiré)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protection simple des routes :
-  // Si l'utilisateur n'est pas connecté et essaie d'aller sur /dashboard
+  // --- RÈGLES DE REDIRECTION ---
+
+  // Règle A : Si l'utilisateur n'est PAS connecté et veut aller sur le Dashboard
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    // Hop, direction le login
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // Si l'utilisateur est connecté et essaie d'aller sur /auth/login
+  // Règle B : Si l'utilisateur EST connecté et essaie d'aller sur la page de Login ou Auth
   if (user && request.nextUrl.pathname.startsWith("/auth")) {
+    // Pas besoin de se reconnecter, direction le dashboard
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Si aucune redirection n'est nécessaire, on laisse passer
   return response;
 }
 
+// Configuration pour dire à Next.js sur quelles routes exécuter ce middleware
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - icons/ (PWA icons)
-     * Feel free to modify this pattern to include more paths.
+     * Exclure les fichiers statiques, les images, etc.
+     * On ne veut pas lancer Supabase quand le navigateur charge le logo ou le CSS.
      */
-    "/((?!_next/static|_next/image|favicon.ico|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
