@@ -121,53 +121,6 @@ export async function addPlantWithAI(formData: FormData) {
   }
 }
 
-// ARROSER LA PLANTE
-export async function waterPlant(plantId: string, currentHistory: string[] = []) {
-  try {
-    const supabase = await createClient();
-    const now = new Date().toISOString();
-    
-    // On garde uniquement les 3 dernières dates
-    const newHistory = [now, ...currentHistory].slice(0, 3);
-
-    const { error } = await supabase
-      .from("plants")
-      .update({ 
-        last_watered_at: now,
-        watering_history: newHistory,
-        snooze_days: 0 // On remet le décalage à zéro !
-      })
-      .eq("id", plantId);
-
-    if (error) return { error: "Erreur d'arrosage." };
-
-    revalidatePath("/dashboard");
-    revalidatePath(`/dashboard/plant/${plantId}`);
-    return { success: true };
-  } catch (error) {
-    return { error: "Erreur inattendue." };
-  }
-}
-
-// REPOUSSER L'ARROSAGE (SNOOZE)
-export async function snoozeWatering(plantId: string, currentSnooze: number = 0) {
-  try {
-    const supabase = await createClient();
-    
-    const { error } = await supabase
-      .from("plants")
-      .update({ snooze_days: currentSnooze + 3 }) // On ajoute 3 jours
-      .eq("id", plantId);
-
-    if (error) return { error: "Erreur de décalage." };
-
-    revalidatePath("/dashboard");
-    revalidatePath(`/dashboard/plant/${plantId}`);
-    return { success: true };
-  } catch (error) {
-    return { error: "Erreur inattendue." };
-  }
-}
 
 export async function deletePlant(plantId: string, imageUrl: string | null) {
   const supabase = await createClient();
@@ -202,4 +155,57 @@ export async function deletePlant(plantId: string, imageUrl: string | null) {
   // 3. Rafraîchir le cache et rediriger vers l'accueil
   revalidatePath("/dashboard");
   redirect("/dashboard");
+}
+
+
+// ARROSER LA PLANTE
+export async function waterPlant(plantId: string, currentHistory: string[] = []) {
+  try {
+    const supabase = await createClient();
+    const now = new Date().toISOString();
+    
+    // On garde uniquement les 3 dernières dates
+    const newHistory = [now, ...currentHistory].slice(0, 3);
+
+    const { error } = await supabase
+      .from("plants")
+      .update({ 
+        last_watered_at: now,
+        watering_history: newHistory,
+        snooze_days: 0 // On remet le décalage à zéro !
+      })
+      .eq("id", plantId);
+
+    if (error) {
+      console.error("Erreur d'arrosage:", error);
+      return; // On arrête là silencieusement
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+  } catch (error) {
+    console.error("Erreur inattendue:", error);
+  }
+}
+
+// REPOUSSER L'ARROSAGE (SNOOZE)
+export async function snoozeWatering(plantId: string, currentSnooze: number = 0) {
+  try {
+    const supabase = await createClient();
+    
+    const { error } = await supabase
+      .from("plants")
+      .update({ snooze_days: currentSnooze + 3 }) // On ajoute 3 jours
+      .eq("id", plantId);
+
+    if (error) {
+      console.error("Erreur de décalage:", error);
+      return; 
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+  } catch (error) {
+    console.error("Erreur inattendue:", error);
+  }
 }
