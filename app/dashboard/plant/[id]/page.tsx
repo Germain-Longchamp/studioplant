@@ -5,6 +5,8 @@ import { ArrowLeft, Droplets, Sun, AlignLeft, Sparkles, Info, LeafyGreen, Chevro
 import Link from "next/link";
 import Image from "next/image";
 import DeleteButton from "./DeleteButton";
+import { getWateringStatus } from "@/lib/utils";
+import { waterPlant, snoozeWatering } from "@/server/actions";
 
 export default async function PlantDetailPage({
   params,
@@ -25,6 +27,11 @@ export default async function PlantDetailPage({
     .single();
 
   if (error || !plant) redirect("/dashboard");
+
+  // Récupération sécurisée des valeurs d'arrosage (au cas où ce sont d'anciennes données)
+  const snoozeDays = plant.snooze_days || 0;
+  const history = plant.watering_history || [];
+  const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
 
   return (
     <div className="min-h-screen bg-stone-50 pb-24 font-sans text-stone-800">
@@ -73,22 +80,59 @@ export default async function PlantDetailPage({
                 </div>
                 <div className="flex flex-col text-left overflow-hidden pr-2">
                   <span className="text-stone-800 font-semibold text-lg">Arrosage</span>
-                  {/* Info utilisateur visible avant ouverture */}
-                  <span className="text-stone-500 text-sm truncate">Tous les {plant.watering_frequency} jours</span>
+                  {/* Statut dynamique */}
+                  <span className={`text-sm truncate font-medium ${status.urgent ? 'text-rose-500' : 'text-stone-500'}`}>
+                    {status.text}
+                  </span>
                 </div>
               </div>
               <div className="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 group-hover:bg-white transition-colors shrink-0">
                 <ChevronDown className="h-5 w-5 text-stone-400 transition-transform duration-300 group-open:-rotate-180" />
               </div>
             </summary>
-            {/* Contenu pleine largeur centré */}
-            <div className="px-5 pb-5 pt-1 text-stone-600 animate-in fade-in duration-300">
-              <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 flex items-start gap-3">
+            
+            <div className="px-5 pb-5 pt-1 text-stone-600 animate-in fade-in duration-300 space-y-4">
+              
+              {/* Actions d'arrosage */}
+              <div className="flex gap-2">
+                <form action={waterPlant.bind(null, plant.id, history)} className="flex-1">
+                  <Button type="submit" className="w-full bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-sm h-11">
+                    <Droplets className="w-4 h-4 mr-2" /> Arrosée
+                  </Button>
+                </form>
+                <form action={snoozeWatering.bind(null, plant.id, snoozeDays)}>
+                  <Button type="submit" variant="outline" className="w-full border-sky-100 text-sky-600 hover:bg-sky-50 rounded-xl h-11 font-medium">
+                    +3 jours
+                  </Button>
+                </form>
+              </div>
+
+              {/* Petit historique */}
+              {(history && history.length > 0) && (
+                <div className="p-4 bg-stone-50 rounded-xl border border-stone-100">
+                  <h4 className="text-stone-700 font-semibold text-xs uppercase tracking-wider mb-3">Derniers arrosages</h4>
+                  <ul className="space-y-2">
+                    {history.map((dateStr: string, index: number) => {
+                      const date = new Date(dateStr);
+                      return (
+                        <li key={index} className="flex items-center gap-2 text-sm text-stone-600 font-medium">
+                          <div className="w-1.5 h-1.5 rounded-full bg-sky-300 shrink-0" />
+                          {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {/* Conseil IA */}
+              <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 flex items-start gap-3 mt-2">
                 <Info className="w-5 h-5 text-sky-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-stone-700 leading-relaxed">
-                  Avant d'arroser, touchez la terre : si elle est encore humide sur les premiers centimètres, patientez un peu.
+                  L'IA recommande tous les <strong>{plant.watering_frequency} jours</strong>. Touchez la terre : si elle est encore humide, utilisez le bouton "+3 jours".
                 </p>
               </div>
+
             </div>
           </details>
 
@@ -111,7 +155,6 @@ export default async function PlantDetailPage({
                 <ChevronDown className="h-5 w-5 text-stone-400 transition-transform duration-300 group-open:-rotate-180" />
               </div>
             </summary>
-            {/* Contenu pleine largeur avec les sous-cartes d'avis IA */}
             <div className="px-5 pb-6 pt-1 space-y-3 text-stone-600 animate-in fade-in duration-300">
               {plant.room_advice && (
                 <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
@@ -164,7 +207,6 @@ export default async function PlantDetailPage({
                   </div>
                   <div className="flex flex-col text-left overflow-hidden pr-2">
                     <span className="text-stone-800 font-semibold text-lg">Mon carnet</span>
-                    {/* Info utilisateur coupée sur 1 ligne (truncate) visible avant ouverture */}
                     <span className="text-stone-500 text-sm truncate">{plant.description}</span>
                   </div>
                 </div>
