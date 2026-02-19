@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, Sprout } from "lucide-react";
@@ -28,7 +27,6 @@ export default function AddPlantPage() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isAnalyzing]);
 
-  // ASTUCE MOBILE 1 : Vider l'input avant chaque clic pour forcer le onChange
   const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
     e.currentTarget.value = "";
   };
@@ -36,7 +34,6 @@ export default function AddPlantPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // ASTUCE MOBILE 2 : Nettoyer l'ancienne URL en mémoire pour éviter les bugs d'affichage
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
@@ -74,96 +71,104 @@ export default function AddPlantPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-20 relative">
+    <div className="min-h-screen bg-stone-50 font-sans pb-24 relative">
       
       {/* OVERLAY D'ANIMATION DE CHARGEMENT */}
       {isAnalyzing && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 transition-all duration-300">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-full text-center space-y-6 animate-in fade-in zoom-in duration-300">
-            <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-4 border-green-100 shadow-inner bg-slate-100">
+        <div className="fixed inset-0 z-50 bg-stone-900/80 backdrop-blur-md flex flex-col items-center justify-center p-4 transition-all duration-500">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center max-w-sm w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <div className="relative w-32 h-32 rounded-3xl overflow-hidden border-4 border-emerald-50 shadow-inner bg-stone-100">
                {/* eslint-disable-next-line @next/next/no-img-element */}
                <img src={previewUrl || ""} alt="Scan" className="w-full h-full object-cover opacity-80 blur-[2px]" />
                <div className="animate-scan"></div>
             </div>
             <div className="space-y-3 flex flex-col items-center">
-              <div className="p-3 bg-green-100 rounded-full text-green-600 animate-gentle-pulse">
+              <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 animate-gentle-pulse">
                 <Sprout className="w-8 h-8" />
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Analyse en cours...</h2>
-              <p className="text-sm text-slate-500">Gemini observe votre plante et prépare sa fiche d'identité.</p>
+              <h2 className="text-2xl font-extrabold text-stone-900 tracking-tight">Analyse en cours</h2>
+              <p className="text-sm text-stone-500 font-medium px-4">
+                Gemini observe votre plante et prépare son carnet de santé.
+              </p>
             </div>
-            <div className="flex items-center text-green-600 text-sm font-medium">
+            <div className="flex items-center text-emerald-600 text-sm font-semibold bg-emerald-50 px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Connexion au laboratoire...
             </div>
           </div>
         </div>
       )}
 
-      {/* HEADER */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 h-16 flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild className="-ml-2" disabled={isAnalyzing}>
-            <Link href="/dashboard">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-          </Button>
-          <h1 className="font-bold text-lg text-green-900">Ajouter une plante</h1>
-        </div>
+      {/* HEADER MINIMALISTE */}
+      <header className="max-w-md mx-auto px-4 pt-6 pb-2 flex items-center gap-3">
+        <Button variant="ghost" size="icon" asChild className="text-stone-400 hover:text-stone-900 hover:bg-stone-200/50 rounded-full" disabled={isAnalyzing}>
+          <Link href="/dashboard">
+            <ArrowLeft className="w-6 h-6" />
+          </Link>
+        </Button>
+        <h1 className="text-2xl font-extrabold text-stone-900 tracking-tight">
+          Nouvelle plante
+        </h1>
       </header>
 
-      <main className="max-w-md mx-auto p-4 mt-2">
+      <main className="max-w-md mx-auto px-5 mt-4">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              {previewUrl ? (
-                <div className="relative aspect-[4/5] w-full bg-black">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewUrl} alt="Aperçu" className="w-full h-full object-cover opacity-90" />
-                  {!isAnalyzing && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40">
-                    <label className="cursor-pointer bg-white text-black px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg">
-                      <Camera className="w-4 h-4" /> Changer la photo
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
-                    </label>
-                  </div>
-                  )}
+          
+          {/* ZONE DE LA PHOTO */}
+          <div className="relative">
+            {previewUrl ? (
+              <div className="relative aspect-[4/5] w-full bg-stone-900 rounded-[2rem] overflow-hidden shadow-sm border border-stone-200/50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewUrl} alt="Aperçu" className="w-full h-full object-cover opacity-90" />
+                {!isAnalyzing && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-stone-900/40 backdrop-blur-sm">
+                  <label className="cursor-pointer bg-white text-stone-900 px-5 py-3 rounded-full font-semibold text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform">
+                    <Camera className="w-4 h-4" /> Changer la photo
+                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
+                  </label>
                 </div>
-              ) : (
-                <div className="aspect-[4/5] w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-green-200 bg-green-50/50 hover:bg-green-50 transition-colors">
-                  <div className="flex gap-4 mb-4">
-                    <div className="p-4 bg-white rounded-full shadow-sm text-green-600"><Camera className="w-8 h-8" /></div>
-                  </div>
-                  <h3 className="font-semibold text-green-900 mb-1">Photo de la plante</h3>
-                  <p className="text-sm text-green-700/70 text-center mb-8">Prenez une nouvelle photo ou choisissez-en une dans votre galerie.</p>
-                  
-                  {/* === LES DEUX BOUTONS DISTINCTS === */}
-                  <div className="flex flex-col gap-3 w-full max-w-xs">
-                    
-                    {/* Bouton 1 : Caméra forcée (capture="environment") */}
-                    <label className="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-medium flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
-                      <Camera className="w-5 h-5" /> Prendre une photo
-                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
-                    </label>
-
-                    {/* Bouton 2 : Galerie standard */}
-                    <label className="cursor-pointer w-full bg-white border-2 border-green-200 text-green-700 hover:bg-green-50 px-6 py-3 rounded-full font-medium flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
-                      <ImageIcon className="w-5 h-5" /> Choisir une image
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
-                    </label>
-
-                  </div>
-
+                )}
+              </div>
+            ) : (
+              <div className="aspect-[4/5] w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-stone-200 bg-white rounded-[2rem] transition-colors">
+                <div className="flex gap-4 mb-6">
+                  <div className="p-4 bg-stone-50 rounded-2xl text-stone-400 shadow-sm"><Camera className="w-8 h-8" /></div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <h3 className="font-bold text-stone-800 text-lg mb-1">Photo de la plante</h3>
+                <p className="text-sm text-stone-500 text-center mb-8 font-medium">
+                  Prenez une belle photo claire pour que l'IA puisse l'identifier.
+                </p>
+                
+                <div className="flex flex-col gap-3 w-full max-w-[250px]">
+                  {/* Bouton Caméra */}
+                  <label className="cursor-pointer w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
+                    <Camera className="w-5 h-5" /> Prendre une photo
+                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
+                  </label>
+
+                  {/* Bouton Galerie */}
+                  <label className="cursor-pointer w-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-6 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
+                    <ImageIcon className="w-5 h-5 text-stone-400" /> Choisir une image
+                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* FORMULAIRE DÉTAILS */}
           {previewUrl && (
-            <div className="space-y-5 bg-white p-5 rounded-xl border shadow-sm">
-               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4" /> Dans quelle pièce ?</Label>
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" value={room} onChange={(e) => setRoom(e.target.value)} disabled={isAnalyzing}>
+            <div className="space-y-6 bg-white p-6 rounded-[2rem] border border-stone-100/80 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+               
+               <div className="space-y-2.5">
+                <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
+                  <MapPin className="w-4 h-4 text-purple-500" /> Dans quelle pièce ?
+                </Label>
+                <select 
+                  className="flex h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
+                  value={room} 
+                  onChange={(e) => setRoom(e.target.value)} 
+                  disabled={isAnalyzing}
+                >
                   <option value="">Sélectionner une pièce...</option>
                   <option value="Salon">Salon</option>
                   <option value="Chambre">Chambre</option>
@@ -175,9 +180,17 @@ export default function AddPlantPage() {
                   <option value="Jardin">Jardin</option>
                 </select>
               </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-slate-600"><Sun className="w-4 h-4" /> Luminosité</Label>
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" value={light} onChange={(e) => setLight(e.target.value)} disabled={isAnalyzing}>
+
+              <div className="space-y-2.5">
+                <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
+                  <Sun className="w-4 h-4 text-amber-500" /> Luminosité
+                </Label>
+                <select 
+                  className="flex h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
+                  value={light} 
+                  onChange={(e) => setLight(e.target.value)} 
+                  disabled={isAnalyzing}
+                >
                   <option value="">Sélectionner l'exposition...</option>
                   <option value="Plein soleil">☀️ Plein soleil (Fenêtre Sud)</option>
                   <option value="Lumière indirecte vive">🌤️ Lumière indirecte vive</option>
@@ -185,13 +198,30 @@ export default function AddPlantPage() {
                   <option value="Faible luminosité">🌑 Faible luminosité</option>
                 </select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-slate-600">Description ou petite note</Label>
-                <Textarea placeholder="Ex: Bouture de ma grand-mère..." className="resize-none h-24" value={description} onChange={(e) => setDescription(e.target.value)} disabled={isAnalyzing} />
+
+              <div className="space-y-2.5">
+                <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
+                  Description ou note
+                </Label>
+                <Textarea 
+                  placeholder="Ex: Bouture de ma grand-mère..." 
+                  className="resize-none h-24 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
+                  value={description} 
+                  onChange={(e) => setDescription(e.target.value)} 
+                  disabled={isAnalyzing} 
+                />
               </div>
 
-              <Button type="submit" className="w-full py-6 text-lg bg-green-900 hover:bg-green-800 shadow-xl mt-4 transition-all" disabled={isAnalyzing}>
-                {isAnalyzing ? "Lancement de l'analyse..." : <><Sparkles className="w-5 h-5 mr-2 text-green-300" /> Identifier cette plante</>}
+              <Button 
+                type="submit" 
+                className="w-full py-6 mt-6 rounded-full text-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95" 
+                disabled={isAnalyzing}
+              >
+                {isAnalyzing ? (
+                  "Lancement de l'analyse..."
+                ) : (
+                  <><Sparkles className="w-5 h-5 mr-2 text-emerald-200" /> Identifier cette plante</>
+                )}
               </Button>
             </div>
           )}
