@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Leaf, MapPin, Sprout } from "lucide-react";
+import { LogOut, Plus, Leaf, MapPin, Sprout, Droplets } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { getWateringStatus } from "@/lib/utils";
+import { waterPlant } from "@/server/actions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -74,12 +76,20 @@ export default async function DashboardPage() {
         ) : (
           /* NOUVELLE GRILLE PREMIUM */
           <div className="grid grid-cols-2 gap-4">
-            {plants.map((plant) => (
-              <Link key={plant.id} href={`/dashboard/plant/${plant.id}`} className="group block h-full">
-                <div className="flex flex-col h-full bg-white rounded-[2rem] overflow-hidden shadow-sm border border-stone-100/80 transition-all duration-300 hover:shadow-md hover:border-emerald-100 group-active:scale-[0.98]">
+            {plants.map((plant) => {
+              // Récupération sécurisée des données d'arrosage
+              const snoozeDays = plant.snooze_days || 0;
+              const history = plant.watering_history || [];
+              const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+
+              return (
+                <div key={plant.id} className="group relative flex flex-col h-full bg-white rounded-[2rem] overflow-hidden shadow-sm border border-stone-100/80 transition-all duration-300 hover:shadow-md hover:border-emerald-100">
+                  
+                  {/* LIEN MAGIQUE : Recouvre toute la carte en fond (z-0) */}
+                  <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-0" />
                   
                   {/* Zone Image avec Badge */}
-                  <div className="relative aspect-[4/5] w-full bg-stone-100 overflow-hidden">
+                  <div className="relative aspect-[4/5] w-full bg-stone-100 overflow-hidden pointer-events-none">
                     {plant.image_path ? (
                       <Image 
                         src={plant.image_path} 
@@ -102,23 +112,50 @@ export default async function DashboardPage() {
                       </div>
                     )}
                     
-                    {/* Dégradé léger en bas de l'image pour lier avec le fond blanc */}
                     <div className="absolute bottom-0 w-full h-12 bg-gradient-to-t from-white to-transparent" />
                   </div>
 
                   {/* Bloc Texte */}
-                  <div className="px-4 pb-5 pt-1 bg-white flex flex-col justify-end flex-1 z-10">
-                    <h3 className="font-bold text-stone-800 text-[15px] leading-tight line-clamp-1">
-                      {plant.name}
-                    </h3>
-                    <p className="text-xs text-stone-500 italic mt-1 line-clamp-1 font-medium">
-                      {plant.species}
-                    </p>
+                  <div className="px-4 pb-4 pt-3 bg-white flex flex-col justify-end flex-1 z-10">
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <div className="overflow-hidden pointer-events-none">
+                        <h3 className="font-bold text-stone-800 text-[15px] leading-tight line-clamp-1">
+                          {plant.name}
+                        </h3>
+                        <p className="text-xs text-stone-500 italic mt-0.5 line-clamp-1 font-medium">
+                          {plant.species}
+                        </p>
+                      </div>
+                      
+                      {/* BOUTON ARROSAGE RAPIDE : Positionné par-dessus le lien (z-20) */}
+                      <form action={waterPlant.bind(null, plant.id, history)} className="relative z-20 shrink-0">
+                        <Button 
+                           type="submit" 
+                           size="icon" 
+                           variant="secondary"
+                           className="w-8 h-8 rounded-full bg-sky-50 text-sky-500 hover:bg-sky-100 hover:text-sky-600 shadow-sm"
+                           title="Arroser maintenant"
+                        >
+                          <Droplets className="w-4 h-4" />
+                        </Button>
+                      </form>
+                    </div>
+
+                    {/* Statut d'arrosage */}
+                    <div className="mt-2 pointer-events-none">
+                      <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wide ${
+                        status.urgent 
+                          ? 'bg-rose-50 text-rose-600 border border-rose-100/50' 
+                          : 'bg-stone-50 text-stone-500 border border-stone-200/50'
+                      }`}>
+                        {status.text}
+                      </span>
+                    </div>
                   </div>
 
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
