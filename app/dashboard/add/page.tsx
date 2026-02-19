@@ -15,12 +15,10 @@ export default function AddPlantPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Nouveaux états
   const [room, setRoom] = useState("");
   const [light, setLight] = useState("");
   const [description, setDescription] = useState("");
 
-  // Petit effet pour empêcher le scroll pendant le chargement
   useEffect(() => {
     if (isAnalyzing) {
       document.body.style.overflow = 'hidden';
@@ -30,9 +28,18 @@ export default function AddPlantPage() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isAnalyzing]);
 
+  // ASTUCE MOBILE 1 : Vider l'input avant chaque clic pour forcer le onChange
+  const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    e.currentTarget.value = "";
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // ASTUCE MOBILE 2 : Nettoyer l'ancienne URL en mémoire pour éviter les bugs d'affichage
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
       setFile(selectedFile);
       setPreviewUrl(URL.createObjectURL(selectedFile));
     }
@@ -46,7 +53,6 @@ export default function AddPlantPage() {
     }
 
     setIsAnalyzing(true);
-    // On enlève le toast.loading ici car on a maintenant un overlay plein écran
 
     try {
       const formData = new FormData();
@@ -61,8 +67,6 @@ export default function AddPlantPage() {
         toast.error(result.error);
         setIsAnalyzing(false);
       }
-      // Si succès, la redirection se fait côté serveur, pas besoin de gérer ici.
-
     } catch (error) {
       toast.error("Une erreur inattendue est survenue.");
       setIsAnalyzing(false);
@@ -72,39 +76,30 @@ export default function AddPlantPage() {
   return (
     <div className="min-h-screen bg-muted/30 pb-20 relative">
       
-      {/* === OVERLAY D'ANIMATION DE CHARGEMENT === */}
+      {/* OVERLAY D'ANIMATION DE CHARGEMENT */}
       {isAnalyzing && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 transition-all duration-300">
           <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-full text-center space-y-6 animate-in fade-in zoom-in duration-300">
-            
-            {/* Zone de scan de l'image */}
             <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-4 border-green-100 shadow-inner bg-slate-100">
                {/* eslint-disable-next-line @next/next/no-img-element */}
                <img src={previewUrl || ""} alt="Scan" className="w-full h-full object-cover opacity-80 blur-[2px]" />
-               {/* Le fameux faisceau laser CSS */}
                <div className="animate-scan"></div>
             </div>
-
             <div className="space-y-3 flex flex-col items-center">
-              {/* Icône qui pousse */}
               <div className="p-3 bg-green-100 rounded-full text-green-600 animate-gentle-pulse">
                 <Sprout className="w-8 h-8" />
               </div>
               <h2 className="text-xl font-bold text-slate-800">Analyse en cours...</h2>
-              <p className="text-sm text-slate-500">
-                Gemini observe votre plante et prépare sa fiche d'identité.
-              </p>
+              <p className="text-sm text-slate-500">Gemini observe votre plante et prépare sa fiche d'identité.</p>
             </div>
-
             <div className="flex items-center text-green-600 text-sm font-medium">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Connexion au laboratoire...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Connexion au laboratoire...
             </div>
           </div>
         </div>
       )}
 
-      {/* Contenu normal de la page (caché derrière l'overlay si actif) */}
+      {/* HEADER */}
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 h-16 flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild className="-ml-2" disabled={isAnalyzing}>
@@ -118,7 +113,6 @@ export default function AddPlantPage() {
 
       <main className="max-w-md mx-auto p-4 mt-2">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Zone de la photo (inchangée) */}
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               {previewUrl ? (
@@ -129,33 +123,44 @@ export default function AddPlantPage() {
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40">
                     <label className="cursor-pointer bg-white text-black px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg">
                       <Camera className="w-4 h-4" /> Changer la photo
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
                     </label>
                   </div>
                   )}
                 </div>
               ) : (
                 <div className="aspect-[4/5] w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-green-200 bg-green-50/50 hover:bg-green-50 transition-colors">
-                  {/* ... contenu de l'état vide (inchangé) ... */}
                   <div className="flex gap-4 mb-4">
                     <div className="p-4 bg-white rounded-full shadow-sm text-green-600"><Camera className="w-8 h-8" /></div>
-                    <div className="p-4 bg-white rounded-full shadow-sm text-green-600"><ImageIcon className="w-8 h-8" /></div>
                   </div>
                   <h3 className="font-semibold text-green-900 mb-1">Photo de la plante</h3>
-                  <p className="text-sm text-green-700/70 text-center mb-6">Prenez une photo claire pour l'IA.</p>
-                  <label className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-medium flex items-center gap-2 shadow-sm transition-all active:scale-95">
-                    <Camera className="w-5 h-5" /> Ouvrir l'appareil
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </label>
+                  <p className="text-sm text-green-700/70 text-center mb-8">Prenez une nouvelle photo ou choisissez-en une dans votre galerie.</p>
+                  
+                  {/* === LES DEUX BOUTONS DISTINCTS === */}
+                  <div className="flex flex-col gap-3 w-full max-w-xs">
+                    
+                    {/* Bouton 1 : Caméra forcée (capture="environment") */}
+                    <label className="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-medium flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
+                      <Camera className="w-5 h-5" /> Prendre une photo
+                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
+                    </label>
+
+                    {/* Bouton 2 : Galerie standard */}
+                    <label className="cursor-pointer w-full bg-white border-2 border-green-200 text-green-700 hover:bg-green-50 px-6 py-3 rounded-full font-medium flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
+                      <ImageIcon className="w-5 h-5" /> Choisir une image
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
+                    </label>
+
+                  </div>
+
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Formulaire complémentaire */}
+          {/* FORMULAIRE DÉTAILS */}
           {previewUrl && (
             <div className="space-y-5 bg-white p-5 rounded-xl border shadow-sm">
-              {/* ... inputs select et textarea (inchangés) ... */}
                <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4" /> Dans quelle pièce ?</Label>
                 <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" value={room} onChange={(e) => setRoom(e.target.value)} disabled={isAnalyzing}>
@@ -186,7 +191,6 @@ export default function AddPlantPage() {
               </div>
 
               <Button type="submit" className="w-full py-6 text-lg bg-green-900 hover:bg-green-800 shadow-xl mt-4 transition-all" disabled={isAnalyzing}>
-                {/* Le texte du bouton change aussi légèrement */}
                 {isAnalyzing ? "Lancement de l'analyse..." : <><Sparkles className="w-5 h-5 mr-2 text-green-300" /> Identifier cette plante</>}
               </Button>
             </div>
