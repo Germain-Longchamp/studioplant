@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Leaf, MapPin, Sprout, Droplets, Calendar } from "lucide-react";
+import { LogOut, Plus, Leaf, MapPin, Sprout, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
-import { waterPlant } from "@/server/actions";
+import WaterButton from "./WaterButton";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -134,18 +134,12 @@ export default async function DashboardPage() {
                         {status.text}
                       </div>
 
-                      {/* Bouton Arroser */}
-                      <form action={waterPlant.bind(null, plant.id, history)}>
-                        <Button 
-                          type="submit" 
-                          size="sm"
-                          variant={status.urgent ? "destructive" : "outline"}
-                          className={`h-8 rounded-xl px-3.5 text-xs font-bold transition-all active:scale-95 ${status.urgent ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-800'}`}
-                        >
-                          <Droplets className={`w-3.5 h-3.5 mr-1.5 ${status.urgent ? 'text-rose-100' : 'text-stone-400'}`} />
-                          Arroser
-                        </Button>
-                      </form>
+                      {/* Bouton Arroser Intelligent (Composant Client avec Toast) */}
+                      <WaterButton 
+                        plantId={plant.id} 
+                        history={history} 
+                        urgent={status.urgent} 
+                      />
 
                     </div>
                   </div>
