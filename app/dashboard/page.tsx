@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Leaf, MapPin, Sprout, Droplets } from "lucide-react";
+import { LogOut, Plus, Leaf, MapPin, Sprout, Droplets, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
             </Button>
           </div>
         ) : (
-          /* NOUVELLE VUE LISTE PLEINE LARGEUR */
+          /* VUE LISTE PLEINE LARGEUR */
           <div className="flex flex-col gap-4">
             {plants.map((plant) => {
               const snoozeDays = plant.snooze_days || 0;
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
                   {/* Lien magique sur toute la carte */}
                   <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
                   
-                  {/* Zone Image : À gauche, occupe environ 35% de la carte */}
+                  {/* Zone Image */}
                   <div className="relative w-[35%] min-w-[120px] max-w-[140px] bg-stone-100 shrink-0 border-r border-stone-100/50">
                     {plant.image_path ? (
                       <Image 
@@ -104,10 +104,10 @@ export default async function DashboardPage() {
                     )}
                   </div>
 
-                  {/* Bloc Contenu : À droite, prend le reste de la place */}
+                  {/* Bloc Contenu */}
                   <div className="flex flex-col flex-1 p-4">
                     
-                    {/* Partie Haute : Titre + Sous-titre + Pièce */}
+                    {/* Partie Haute */}
                     <div className="flex-1">
                       <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">
                         {plant.name}
@@ -128,9 +128,9 @@ export default async function DashboardPage() {
                     {/* Partie Basse : Statut et Bouton Arroser */}
                     <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between relative z-20">
                       
-                      {/* Statut ("Dans X jours") */}
+                      {/* Statut avec ICÔNE CALENDRIER */}
                       <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
-                        {status.urgent && <Droplets className="w-3 h-3 animate-pulse" />}
+                        <Calendar className={`w-3.5 h-3.5 ${status.urgent ? 'animate-pulse' : ''}`} />
                         {status.text}
                       </div>
 
