@@ -45,7 +45,7 @@ export default async function DashboardPage() {
 
       <main className="max-w-md mx-auto px-5 mt-4 space-y-8">
         
-        {/* Titre de la page façon iOS / Magazine */}
+        {/* Titre de la page */}
         <div>
           <h1 className="text-4xl font-extrabold text-stone-900 tracking-tight leading-none mb-2">
             Mon Jardin
@@ -74,10 +74,9 @@ export default async function DashboardPage() {
             </Button>
           </div>
         ) : (
-          /* NOUVELLE GRILLE PREMIUM */
+          /* NOUVELLE GRILLE AVEC CARTES REVUES */
           <div className="grid grid-cols-2 gap-4">
             {plants.map((plant) => {
-              // Récupération sécurisée des données d'arrosage
               const snoozeDays = plant.snooze_days || 0;
               const history = plant.watering_history || [];
               const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
@@ -85,11 +84,11 @@ export default async function DashboardPage() {
               return (
                 <div key={plant.id} className="group relative flex flex-col h-full bg-white rounded-[2rem] overflow-hidden shadow-sm border border-stone-100/80 transition-all duration-300 hover:shadow-md hover:border-emerald-100">
                   
-                  {/* LIEN MAGIQUE : Recouvre toute la carte en fond (z-0) */}
-                  <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-0" />
+                  {/* Le lien principal ne couvre plus que la partie haute (image + titres) */}
+                  <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-x-0 top-0 bottom-[60px] z-10" />
                   
-                  {/* Zone Image avec Badge */}
-                  <div className="relative aspect-[4/5] w-full bg-stone-100 overflow-hidden pointer-events-none">
+                  {/* Zone Image : Hauteur réduite (aspect-[3/4]) */}
+                  <div className="relative aspect-[3/4] w-full bg-stone-100 overflow-hidden pointer-events-none">
                     {plant.image_path ? (
                       <Image 
                         src={plant.image_path} 
@@ -104,7 +103,7 @@ export default async function DashboardPage() {
                       </div>
                     )}
                     
-                    {/* Badge Pièce Flottant */}
+                    {/* Badge Pièce */}
                     {plant.room && (
                       <div className="absolute top-3 left-3 bg-white/85 backdrop-blur-md px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1 shadow-sm">
                         <MapPin className="w-3 h-3 text-emerald-600" />
@@ -112,45 +111,40 @@ export default async function DashboardPage() {
                       </div>
                     )}
                     
-                    <div className="absolute bottom-0 w-full h-12 bg-gradient-to-t from-white to-transparent" />
+                    <div className="absolute bottom-0 w-full h-16 bg-gradient-to-t from-white via-white/60 to-transparent" />
                   </div>
 
-                  {/* Bloc Texte */}
-                  <div className="px-4 pb-4 pt-3 bg-white flex flex-col justify-end flex-1 z-10">
-                    <div className="flex justify-between items-start gap-2 mb-1">
-                      <div className="overflow-hidden pointer-events-none">
-                        <h3 className="font-bold text-stone-800 text-[15px] leading-tight line-clamp-1">
-                          {plant.name}
-                        </h3>
-                        <p className="text-xs text-stone-500 italic mt-0.5 line-clamp-1 font-medium">
-                          {plant.species}
-                        </p>
-                      </div>
-                      
-                      {/* BOUTON ARROSAGE RAPIDE : Positionné par-dessus le lien (z-20) */}
-                      <form action={waterPlant.bind(null, plant.id, history)} className="relative z-20 shrink-0">
-                        <Button 
-                           type="submit" 
-                           size="icon" 
-                           variant="secondary"
-                           className="w-8 h-8 rounded-full bg-sky-50 text-sky-500 hover:bg-sky-100 hover:text-sky-600 shadow-sm"
-                           title="Arroser maintenant"
-                        >
-                          <Droplets className="w-4 h-4" />
-                        </Button>
-                      </form>
+                  {/* Bloc Texte : Pleine largeur */}
+                  <div className="px-4 pt-2 pb-3 bg-white flex flex-col flex-1 z-0 relative">
+                     <h3 className="font-bold text-stone-800 text-[15px] leading-tight line-clamp-1">
+                       {plant.name}
+                     </h3>
+                     <p className="text-xs text-stone-500 italic mt-0.5 line-clamp-1 font-medium">
+                       {plant.species}
+                     </p>
+                  </div>
+
+                  {/* NOUVELLE BARRE D'ACTION EN BAS (Séparée) */}
+                  <div className="px-3 py-2.5 bg-stone-50 border-t border-stone-100 flex items-center justify-between relative z-20">
+                    
+                    {/* Indicateur de temps */}
+                    <div className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${status.urgent ? 'text-rose-600' : 'text-stone-500'}`}>
+                      {status.urgent && <Droplets className="w-3 h-3 animate-pulse" />}
+                      {status.text}
                     </div>
 
-                    {/* Statut d'arrosage */}
-                    <div className="mt-2 pointer-events-none">
-                      <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wide ${
-                        status.urgent 
-                          ? 'bg-rose-50 text-rose-600 border border-rose-100/50' 
-                          : 'bg-stone-50 text-stone-500 border border-stone-200/50'
-                      }`}>
-                        {status.text}
-                      </span>
-                    </div>
+                    {/* Vrai bouton explicite */}
+                    <form action={waterPlant.bind(null, plant.id, history)}>
+                      <Button 
+                         type="submit" 
+                         size="sm"
+                         variant={status.urgent ? "destructive" : "outline"}
+                         className={`h-8 rounded-xl px-3 text-xs font-bold transition-all active:scale-95 ${status.urgent ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-800'}`}
+                      >
+                        <Droplets className={`w-3.5 h-3.5 mr-1.5 ${status.urgent ? 'text-rose-100' : 'text-stone-400'}`} />
+                        Arroser
+                      </Button>
+                    </form>
                   </div>
 
                 </div>
@@ -160,8 +154,8 @@ export default async function DashboardPage() {
         )}
       </main>
 
-      {/* FAB (Floating Action Button) Modernisé */}
-      <div className="fixed bottom-6 right-6 md:hidden z-20">
+      {/* FAB */}
+      <div className="fixed bottom-6 right-6 md:hidden z-30">
         <Button asChild size="icon" className="w-16 h-16 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20 transition-transform active:scale-95">
           <Link href="/dashboard/add">
             <Plus className="w-7 h-7" />
