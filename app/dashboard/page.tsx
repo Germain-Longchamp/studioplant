@@ -74,77 +74,80 @@ export default async function DashboardPage() {
             </Button>
           </div>
         ) : (
-          /* NOUVELLE GRILLE AVEC CARTES REVUES */
-          <div className="grid grid-cols-2 gap-4">
+          /* NOUVELLE VUE LISTE PLEINE LARGEUR */
+          <div className="flex flex-col gap-4">
             {plants.map((plant) => {
               const snoozeDays = plant.snooze_days || 0;
               const history = plant.watering_history || [];
               const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
 
               return (
-                <div key={plant.id} className="group relative flex flex-col h-full bg-white rounded-[2rem] overflow-hidden shadow-sm border border-stone-100/80 transition-all duration-300 hover:shadow-md hover:border-emerald-100">
+                <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-sm border border-stone-100/80 transition-all duration-300 hover:shadow-md hover:border-emerald-100">
                   
-                  {/* Le lien principal ne couvre plus que la partie haute (image + titres) */}
-                  <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-x-0 top-0 bottom-[60px] z-10" />
+                  {/* Lien magique sur toute la carte */}
+                  <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
                   
-                  {/* Zone Image : Hauteur réduite (aspect-[3/4]) */}
-                  <div className="relative aspect-[3/4] w-full bg-stone-100 overflow-hidden pointer-events-none">
+                  {/* Zone Image : À gauche, occupe environ 35% de la carte */}
+                  <div className="relative w-[35%] min-w-[120px] max-w-[140px] bg-stone-100 shrink-0 border-r border-stone-100/50">
                     {plant.image_path ? (
                       <Image 
                         src={plant.image_path} 
                         alt={plant.name} 
                         fill 
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 768px) 50vw, 33vw"
+                        sizes="(max-width: 768px) 33vw, 25vw"
                       />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full text-stone-300">
                         <Leaf className="w-8 h-8 opacity-50" />
                       </div>
                     )}
-                    
-                    {/* Badge Pièce */}
-                    {plant.room && (
-                      <div className="absolute top-3 left-3 bg-white/85 backdrop-blur-md px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1 shadow-sm">
-                        <MapPin className="w-3 h-3 text-emerald-600" />
-                        <span className="truncate max-w-[70px]">{plant.room}</span>
-                      </div>
-                    )}
-                    
-                    <div className="absolute bottom-0 w-full h-16 bg-gradient-to-t from-white via-white/60 to-transparent" />
                   </div>
 
-                  {/* Bloc Texte : Pleine largeur */}
-                  <div className="px-4 pt-2 pb-3 bg-white flex flex-col flex-1 z-0 relative">
-                     <h3 className="font-bold text-stone-800 text-[15px] leading-tight line-clamp-1">
-                       {plant.name}
-                     </h3>
-                     <p className="text-xs text-stone-500 italic mt-0.5 line-clamp-1 font-medium">
-                       {plant.species}
-                     </p>
-                  </div>
-
-                  {/* NOUVELLE BARRE D'ACTION EN BAS (Séparée) */}
-                  <div className="px-3 py-2.5 bg-stone-50 border-t border-stone-100 flex items-center justify-between relative z-20">
+                  {/* Bloc Contenu : À droite, prend le reste de la place */}
+                  <div className="flex flex-col flex-1 p-4">
                     
-                    {/* Indicateur de temps */}
-                    <div className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${status.urgent ? 'text-rose-600' : 'text-stone-500'}`}>
-                      {status.urgent && <Droplets className="w-3 h-3 animate-pulse" />}
-                      {status.text}
+                    {/* Partie Haute : Titre + Sous-titre + Pièce */}
+                    <div className="flex-1">
+                      <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">
+                        {plant.name}
+                      </h3>
+                      <p className="text-sm text-stone-500 italic mt-0.5 line-clamp-1">
+                        {plant.species}
+                      </p>
+                      
+                      {/* Badge Pièce */}
+                      {plant.room && (
+                        <div className="inline-flex items-center gap-1 mt-2.5 bg-stone-50 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-stone-500 border border-stone-200/60">
+                          <MapPin className="w-3 h-3 text-emerald-600" />
+                          {plant.room}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Vrai bouton explicite */}
-                    <form action={waterPlant.bind(null, plant.id, history)}>
-                      <Button 
-                         type="submit" 
-                         size="sm"
-                         variant={status.urgent ? "destructive" : "outline"}
-                         className={`h-8 rounded-xl px-3 text-xs font-bold transition-all active:scale-95 ${status.urgent ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-800'}`}
-                      >
-                        <Droplets className={`w-3.5 h-3.5 mr-1.5 ${status.urgent ? 'text-rose-100' : 'text-stone-400'}`} />
-                        Arroser
-                      </Button>
-                    </form>
+                    {/* Partie Basse : Statut et Bouton Arroser */}
+                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between relative z-20">
+                      
+                      {/* Statut ("Dans X jours") */}
+                      <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
+                        {status.urgent && <Droplets className="w-3 h-3 animate-pulse" />}
+                        {status.text}
+                      </div>
+
+                      {/* Bouton Arroser */}
+                      <form action={waterPlant.bind(null, plant.id, history)}>
+                        <Button 
+                          type="submit" 
+                          size="sm"
+                          variant={status.urgent ? "destructive" : "outline"}
+                          className={`h-8 rounded-xl px-3.5 text-xs font-bold transition-all active:scale-95 ${status.urgent ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-800'}`}
+                        >
+                          <Droplets className={`w-3.5 h-3.5 mr-1.5 ${status.urgent ? 'text-rose-100' : 'text-stone-400'}`} />
+                          Arroser
+                        </Button>
+                      </form>
+
+                    </div>
                   </div>
 
                 </div>
