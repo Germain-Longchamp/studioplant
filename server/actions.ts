@@ -41,20 +41,23 @@ export async function addPlantWithAI(formData: FormData) {
       model: "gemini-2.5-flash", 
     });
 
+    // 🔴 PROMPT MIS À JOUR : On demande l'avis sur la pièce, la lumière et un entretien détaillé
     const prompt = `
-      Analyse cette photo de plante. 
-      L'utilisateur indique qu'elle est située ici : ${room || "Non précisé"}.
-      La luminosité de la pièce est : ${light || "Non précisée"}.
-      Note de l'utilisateur : ${description || "Aucune"}.
+      Analyse cette photo de plante d'intérieur. 
+      L'utilisateur indique qu'elle est située ici : "${room || "Non précisé"}".
+      La luminosité actuelle de la pièce est : "${light || "Non précisée"}".
+      Note de l'utilisateur : "${description || "Aucune"}".
 
-      Retourne UNIQUEMENT un objet JSON valide avec la structure suivante (SANS balises markdown) :
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
-        "name": "Nom commun (ex: Monstera)",
+        "name": "Nom commun (ex: Monstera Deliciosa)",
         "species": "Nom scientifique",
         "watering_frequency": 7,
-        "care_notes": "Une courte phrase de conseil d'entretien ADAPTÉE à la pièce et la luminosité fournies."
+        "room_advice": "Ton avis d'expert court sur le choix de la pièce actuelle. Est-ce adapté à cette plante ?",
+        "light_advice": "Ton avis d'expert court sur la luminosité actuelle. Faut-il la rapprocher ou l'éloigner de la fenêtre ?",
+        "care_notes": "Un paragraphe très détaillé sur l'entretien global (type de terreau, engrais, humidité, nettoyage des feuilles, etc.)."
       }
-      Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "care_notes": "Ceci ne semble pas être une plante."}
+      Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
     `;
 
     const result = await model.generateContent([prompt, imagePart]);
@@ -78,7 +81,7 @@ export async function addPlantWithAI(formData: FormData) {
 
     const { data: publicUrlData } = supabase.storage.from("plant-images").getPublicUrl(fileName);
 
-    // MODIFICATION ICI : On ajoute .select().single() pour récupérer la ligne fraîchement créée
+    // 🔴 INSERTION MISE À JOUR : On ajoute room_advice et light_advice
     const { data: newPlant, error: dbError } = await supabase.from("plants").insert({
       user_id: user.id,
       name: plantData.name,
@@ -88,6 +91,8 @@ export async function addPlantWithAI(formData: FormData) {
       room: room,
       description: description,
       care_notes: plantData.care_notes,
+      room_advice: plantData.room_advice,   // Nouveau
+      light_advice: plantData.light_advice, // Nouveau
       image_path: publicUrlData.publicUrl,
       last_watered_at: new Date().toISOString(),
     }).select().single();
@@ -130,7 +135,6 @@ export async function waterPlant(plantId: string) {
     return { error: "Erreur inattendue." };
   }
 }
-
 
 export async function deletePlant(plantId: string, imageUrl: string | null) {
   const supabase = await createClient();
