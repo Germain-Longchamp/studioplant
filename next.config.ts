@@ -6,7 +6,6 @@ const withPWA = withPWAInit({
   dest: "public", // Dossier de destination du service worker
   disable: process.env.NODE_ENV === "development", // Désactive le cache en mode dev pour éviter les bugs
   register: true, // Enregistre automatiquement le service worker
-  skipWaiting: true, // Met à jour le SW dès qu'une nouvelle version est dispo
   workboxOptions: {
     disableDevLogs: true,
   },
