@@ -91,10 +91,12 @@ export async function addPlantWithAI(formData: FormData) {
       room: room,
       description: description,
       care_notes: plantData.care_notes,
-      room_advice: plantData.room_advice,   // Nouveau
-      light_advice: plantData.light_advice, // Nouveau
+      room_advice: plantData.room_advice,
+      light_advice: plantData.light_advice,
       image_path: publicUrlData.publicUrl,
       last_watered_at: new Date().toISOString(),
+      watering_history: [new Date().toISOString()],
+      snooze_days: 0,
     }).select().single();
 
     if (dbError) throw dbError;
