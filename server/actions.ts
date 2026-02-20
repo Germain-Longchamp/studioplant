@@ -11,8 +11,14 @@ export async function addPlantWithAI(formData: FormData) {
   const imageFile = formData.get("image") as File;
   const room = formData.get("room") as string;
   const light = formData.get("light") as string;
-  const description = formData.get("description") as string;
   
+  // Récupération de la date d'arrosage fournie par l'utilisateur
+  const lastWateredInput = formData.get("lastWateredAt") as string;
+  // Si l'utilisateur n'a rien mis, on prend la date d'aujourd'hui par défaut
+  const lastWateredDate = lastWateredInput 
+    ? new Date(lastWateredInput).toISOString() 
+    : new Date().toISOString();
+
   if (!imageFile || imageFile.size === 0) {
     return { error: "Aucune image fournie." };
   }
@@ -41,12 +47,11 @@ export async function addPlantWithAI(formData: FormData) {
       model: "gemini-2.5-flash", 
     });
 
-    // 🔴 PROMPT MIS À JOUR : On demande l'avis sur la pièce, la lumière et un entretien détaillé
+    // PROMPT MIS À JOUR (Sans la description)
     const prompt = `
       Analyse cette photo de plante d'intérieur. 
       L'utilisateur indique qu'elle est située ici : "${room || "Non précisé"}".
       La luminosité actuelle de la pièce est : "${light || "Non précisée"}".
-      Note de l'utilisateur : "${description || "Aucune"}".
 
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
@@ -81,7 +86,7 @@ export async function addPlantWithAI(formData: FormData) {
 
     const { data: publicUrlData } = supabase.storage.from("plant-images").getPublicUrl(fileName);
 
-    // 🔴 INSERTION MISE À JOUR : On ajoute room_advice et light_advice
+    // INSERTION MISE À JOUR EN BASE DE DONNÉES
     const { data: newPlant, error: dbError } = await supabase.from("plants").insert({
       user_id: user.id,
       name: plantData.name,
@@ -89,13 +94,13 @@ export async function addPlantWithAI(formData: FormData) {
       watering_frequency: plantData.watering_frequency,
       exposure: light,
       room: room,
-      description: description,
+      description: "", // Laissé vide pour ne pas casser la structure si la colonne n'est pas "nullable"
       care_notes: plantData.care_notes,
       room_advice: plantData.room_advice,
       light_advice: plantData.light_advice,
       image_path: publicUrlData.publicUrl,
-      last_watered_at: new Date().toISOString(),
-      watering_history: [new Date().toISOString()],
+      last_watered_at: lastWateredDate, // Date d'arrosage sélectionnée
+      watering_history: [lastWateredDate], // On initialise l'historique avec cette date
       snooze_days: 0,
     }).select().single();
 
@@ -109,11 +114,9 @@ export async function addPlantWithAI(formData: FormData) {
     return { error: "Une erreur inattendue est survenue." };
   }
 
-  // REDIRECTION (en dehors du bloc catch pour que Next.js puisse faire son travail proprement)
-  // On met à jour le cache du dashboard de toute façon
+  // REDIRECTION
   revalidatePath("/dashboard");
   
-  // Si on a bien l'ID, direction la page de la plante ! Sinon, retour à l'accueil
   if (newPlantId) {
     redirect(`/dashboard/plant/${newPlantId}`);
   } else {
@@ -121,44 +124,7 @@ export async function addPlantWithAI(formData: FormData) {
   }
 }
 
-
-export async function deletePlant(plantId: string, imageUrl: string | null) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) return { error: "Non autorisé" };
-
-  try {
-    // 1. Supprimer l'image du bucket Storage (si elle existe)
-    if (imageUrl) {
-      // On extrait le nom du fichier à la fin de l'URL
-      const fileName = imageUrl.split('/').pop(); 
-      if (fileName) {
-        await supabase.storage.from("plant-images").remove([fileName]);
-      }
-    }
-
-    // 2. Supprimer la plante de la base de données
-    const { error } = await supabase
-      .from("plants")
-      .delete()
-      .eq("id", plantId)
-      .eq("user_id", user.id); // Sécurité supplémentaire
-
-    if (error) return { error: "Erreur lors de la suppression en base de données." };
-
-  } catch (error) {
-    console.error("Delete Error:", error);
-    return { error: "Une erreur inattendue est survenue." };
-  }
-
-  // 3. Rafraîchir le cache et rediriger vers l'accueil
-  revalidatePath("/dashboard");
-  redirect("/dashboard");
-}
-
-
-// ARROSER LA PLANTE
+// ARROSER LA PLANTE (Sans retour pour TS)
 export async function waterPlant(plantId: string, currentHistory: string[] = []) {
   try {
     const supabase = await createClient();
@@ -178,7 +144,7 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
 
     if (error) {
       console.error("Erreur d'arrosage:", error);
-      return; // On arrête là silencieusement
+      return; 
     }
 
     revalidatePath("/dashboard");
@@ -188,7 +154,7 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
   }
 }
 
-// REPOUSSER L'ARROSAGE (SNOOZE)
+// REPOUSSER L'ARROSAGE (SNOOZE) (Sans retour pour TS)
 export async function snoozeWatering(plantId: string, currentSnooze: number = 0) {
   try {
     const supabase = await createClient();
@@ -208,4 +174,39 @@ export async function snoozeWatering(plantId: string, currentSnooze: number = 0)
   } catch (error) {
     console.error("Erreur inattendue:", error);
   }
+}
+
+// SUPPRIMER LA PLANTE
+export async function deletePlant(plantId: string, imageUrl: string | null) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return { error: "Non autorisé" };
+
+  try {
+    // 1. Supprimer l'image du bucket Storage
+    if (imageUrl) {
+      const fileName = imageUrl.split('/').pop(); 
+      if (fileName) {
+        await supabase.storage.from("plant-images").remove([fileName]);
+      }
+    }
+
+    // 2. Supprimer la plante de la base de données
+    const { error } = await supabase
+      .from("plants")
+      .delete()
+      .eq("id", plantId)
+      .eq("user_id", user.id);
+
+    if (error) return { error: "Erreur lors de la suppression en base de données." };
+
+  } catch (error) {
+    console.error("Delete Error:", error);
+    return { error: "Une erreur inattendue est survenue." };
+  }
+
+  // 3. Rafraîchir le cache et rediriger vers l'accueil
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }
