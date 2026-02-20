@@ -126,20 +126,22 @@ export default async function DashboardPage() {
                     </div>
 
                     {/* Partie Basse : Statut et Bouton Arroser */}
-                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between relative z-20">
+                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
                       
-                      {/* Statut avec ICÔNE CALENDRIER */}
-                      <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
-                        <Calendar className={`w-3.5 h-3.5 ${status.urgent ? 'animate-pulse' : ''}`} />
-                        {status.text}
+                      {/* Statut avec ICÔNE CALENDRIER - Sécurisé contre le retour à la ligne */}
+                      <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
+                        <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
+                        <span className="truncate">{status.text}</span>
                       </div>
 
-                      {/* Bouton Arroser Intelligent (Composant Client avec Toast) */}
-                      <WaterButton 
-                        plantId={plant.id} 
-                        history={history} 
-                        urgent={status.urgent} 
-                      />
+                      {/* Bouton Arroser Intelligent - Protégé contre l'écrasement */}
+                      <div className="shrink-0">
+                        <WaterButton 
+                          plantId={plant.id} 
+                          history={history} 
+                          urgent={status.urgent} 
+                        />
+                      </div>
 
                     </div>
                   </div>
