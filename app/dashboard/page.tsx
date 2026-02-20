@@ -73,8 +73,15 @@ export default async function DashboardPage() {
         </form>
       </header>
 
-      <main className="max-w-md mx-auto px-5 mt-6 space-y-10">
+      <main className="max-w-md mx-auto px-5 mt-4 space-y-8">
         
+        {/* Titre de la page (Plus petit et épuré) */}
+        <div>
+          <h1 className="text-2xl font-bold text-stone-800 tracking-tight">
+            Tableau de bord
+          </h1>
+        </div>
+
         {/* =========================================
             BLOC 1 : LES WIDGETS 
             ========================================= */}
@@ -117,7 +124,7 @@ export default async function DashboardPage() {
             BLOC 2 : LA LISTE
             ========================================= */}
         <section>
-          <h2 className="text-3xl font-extrabold text-stone-800 tracking-tight leading-none mb-5">
+          <h2 className="text-lg font-bold text-stone-800 tracking-tight mb-4">
             Mes plantes
           </h2>
 
@@ -139,7 +146,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             /* VUE LISTE PLEINE LARGEUR */
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {sortedPlants.map((plant) => {
                 const snoozeDays = plant.snooze_days || 0;
                 const history = plant.watering_history || [];
