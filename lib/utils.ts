@@ -5,7 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// NOUVELLE FONCTION DE CALCUL D'ARROSAGE (Textes courts)
 export function getWateringStatus(lastWateredAt: string, frequency: number, snoozeDays: number = 0) {
   const lastDate = new Date(lastWateredAt);
   const nextDate = new Date(lastDate);
@@ -18,8 +17,12 @@ export function getWateringStatus(lastWateredAt: string, frequency: number, snoo
   const diffTime = nextDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
-  // Textes beaucoup plus courts pour s'adapter à l'icône calendrier
-  if (diffDays < 0) return { urgent: true, text: `Retard ${Math.abs(diffDays)}j`, state: 'late' };
+  // En retard (diffDays est négatif) -> Affiche "+X J" et passe en urgent (rouge)
+  if (diffDays < 0) return { urgent: true, text: `+${Math.abs(diffDays)} J`, state: 'late' };
+  
+  // Le jour J -> Affiche "Aujourd'hui" (reste en urgent/rouge pour attirer l'attention)
   if (diffDays === 0) return { urgent: true, text: "Aujourd'hui", state: 'today' };
-  return { urgent: false, text: `${diffDays} jour${diffDays > 1 ? 's' : ''}`, state: 'ok' };
+  
+  // Dans le futur -> Affiche "-X J" et reste normal (gris)
+  return { urgent: false, text: `-${diffDays} J`, state: 'ok' };
 }
