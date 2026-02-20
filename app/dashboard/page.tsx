@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   const season = getSeasonInfo();
   const plantCount = plants?.length || 0;
   
-  // Formatage de la date du jour (ex: "Vendredi 20 février")
+  // Formatage de la date du jour
   const today = new Date();
   const formattedDate = new Intl.DateTimeFormat('fr-FR', { 
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' 
@@ -90,10 +90,14 @@ export default async function DashboardPage() {
                 <season.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-stone-800 font-bold text-[15px] leading-tight capitalize mb-0.5 line-clamp-1">
+                {/* MODIFICATION ICI : On a enlevé le line-clamp-1, et ajusté la taille/interligne pour un passage à la ligne fluide */}
+                <p className="text-stone-800 font-bold text-sm sm:text-[15px] leading-tight capitalize mb-1.5">
                   {dateString}
                 </p>
-                <p className="text-stone-500 text-xs font-medium">Saison : {season.name}</p>
+                {/* On passe le sous-titre en majuscules discrètes pour équilibrer le texte au-dessus */}
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">
+                  Saison : {season.name}
+                </p>
               </div>
             </div>
 
@@ -103,10 +107,12 @@ export default async function DashboardPage() {
                 <Sprout className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-stone-800 font-bold text-[15px] leading-tight mb-0.5">
+                <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">
                   {plantCount} plante{plantCount > 1 ? 's' : ''}
                 </p>
-                <p className="text-stone-500 text-xs font-medium">Dans la jungle</p>
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">
+                  Dans la jungle
+                </p>
               </div>
             </div>
           </div>
