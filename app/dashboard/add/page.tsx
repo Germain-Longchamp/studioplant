@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, Sprout } from "lucide-react";
+import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, Sprout, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { addPlantWithAI } from "@/server/actions";
 
@@ -16,7 +15,8 @@ export default function AddPlantPage() {
 
   const [room, setRoom] = useState("");
   const [light, setLight] = useState("");
-  const [description, setDescription] = useState("");
+  // Nouvel état pour la date, initialisé à aujourd'hui (format YYYY-MM-DD requis pour l'input date)
+  const [lastWateredAt, setLastWateredAt] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     if (isAnalyzing) {
@@ -56,7 +56,7 @@ export default function AddPlantPage() {
       formData.append("image", file);
       formData.append("room", room);
       formData.append("light", light);
-      formData.append("description", description);
+      formData.append("lastWateredAt", lastWateredAt); // 👈 On envoie la date au lieu de la description
 
       const result = await addPlantWithAI(formData);
 
@@ -139,13 +139,11 @@ export default function AddPlantPage() {
                 </p>
                 
                 <div className="flex flex-col gap-3 w-full max-w-[250px]">
-                  {/* Bouton Caméra */}
                   <label className="cursor-pointer w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
                     <Camera className="w-5 h-5" /> Prendre une photo
                     <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
                   </label>
 
-                  {/* Bouton Galerie */}
                   <label className="cursor-pointer w-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-6 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
                     <ImageIcon className="w-5 h-5 text-stone-400" /> Choisir une image
                     <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
@@ -159,6 +157,7 @@ export default function AddPlantPage() {
           {previewUrl && (
             <div className="space-y-6 bg-white p-6 rounded-[2rem] border border-stone-100/80 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
                
+               {/* 1. PIÈCE */}
                <div className="space-y-2.5">
                 <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
                   <MapPin className="w-4 h-4 text-purple-500" /> Dans quelle pièce ?
@@ -181,6 +180,7 @@ export default function AddPlantPage() {
                 </select>
               </div>
 
+              {/* 2. LUMINOSITÉ */}
               <div className="space-y-2.5">
                 <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
                   <Sun className="w-4 h-4 text-amber-500" /> Luminosité
@@ -199,16 +199,18 @@ export default function AddPlantPage() {
                 </select>
               </div>
 
+              {/* 3. NOUVEAU : DATE DE DERNIER ARROSAGE */}
               <div className="space-y-2.5">
                 <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
-                  Description ou note
+                  <CalendarClock className="w-4 h-4 text-sky-500" /> Dernier arrosage
                 </Label>
-                <Textarea 
-                  placeholder="Ex: Bouture de ma grand-mère..." 
-                  className="resize-none h-24 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)} 
+                <input 
+                  type="date"
+                  className="flex h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
+                  value={lastWateredAt} 
+                  onChange={(e) => setLastWateredAt(e.target.value)} 
                   disabled={isAnalyzing} 
+                  max={new Date().toISOString().split('T')[0]} // Empêche de choisir une date dans le futur
                 />
               </div>
 
