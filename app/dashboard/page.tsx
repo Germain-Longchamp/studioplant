@@ -75,14 +75,22 @@ export default async function DashboardPage() {
 
       <main className="max-w-md mx-auto px-5 mt-4 space-y-10">
         
+        {/* Titre de la page (Couleur adoucie en stone-800) */}
+        <div>
+          <h1 className="text-4xl font-extrabold text-stone-800 tracking-tight leading-none mb-2">
+            Mon Jardin
+          </h1>
+          <p className="text-lg text-stone-500 font-medium">
+            {plants && plants.length > 0 
+              ? `Vous avez ${plants.length} plante${plants.length > 1 ? 's' : ''}.` 
+              : "Votre espace est encore vide."}
+          </p>
+        </div>
+
         {/* =========================================
-            BLOC 1 : MON ÉCOSYSTÈME (Les Widgets) 
+            BLOC 1 : LES WIDGETS (Sans titre) 
             ========================================= */}
         <section>
-          <h2 className="text-3xl font-extrabold text-stone-900 tracking-tight leading-none mb-5">
-            Mon écosystème
-          </h2>
-          
           <div className="grid grid-cols-2 gap-4">
             {/* Widget Date / Saison */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-sm border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02]">
@@ -90,11 +98,9 @@ export default async function DashboardPage() {
                 <season.icon className="w-5 h-5" />
               </div>
               <div>
-                {/* MODIFICATION ICI : On a enlevé le line-clamp-1, et ajusté la taille/interligne pour un passage à la ligne fluide */}
                 <p className="text-stone-800 font-bold text-sm sm:text-[15px] leading-tight capitalize mb-1.5">
                   {dateString}
                 </p>
-                {/* On passe le sous-titre en majuscules discrètes pour équilibrer le texte au-dessus */}
                 <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">
                   Saison : {season.name}
                 </p>
@@ -120,11 +126,11 @@ export default async function DashboardPage() {
 
 
         {/* =========================================
-            BLOC 2 : MON JARDIN (La liste triée) 
+            BLOC 2 : LA LISTE (Couleur adoucie)
             ========================================= */}
         <section>
-          <h2 className="text-3xl font-extrabold text-stone-900 tracking-tight leading-none mb-5">
-            Mon jardin
+          <h2 className="text-3xl font-extrabold text-stone-800 tracking-tight leading-none mb-5">
+            Mes plantes
           </h2>
 
           {/* État vide */}
