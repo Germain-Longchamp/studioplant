@@ -73,22 +73,10 @@ export default async function DashboardPage() {
         </form>
       </header>
 
-      <main className="max-w-md mx-auto px-5 mt-4 space-y-10">
+      <main className="max-w-md mx-auto px-5 mt-6 space-y-10">
         
-        {/* Titre de la page (Couleur adoucie en stone-800) */}
-        <div>
-          <h1 className="text-4xl font-extrabold text-stone-800 tracking-tight leading-none mb-2">
-            Mon Jardin
-          </h1>
-          <p className="text-lg text-stone-500 font-medium">
-            {plants && plants.length > 0 
-              ? `Vous avez ${plants.length} plante${plants.length > 1 ? 's' : ''}.` 
-              : "Votre espace est encore vide."}
-          </p>
-        </div>
-
         {/* =========================================
-            BLOC 1 : LES WIDGETS (Sans titre) 
+            BLOC 1 : LES WIDGETS 
             ========================================= */}
         <section>
           <div className="grid grid-cols-2 gap-4">
@@ -126,7 +114,7 @@ export default async function DashboardPage() {
 
 
         {/* =========================================
-            BLOC 2 : LA LISTE (Couleur adoucie)
+            BLOC 2 : LA LISTE
             ========================================= */}
         <section>
           <h2 className="text-3xl font-extrabold text-stone-800 tracking-tight leading-none mb-5">
