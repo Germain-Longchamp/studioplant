@@ -15,11 +15,24 @@ export default async function DashboardPage() {
     redirect("/auth/login");
   }
 
-  // Récupération des plantes
+  // 1. Récupération des plantes
   const { data: plants } = await supabase
     .from("plants")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*");
+
+  // 2. Tri dynamique par urgence d'arrosage
+  const sortedPlants = plants?.sort((a, b) => {
+    // Calcul de la date du prochain arrosage pour la plante A
+    const nextDateA = new Date(a.last_watered_at);
+    nextDateA.setDate(nextDateA.getDate() + a.watering_frequency + (a.snooze_days || 0));
+    
+    // Calcul de la date du prochain arrosage pour la plante B
+    const nextDateB = new Date(b.last_watered_at);
+    nextDateB.setDate(nextDateB.getDate() + b.watering_frequency + (b.snooze_days || 0));
+
+    // Tri croissant : la date la plus petite (la plus ancienne/urgente) remonte en premier
+    return nextDateA.getTime() - nextDateB.getTime();
+  });
 
   const signOut = async () => {
     "use server";
@@ -51,14 +64,14 @@ export default async function DashboardPage() {
             Mon Jardin
           </h1>
           <p className="text-lg text-stone-500 font-medium">
-            {plants && plants.length > 0 
-              ? `Vous avez ${plants.length} plante${plants.length > 1 ? 's' : ''}.` 
+            {sortedPlants && sortedPlants.length > 0 
+              ? `Vous avez ${sortedPlants.length} plante${sortedPlants.length > 1 ? 's' : ''}.` 
               : "Votre espace est encore vide."}
           </p>
         </div>
 
         {/* État vide */}
-        {!plants || plants.length === 0 ? (
+        {!sortedPlants || sortedPlants.length === 0 ? (
           <div className="bg-white rounded-[2rem] border-2 border-dashed border-stone-200 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-sm">
             <div className="p-4 bg-stone-50 rounded-full">
               <Sprout className="w-8 h-8 text-stone-400" />
@@ -76,7 +89,8 @@ export default async function DashboardPage() {
         ) : (
           /* VUE LISTE PLEINE LARGEUR */
           <div className="flex flex-col gap-4">
-            {plants.map((plant) => {
+            {/* On map maintenant sur sortedPlants */}
+            {sortedPlants.map((plant) => {
               const snoozeDays = plant.snooze_days || 0;
               const history = plant.watering_history || [];
               const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
@@ -128,13 +142,13 @@ export default async function DashboardPage() {
                     {/* Partie Basse : Statut et Bouton Arroser */}
                     <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
                       
-                      {/* Statut avec ICÔNE CALENDRIER - Sécurisé contre le retour à la ligne */}
+                      {/* Statut avec ICÔNE CALENDRIER (Format -X J / +X J) */}
                       <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
                         <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                         <span className="truncate">{status.text}</span>
                       </div>
 
-                      {/* Bouton Arroser Intelligent - Protégé contre l'écrasement */}
+                      {/* Bouton Arroser Intelligent avec Animation */}
                       <div className="shrink-0">
                         <WaterButton 
                           plantId={plant.id} 
