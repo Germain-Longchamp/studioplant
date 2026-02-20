@@ -47,11 +47,9 @@ export default async function DashboardPage() {
     redirect("/auth/login");
   };
 
-  // Préparation des données du Widget "Écosystème"
   const season = getSeasonInfo();
   const plantCount = plants?.length || 0;
   
-  // Formatage de la date du jour
   const today = new Date();
   const formattedDate = new Intl.DateTimeFormat('fr-FR', { 
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' 
@@ -59,33 +57,33 @@ export default async function DashboardPage() {
   const dateString = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    // Fond général légèrement texturé / chaud
-    <div className="min-h-screen bg-[#FDFCF8] font-sans pb-24">
+    // Ajout de overflow-x-hidden sur le conteneur principal pour bloquer tout scroll horizontal
+    <div className="min-h-screen bg-[#FDFCF8] font-sans pb-24 overflow-x-hidden">
       
       {/* =========================================
-          HERO SECTION : Vert Forêt avec effet Overlap
+          HERO SECTION : Vert Forêt corrigé
           ========================================= */}
-      {/* Le bg-green-950 donne ce vert très profond, et le radial-gradient donne de la lumière au centre */}
-      <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-800 via-green-950 to-green-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-green-900/10">
+      {/* Remplacement du gradient complexe par des classes natives et ajout de overflow-hidden pour piéger les cercles décoratifs */}
+      <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
         
-        {/* Motif décoratif léger (cercles floutés) pour la texture */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-green-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-        <div className="absolute top-10 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2"></div>
+        {/* Motifs décoratifs pris au piège par l'overflow-hidden, ils ne casseront plus la largeur */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
 
         <div className="max-w-md mx-auto relative z-10">
-          {/* Header avec effet "Glassmorphism" (verre dépoli) */}
+          {/* Header */}
           <header className="flex items-center justify-between mb-8">
             <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
-              <Leaf className="w-6 h-6 text-green-300" />
+              <Leaf className="w-6 h-6 text-emerald-300" />
             </div>
             <form action={signOut}>
-              <Button variant="ghost" size="icon" type="submit" className="text-green-200 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+              <Button variant="ghost" size="icon" type="submit" className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition-colors">
                 <LogOut className="w-5 h-5" />
               </Button>
             </form>
           </header>
 
-          {/* Titre de la page (Texte clair sur fond sombre) */}
+          {/* Titre de la page (Maintenant bien lisible sur le fond sombre garanti) */}
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Tableau de bord
@@ -97,7 +95,7 @@ export default async function DashboardPage() {
       <main className="max-w-md mx-auto px-5 -mt-14 relative z-20 space-y-10">
         
         {/* =========================================
-            BLOC 1 : LES WIDGETS (Overlap sur le vert)
+            BLOC 1 : LES WIDGETS
             ========================================= */}
         <section>
           <div className="grid grid-cols-2 gap-4">
@@ -118,7 +116,7 @@ export default async function DashboardPage() {
 
             {/* Widget Nombre de plantes */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-green-50 text-green-700 mb-2 relative z-10">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10">
                 <Sprout className="w-5 h-5" />
               </div>
               <div className="relative z-10">
@@ -148,17 +146,17 @@ export default async function DashboardPage() {
           {/* État vide */}
           {!sortedPlants || sortedPlants.length === 0 ? (
             <div className="bg-white rounded-[2rem] border border-stone-100 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg shadow-stone-200/40 relative overflow-hidden">
-              <div className="absolute -right-6 -top-6 text-green-50">
+              <div className="absolute -right-6 -top-6 text-emerald-50">
                 <Leaf className="w-32 h-32 rotate-12" />
               </div>
-              <div className="p-4 bg-green-50 rounded-full relative z-10">
-                <Sprout className="w-8 h-8 text-green-600" />
+              <div className="p-4 bg-emerald-50 rounded-full relative z-10">
+                <Sprout className="w-8 h-8 text-emerald-600" />
               </div>
               <div className="relative z-10">
                 <h3 className="font-bold text-stone-800 text-lg">Aucune plante</h3>
                 <p className="text-sm text-stone-500 mt-1">Commencez à créer votre jungle urbaine.</p>
               </div>
-              <Button asChild className="bg-green-800 hover:bg-green-900 text-white rounded-full px-6 py-6 mt-4 shadow-md transition-all active:scale-95 relative z-10">
+              <Button asChild className="bg-emerald-800 hover:bg-emerald-900 text-white rounded-full px-6 py-6 mt-4 shadow-md transition-all active:scale-95 relative z-10">
                 <Link href="/dashboard/add">
                   <Plus className="w-5 h-5 mr-2" /> Ajouter une plante
                 </Link>
@@ -173,12 +171,10 @@ export default async function DashboardPage() {
                 const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
 
                 return (
-                  <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-green-200">
+                  <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
                     
-                    {/* Lien magique */}
                     <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
                     
-                    {/* Zone Image */}
                     <div className="relative w-[35%] min-w-[120px] max-w-[140px] bg-stone-100 shrink-0 border-r border-stone-100/50">
                       {plant.image_path ? (
                         <Image 
@@ -189,16 +185,13 @@ export default async function DashboardPage() {
                           sizes="(max-width: 768px) 33vw, 25vw"
                         />
                       ) : (
-                        <div className="flex items-center justify-center w-full h-full text-stone-300 bg-green-50/50">
-                          <Leaf className="w-8 h-8 opacity-40 text-green-600" />
+                        <div className="flex items-center justify-center w-full h-full text-stone-300 bg-emerald-50/50">
+                          <Leaf className="w-8 h-8 opacity-40 text-emerald-600" />
                         </div>
                       )}
                     </div>
 
-                    {/* Bloc Contenu */}
                     <div className="flex flex-col flex-1 p-4">
-                      
-                      {/* Partie Haute */}
                       <div className="flex-1">
                         <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">
                           {plant.name}
@@ -207,16 +200,14 @@ export default async function DashboardPage() {
                           {plant.species}
                         </p>
                         
-                        {/* Badge Pièce */}
                         {plant.room && (
                           <div className="inline-flex items-center gap-1 mt-2.5 bg-[#FDFCF8] px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-stone-500 border border-stone-200/60">
-                            <MapPin className="w-3 h-3 text-green-700" />
+                            <MapPin className="w-3 h-3 text-emerald-700" />
                             {plant.room}
                           </div>
                         )}
                       </div>
 
-                      {/* Partie Basse */}
                       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
                         <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
                           <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
@@ -242,9 +233,9 @@ export default async function DashboardPage() {
 
       </main>
 
-      {/* FAB: Vert forêt profond */}
-      <div className="fixed bottom-6 right-6 md:hidden z-30">
-        <Button asChild size="icon" className="w-16 h-16 rounded-full bg-green-800 hover:bg-green-900 text-white shadow-xl shadow-green-900/30 transition-transform active:scale-95 border-2 border-green-700">
+      {/* FAB: Passé en z-50 pour être certain qu'il surmonte tout le reste */}
+      <div className="fixed bottom-6 right-6 md:hidden z-50">
+        <Button asChild size="icon" className="w-16 h-16 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white shadow-xl shadow-emerald-900/30 transition-transform active:scale-95 border-2 border-emerald-700">
           <Link href="/dashboard/add">
             <Plus className="w-7 h-7" />
           </Link>
