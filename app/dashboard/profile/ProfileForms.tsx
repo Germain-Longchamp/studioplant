@@ -74,7 +74,7 @@ export default function ProfileForms({ user, metadata }: { user: any; metadata: 
           <div>
             {/* TEXTES MIS À JOUR */}
             <h2 className="text-xl font-bold text-stone-800 tracking-tight">Environnement</h2>
-            <p className="text-xs text-stone-500 mt-0.5">Aide à te donner de meilleurs conseils pour entretenir ta jungle.</p>
+            <p className="text-xs text-stone-500 mt-0.5">Aide nous à te donner de meilleurs conseils pour entretenir ta jungle.</p>
           </div>
         </div>
 
