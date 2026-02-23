@@ -55,12 +55,12 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
           /* =========================================
              MODE ÉDITION
              ========================================= */
-          <div className="p-5 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-4 shadow-inner">
+          <div className="p-5 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 space-y-4 shadow-inner">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-bold text-stone-800 text-sm flex items-center gap-2">
                 <Edit2 className="w-4 h-4 text-emerald-600" /> Nouvel emplacement
               </h4>
-              <button onClick={() => setIsEditing(false)} disabled={isPending} className="text-stone-400 hover:text-stone-600 p-1">
+              <button onClick={() => setIsEditing(false)} disabled={isPending} className="text-stone-400 hover:text-stone-600 p-1.5 bg-white rounded-full shadow-sm border border-stone-100 transition-transform active:scale-95">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -68,7 +68,7 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
             <div className="space-y-2">
               <Label className="text-xs font-bold text-stone-500 uppercase tracking-wider ml-1">Pièce</Label>
               <select 
-                className="flex h-11 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all shadow-sm"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all shadow-sm"
                 value={room} 
                 onChange={(e) => setRoom(e.target.value)} 
                 disabled={isPending}
@@ -88,7 +88,7 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
             <div className="space-y-2">
               <Label className="text-xs font-bold text-stone-500 uppercase tracking-wider ml-1">Luminosité</Label>
               <select 
-                className="flex h-11 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all shadow-sm"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all shadow-sm"
                 value={light} 
                 onChange={(e) => setLight(e.target.value)} 
                 disabled={isPending}
@@ -104,7 +104,7 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
             <Button 
               onClick={handleSave} 
               disabled={isPending}
-              className="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow-lg shadow-emerald-900/20 h-11 font-bold transition-all active:scale-95"
+              className="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow-lg shadow-emerald-900/20 h-12 font-bold transition-all active:scale-95"
             >
               {isPending ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analyse en cours...</>
@@ -118,17 +118,26 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
              MODE VUE
              ========================================= */
           <>
-            <div className="flex justify-end -mt-2 mb-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsEditing(true)}
-                className="text-stone-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-full h-8 px-3 text-xs font-bold transition-colors"
-              >
-                <Edit2 className="w-3.5 h-3.5 mr-1.5" /> Modifier le lieu
-              </Button>
-            </div>
+            {/* NOUVEAU BOUTON : Façon "Carte de réglages iOS" */}
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="w-full flex items-center justify-between p-4 mb-2 bg-[#FDFCF8] hover:bg-emerald-50/50 border border-stone-200/60 rounded-2xl transition-all group text-left shadow-sm"
+            >
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-stone-400" /> Localisation actuelle
+                </div>
+                <div className="text-stone-700 font-semibold text-sm">
+                  {plant.room || "Pièce non définie"} <span className="text-stone-300 mx-1">•</span> {plant.exposure || "Lumière non définie"}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-600 group-hover:border-emerald-200 group-hover:text-emerald-700 group-hover:bg-emerald-50/50 shadow-sm transition-all">
+                <Edit2 className="w-3.5 h-3.5" /> Modifier
+              </div>
+            </button>
 
+            {/* AVIS IA */}
             {plant.room_advice && (
               <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
                 <h4 className="text-purple-800 font-semibold text-sm mb-1.5 flex items-center gap-1.5">
