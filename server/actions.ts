@@ -60,7 +60,7 @@ export async function addPlantWithAI(formData: FormData) {
         "watering_frequency": 7,
         "room_advice": "Ton avis d'expert court sur le choix de la pièce actuelle. Est-ce adapté à cette plante ?",
         "light_advice": "Ton avis d'expert court sur la luminosité actuelle. Faut-il la rapprocher ou l'éloigner de la fenêtre ?",
-        "care_notes": "Un paragraphe très détaillé sur l'entretien global (type de terreau, engrais, humidité, nettoyage des feuilles, etc.)."
+        "care_notes": "Un guide d'entretien détaillé et aéré. Fais des paragraphes courts. Mets les titres de section en gras avec ** (ex: **Terreau :** ...). N'hésite pas à utiliser des tirets - pour faire des listes."
       }
       Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
     `;
