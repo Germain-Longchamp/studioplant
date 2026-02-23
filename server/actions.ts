@@ -274,3 +274,11 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
     return { error: "Erreur lors de l'analyse IA du nouvel emplacement." };
   }
 }
+
+
+// DÉCONNEXION
+export async function logOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/auth/login");
+}
