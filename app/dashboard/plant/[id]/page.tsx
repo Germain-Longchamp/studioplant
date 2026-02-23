@@ -17,6 +17,65 @@ const getSeasonAdvice = () => {
   return "en hiver, les plantes entrent en dormance et nécessitent beaucoup moins d'eau";
 };
 
+// NOUVEAU COMPOSANT : Formateur de texte ultra-robuste
+function FormatCareNotes({ text }: { text: string }) {
+  if (!text) return <p className="text-sm text-stone-700">Aucun guide disponible pour le moment.</p>;
+  
+  const lines = text.split('\n');
+  
+  return (
+    <div className="space-y-3.5">
+      {lines.map((line, i) => {
+        if (!line.trim()) return null;
+        
+        // 1. Détection et nettoyage des puces
+        const isBullet = line.trim().startsWith('-') || line.trim().startsWith('* ');
+        let content = line.trim();
+        if (isBullet) {
+          content = content.replace(/^[-*]\s*/, ''); // Retire la puce
+        }
+        
+        // 2. Découpage infaillible du gras
+        const parts = content.split(/\*\*(.*?)\*\*/g);
+        
+        const formattedLine = parts.map((part, j) => {
+          if (j % 2 === 1) {
+            // Index impair = c'était entre des **
+            return <strong key={j} className="text-stone-900 font-bold">{part}</strong>;
+          }
+          // Index pair = texte normal, on nettoie les résidus d'étoiles
+          return part.replace(/\*/g, '');
+        });
+
+        // 3. Rendu
+        if (isBullet) {
+          return (
+            <div key={i} className="flex gap-2.5 text-sm text-stone-700 leading-relaxed ml-1">
+              <span className="text-emerald-500 font-bold mt-0.5">•</span>
+              <span className="flex-1">{formattedLine}</span>
+            </div>
+          );
+        }
+
+        // Cas bonus : Titres Markdown
+        if (content.startsWith('#')) {
+          return (
+            <h4 key={i} className="text-stone-900 font-bold text-[15px] pt-2">
+              {content.replace(/^#+\s*/, '')}
+            </h4>
+          );
+        }
+
+        return (
+          <p key={i} className="text-sm text-stone-700 leading-relaxed">
+            {formattedLine}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export default async function PlantDetailPage({
   params,
 }: {
@@ -42,6 +101,12 @@ export default async function PlantDetailPage({
   const history = plant.watering_history || [];
   const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
   
+  // Raccord couleur du statut d'arrosage
+  const badgeColorClass = 
+    status.color === 'red' ? 'text-rose-600' :
+    status.color === 'orange' ? 'text-amber-500' :
+    'text-emerald-600';
+
   // Conseil saisonnier dynamique
   const seasonAdvice = getSeasonAdvice();
 
@@ -61,21 +126,19 @@ export default async function PlantDetailPage({
 
       <main className="max-w-md mx-auto">
         
-        {/* HERO IMAGE : Prends la moitié de l'écran avec fondu vers la couleur de fond */}
+        {/* HERO IMAGE */}
         <div className="relative w-full h-[55vh] bg-emerald-900 overflow-hidden">
           {plant.image_path ? (
             <Image src={plant.image_path} alt={plant.name} fill className="object-cover" priority sizes="100vw" />
           ) : (
              <div className="flex items-center justify-center h-full opacity-30"><Info className="w-16 h-16 text-white" /></div>
           )}
-          {/* Dégradé de transition image -> fond #FDFCF8 */}
           <div className="absolute bottom-0 w-full h-40 bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/80 to-transparent" />
         </div>
 
-        {/* CONTENU PRINCIPAL : Overlap sur l'image */}
+        {/* CONTENU PRINCIPAL */}
         <div className="px-5 relative -mt-24 z-20 space-y-4">
           
-          {/* En-tête de la plante */}
           <div className="mb-6 drop-shadow-sm">
             <h1 className="text-4xl font-extrabold text-stone-900 tracking-tight leading-none mb-1">
               {plant.name}
@@ -85,7 +148,7 @@ export default async function PlantDetailPage({
             </p>
           </div>
 
-          {/* === 1. ACCORDÉON : ARROSAGE (Passé en Vert Forêt) === */}
+          {/* === 1. ACCORDÉON : ARROSAGE === */}
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4 overflow-hidden">
@@ -94,7 +157,7 @@ export default async function PlantDetailPage({
                 </div>
                 <div className="flex flex-col text-left overflow-hidden pr-2">
                   <span className="text-stone-800 font-bold text-lg">Arrosage</span>
-                  <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide mt-0.5 ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
+                  <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide mt-0.5 ${badgeColorClass}`}>
                     <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                     <span className="truncate">{status.text}</span>
                   </div>
@@ -107,7 +170,6 @@ export default async function PlantDetailPage({
             
             <div className="px-5 pb-6 pt-1 text-stone-600 animate-in fade-in duration-300 space-y-5">
               
-              {/* Actions d'arrosage Premium */}
               <div className="flex gap-3">
                 <form action={waterPlant.bind(null, plant.id, history)} className="flex-1">
                   <Button type="submit" className="w-full bg-emerald-800 hover:bg-emerald-900 text-white rounded-[1.25rem] shadow-lg shadow-emerald-900/20 h-12 font-bold transition-all active:scale-95">
@@ -121,7 +183,6 @@ export default async function PlantDetailPage({
                 </form>
               </div>
 
-              {/* Petit historique */}
               {(history && history.length > 0) && (
                 <div className="p-4 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm">
                   <h4 className="text-stone-400 font-bold text-[10px] uppercase tracking-wider mb-3">Derniers arrosages</h4>
@@ -139,7 +200,6 @@ export default async function PlantDetailPage({
                 </div>
               )}
 
-              {/* Conseil Saisonnier et Naturel */}
               <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-start gap-3 mt-2">
                 <Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-stone-700 leading-relaxed">
@@ -204,9 +264,10 @@ export default async function PlantDetailPage({
             </summary>
             <div className="px-5 pb-6 pt-1 text-stone-600 animate-in fade-in duration-300">
               <div className="p-5 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm">
-                <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">
-                  {plant.care_notes || "Aucun guide disponible pour le moment."}
-                </p>
+                
+                {/* APPLICATION DU NOUVEAU FORMATEUR ICI */}
+                <FormatCareNotes text={plant.care_notes} />
+
               </div>
             </div>
           </details>
