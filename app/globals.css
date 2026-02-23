@@ -158,3 +158,15 @@
 .animate-gentle-pulse {
     animation: gentle-pulse 2s infinite ease-in-out;
 }
+
+
+/* Masquer les scrollbars disgracieuses (Chrome, Safari et Opera) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Masquer les scrollbars (IE, Edge et Firefox) */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE et Edge */
+  scrollbar-width: none;  /* Firefox */
+}
