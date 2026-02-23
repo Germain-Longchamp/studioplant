@@ -1,49 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Leaf, MapPin, Sprout, Calendar, Snowflake, Sun, Flower2, Droplets } from "lucide-react";
+import { LogOut, Plus, Leaf, MapPin, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
 import WaterButton from "./WaterButton";
+import BottomNav from "@/components/BottomNav";
 
-// Petite fonction utilitaire pour déterminer la saison actuelle
 const getSeasonInfo = () => {
   const month = new Date().getMonth();
-  if (month >= 2 && month <= 4) return { name: "Printemps", icon: Flower2 };
-  if (month >= 5 && month <= 7) return { name: "Été", icon: Sun };
-  if (month >= 8 && month <= 10) return { name: "Automne", icon: Leaf };
-  return { name: "Hiver", icon: Snowflake };
+  if (month >= 2 && month <= 4) return { name: "Printemps", icon: Flower2, color: "text-rose-500", bg: "bg-rose-50" };
+  if (month >= 5 && month <= 7) return { name: "Été", icon: Sun, color: "text-amber-500", bg: "bg-amber-50" };
+  if (month >= 8 && month <= 10) return { name: "Automne", icon: Leaf, color: "text-orange-500", bg: "bg-orange-50" };
+  return { name: "Hiver", icon: Snowflake, color: "text-sky-500", bg: "bg-sky-50" };
 };
 
-export default async function DashboardPage(props: {
-  searchParams: Promise<{ [key: string]: string | undefined }>
-}) {
-  const searchParams = await props.searchParams;
-  const roomFilter = searchParams.room;
-
+export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/auth/login");
-  }
+  if (!user) redirect("/auth/login");
 
-  // 1. Récupération de toutes les plantes
-  const { data: plants } = await supabase
-    .from("plants")
-    .select("*");
+  const { data: plants } = await supabase.from("plants").select("*");
 
-  // 2. Extraction dynamique des pièces
-  const rooms = Array.from(new Set(plants?.map((p) => p.room).filter(Boolean))) as string[];
-
-  // 3. Application du filtre de pièce
-  const filteredPlantsData = roomFilter 
-    ? plants?.filter((p) => p.room === roomFilter) 
-    : plants;
-
-  // 4. Tri dynamique par urgence d'arrosage
-  const sortedPlants = filteredPlantsData?.sort((a, b) => {
+  // On trie toutes les plantes pour la logique de base
+  const sortedPlants = plants?.sort((a, b) => {
     const nextDateA = new Date(a.last_watered_at);
     nextDateA.setDate(nextDateA.getDate() + a.watering_frequency + (a.snooze_days || 0));
     
@@ -53,6 +35,13 @@ export default async function DashboardPage(props: {
     return nextDateA.getTime() - nextDateB.getTime();
   });
 
+  // NOUVEAU : On filtre pour ne garder QUE les plantes "urgentes"
+  const urgentPlants = sortedPlants?.filter((plant) => {
+    const snoozeDays = plant.snooze_days || 0;
+    const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+    return status.urgent;
+  });
+
   const signOut = async () => {
     "use server";
     const supabaseAuth = await createClient();
@@ -60,19 +49,9 @@ export default async function DashboardPage(props: {
     redirect("/auth/login");
   };
 
-  // ==========================================
-  // PRÉPARATION DES DONNÉES WIDGETS ET HEADER
-  // ==========================================
   const season = getSeasonInfo();
   const plantCount = plants?.length || 0;
   
-  // Calcul du nombre de plantes à arroser (urgent) parmi TOUTES les plantes
-  const plantsToWater = plants?.filter((plant) => {
-    const snoozeDays = plant.snooze_days || 0;
-    return getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays).urgent;
-  }).length || 0;
-  
-  // Formatage de la date du jour
   const today = new Date();
   const formattedDate = new Intl.DateTimeFormat('fr-FR', { 
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' 
@@ -80,11 +59,8 @@ export default async function DashboardPage(props: {
   const dateString = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] font-sans pb-24 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
       
-      {/* =========================================
-          HERO SECTION : Vert Forêt
-          ========================================= */}
       <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
@@ -101,208 +77,114 @@ export default async function DashboardPage(props: {
             </form>
           </header>
 
-          {/* Titre & Nouveau Sous-titre avec Date/Saison */}
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Tableau de bord
             </h1>
-            <div className="flex items-center gap-1.5 mt-2 text-emerald-100/90 font-medium text-sm">
-              <Calendar className="w-4 h-4 opacity-70" />
-              <span>{dateString}</span>
-              <span className="opacity-50 mx-1">•</span>
-              <season.icon className="w-4 h-4 opacity-70" />
-              <span>{season.name}</span>
-            </div>
           </div>
         </div>
       </div>
 
       <main className="max-w-md mx-auto px-5 -mt-14 relative z-20 space-y-10">
         
-        {/* =========================================
-            BLOC 1 : LES WIDGETS
-            ========================================= */}
+        {/* WIDGETS ECOSYSTEME */}
         <section>
           <div className="grid grid-cols-2 gap-4">
-            
-            {/* Widget 1 : Total des plantes */}
+            <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${season.bg} ${season.color} mb-2 relative z-10`}>
+                <season.icon className="w-5 h-5" />
+              </div>
+              <div className="relative z-10">
+                <p className="text-stone-800 font-bold text-sm sm:text-[15px] leading-tight capitalize mb-1.5">{dateString}</p>
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">Saison : {season.name}</p>
+              </div>
+            </div>
+
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10">
                 <Sprout className="w-5 h-5" />
               </div>
               <div className="relative z-10">
-                <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">
-                  {plantCount} plante{plantCount > 1 ? 's' : ''}
-                </p>
-                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">
-                  Dans la jungle
-                </p>
+                <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">{plantCount} plante{plantCount > 1 ? 's' : ''}</p>
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">Dans la jungle</p>
               </div>
             </div>
-
-            {/* Widget 2 : Plantes à arroser */}
-            <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 relative z-10 ${plantsToWater > 0 ? 'bg-sky-50 text-sky-500' : 'bg-stone-50 text-stone-400'}`}>
-                <Droplets className="w-5 h-5" />
-              </div>
-              <div className="relative z-10">
-                <p className={`font-bold text-lg sm:text-xl leading-tight mb-1 ${plantsToWater > 0 ? 'text-stone-800' : 'text-stone-400'}`}>
-                  {plantsToWater} à arroser
-                </p>
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${plantsToWater > 0 ? 'text-rose-500' : 'text-stone-400'}`}>
-                  {plantsToWater > 0 ? "Action requise" : "Tout va bien"}
-                </p>
-              </div>
-            </div>
-
           </div>
         </section>
 
-
-        {/* =========================================
-            BLOC 2 : LA LISTE (Filtres & Cartes)
-            ========================================= */}
+        {/* LISTE : À ARROSER */}
         <section>
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-stone-800 tracking-tight">
-                Mes plantes
-              </h2>
-              <div className="h-px bg-stone-200 flex-1 ml-2"></div>
-            </div>
-
-            {/* BARRE DE FILTRES HORIZONTALE */}
-            {rooms.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 [&::-webkit-scrollbar]:hidden">
-                <Link 
-                  href="/dashboard" 
-                  scroll={false}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                    !roomFilter 
-                      ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20' 
-                      : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
-                  }`}
-                >
-                  Toutes
-                </Link>
-                {rooms.map((room) => (
-                  <Link 
-                    key={room}
-                    href={`/dashboard?room=${encodeURIComponent(room)}`}
-                    scroll={false}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                      roomFilter === room 
-                        ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20' 
-                        : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
-                    }`}
-                  >
-                    {room}
-                  </Link>
-                ))}
-              </div>
-            )}
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-bold text-stone-800 tracking-tight">À arroser</h2>
+            <div className="h-px bg-stone-200 flex-1 ml-2"></div>
           </div>
 
-          {!sortedPlants || sortedPlants.length === 0 ? (
+          {plantCount === 0 ? (
+            /* Cas 1 : Aucune plante enregistrée */
             <div className="bg-white rounded-[2rem] border border-stone-100 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg shadow-stone-200/40 relative overflow-hidden">
-              <div className="absolute -right-6 -top-6 text-emerald-50">
-                <Leaf className="w-32 h-32 rotate-12" />
-              </div>
-              <div className="p-4 bg-emerald-50 rounded-full relative z-10">
-                <Sprout className="w-8 h-8 text-emerald-600" />
-              </div>
+              <div className="absolute -right-6 -top-6 text-emerald-50"><Leaf className="w-32 h-32 rotate-12" /></div>
+              <div className="p-4 bg-emerald-50 rounded-full relative z-10"><Sprout className="w-8 h-8 text-emerald-600" /></div>
               <div className="relative z-10">
                 <h3 className="font-bold text-stone-800 text-lg">Aucune plante</h3>
                 <p className="text-sm text-stone-500 mt-1">Commencez à créer votre jungle urbaine.</p>
               </div>
-              <Button asChild className="bg-emerald-800 hover:bg-emerald-900 text-white rounded-full px-6 py-6 mt-4 shadow-md transition-all active:scale-95 relative z-10">
-                <Link href="/dashboard/add">
-                  <Plus className="w-5 h-5 mr-2" /> Ajouter une plante
-                </Link>
-              </Button>
+            </div>
+          ) : urgentPlants?.length === 0 ? (
+            /* Cas 2 : Des plantes, mais aucune n'a soif ! (Message positif) */
+            <div className="bg-white rounded-[2rem] border border-stone-100 p-8 flex flex-col items-center justify-center text-center shadow-lg shadow-stone-200/40 relative overflow-hidden">
+              <div className="p-4 bg-emerald-50 rounded-full relative z-10 mb-3">
+                <CheckCircle className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="font-bold text-stone-800 text-lg relative z-10">Tout va bien !</h3>
+              <p className="text-sm text-stone-500 mt-1 relative z-10">Aucune de vos plantes n'a soif aujourd'hui. Profitez de votre écosystème.</p>
             </div>
           ) : (
+            /* Cas 3 : Liste des plantes urgentes */
             <div className="flex flex-col gap-3">
-              {sortedPlants.map((plant) => {
+              {urgentPlants?.map((plant) => {
                 const snoozeDays = plant.snooze_days || 0;
                 const history = plant.watering_history || [];
                 const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
-
-                const badgeColorClass = 
-                  status.color === 'red' ? 'text-rose-600' :
-                  status.color === 'orange' ? 'text-amber-500' :
-                  'text-emerald-600';
+                const badgeColorClass = status.color === 'red' ? 'text-rose-600' : status.color === 'orange' ? 'text-amber-500' : 'text-emerald-600';
 
                 return (
                   <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
-                    
                     <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
-                    
                     <div className="relative w-[35%] min-w-[120px] max-w-[140px] bg-stone-100 shrink-0 border-r border-stone-100/50">
                       {plant.image_path ? (
-                        <Image 
-                          src={plant.image_path} 
-                          alt={plant.name} 
-                          fill 
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          sizes="(max-width: 768px) 33vw, 25vw"
-                        />
+                        <Image src={plant.image_path} alt={plant.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 33vw, 25vw" />
                       ) : (
-                        <div className="flex items-center justify-center w-full h-full text-stone-300 bg-emerald-50/50">
-                          <Leaf className="w-8 h-8 opacity-40 text-emerald-600" />
-                        </div>
+                        <div className="flex items-center justify-center w-full h-full text-stone-300 bg-emerald-50/50"><Leaf className="w-8 h-8 opacity-40 text-emerald-600" /></div>
                       )}
                     </div>
-
                     <div className="flex flex-col flex-1 p-4">
                       <div className="flex-1">
-                        <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">
-                          {plant.name}
-                        </h3>
-                        <p className="text-sm text-stone-500 italic mt-0.5 line-clamp-1">
-                          {plant.species}
-                        </p>
-                        
+                        <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">{plant.name}</h3>
+                        <p className="text-sm text-stone-500 italic mt-0.5 line-clamp-1">{plant.species}</p>
                         {plant.room && (
                           <div className="inline-flex items-center gap-1 mt-2.5 bg-[#FDFCF8] px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-stone-500 border border-stone-200/60">
-                            <MapPin className="w-3 h-3 text-emerald-700" />
-                            {plant.room}
+                            <MapPin className="w-3 h-3 text-emerald-700" /> {plant.room}
                           </div>
                         )}
                       </div>
-
                       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
                         <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${badgeColorClass}`}>
                           <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                           <span className="truncate">{status.text}</span>
                         </div>
-
-                        <div className="shrink-0">
-                          <WaterButton 
-                            plantId={plant.id} 
-                            history={history} 
-                            urgent={status.urgent} 
-                          />
-                        </div>
+                        <div className="shrink-0"><WaterButton plantId={plant.id} history={history} urgent={status.urgent} /></div>
                       </div>
                     </div>
-
                   </div>
                 );
               })}
             </div>
           )}
         </section>
-
       </main>
 
-      <div className="fixed bottom-6 right-6 md:hidden z-50">
-        <Button asChild size="icon" className="w-16 h-16 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white shadow-xl shadow-emerald-900/30 transition-transform active:scale-95 border-2 border-emerald-700">
-          <Link href="/dashboard/add">
-            <Plus className="w-7 h-7" />
-          </Link>
-        </Button>
-      </div>
+      {/* Remplacement du vieux bouton FAB par le BottomNav global */}
+      <BottomNav />
     </div>
   );
 }
