@@ -47,20 +47,33 @@ export async function addPlantWithAI(formData: FormData) {
       model: "gemini-2.5-flash", 
     });
 
-    // PROMPT MIS À JOUR (Sans la description)
+    // --- NOUVEAU : INJECTION DU CONTEXTE UTILISATEUR ---
+    const meta = user.user_metadata || {};
+    const contextPrompt = meta.home_type ? `
+      CONTEXTE GLOBAL DU DOMICILE :
+      - Type : ${meta.home_type}
+      - Ville/Climat : ${meta.city || 'Non précisé'}
+      - Orientation : ${meta.orientation}
+      - Luminosité moyenne : ${meta.light_level}
+      -> Prends IMPÉRATIVEMENT ce contexte global en compte pour rédiger tes 'room_advice', 'light_advice' et 'care_notes'.
+    ` : "";
+
+    // PROMPT MIS À JOUR
     const prompt = `
       Analyse cette photo de plante d'intérieur. 
       L'utilisateur indique qu'elle est située ici : "${room || "Non précisé"}".
       La luminosité actuelle de la pièce est : "${light || "Non précisée"}".
+
+      ${contextPrompt}
 
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
         "name": "Nom commun (ex: Monstera Deliciosa)",
         "species": "Nom scientifique",
         "watering_frequency": 7,
-        "room_advice": "Ton avis d'expert court sur le choix de la pièce actuelle. Est-ce adapté à cette plante ?",
-        "light_advice": "Ton avis d'expert court sur la luminosité actuelle. Faut-il la rapprocher ou l'éloigner de la fenêtre ?",
-        "care_notes": "Un guide d'entretien détaillé et aéré. Fais des paragraphes courts. Mets les titres de section en gras avec ** (ex: **Terreau :** ...). N'hésite pas à utiliser des tirets - pour faire des listes."
+        "room_advice": "Ton avis d'expert court sur le choix de la pièce en fonction du contexte global du domicile.",
+        "light_advice": "Ton avis d'expert court sur la luminosité actuelle.",
+        "care_notes": "Un paragraphe très détaillé sur l'entretien global adapté à la plante ET au climat/contexte de l'utilisateur."
       }
       Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
     `;
@@ -281,4 +294,47 @@ export async function logOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/auth/login");
+}
+
+
+// METTRE À JOUR LE CONTEXTE (METADATA)
+export async function updateProfileContext(formData: FormData) {
+  try {
+    const supabase = await createClient();
+    const home_type = formData.get("home_type");
+    const orientation = formData.get("orientation");
+    const light_level = formData.get("light_level");
+    const city = formData.get("city");
+
+    const { error } = await supabase.auth.updateUser({
+      data: { home_type, orientation, light_level, city }
+    });
+
+    if (error) return { error: error.message };
+    
+    revalidatePath("/dashboard/profile");
+    return { success: true };
+  } catch (error) {
+    return { error: "Erreur inattendue." };
+  }
+}
+
+// METTRE À JOUR LA SÉCURITÉ (EMAIL / MDP)
+export async function updateSecurity(formData: FormData) {
+  try {
+    const supabase = await createClient();
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    const updates: any = {};
+    if (email) updates.email = email;
+    if (password) updates.password = password;
+
+    const { error } = await supabase.auth.updateUser(updates);
+    
+    if (error) return { error: error.message };
+    return { success: true };
+  } catch (error) {
+    return { error: "Erreur inattendue." };
+  }
 }
