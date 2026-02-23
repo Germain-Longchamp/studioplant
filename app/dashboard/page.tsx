@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Leaf, MapPin, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
+import { Plus, Leaf, MapPin, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
@@ -40,13 +39,6 @@ export default async function DashboardPage() {
     return status.urgent;
   });
 
-  const signOut = async () => {
-    "use server";
-    const supabaseAuth = await createClient();
-    await supabaseAuth.auth.signOut();
-    redirect("/auth/login");
-  };
-
   const season = getSeasonInfo();
   const plantCount = plants?.length || 0;
   const urgentCount = urgentPlants?.length || 0;
@@ -66,22 +58,16 @@ export default async function DashboardPage() {
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
 
         <div className="max-w-md mx-auto relative z-10">
-          <header className="flex items-center justify-between mb-8">
+          <header className="flex items-center mb-8">
             <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
               <Leaf className="w-6 h-6 text-emerald-300" />
             </div>
-            <form action={signOut}>
-              <Button variant="ghost" size="icon" type="submit" className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </form>
           </header>
 
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Tableau de bord
             </h1>
-            {/* NOUVEAU : Date et saison rapatriées ici */}
             <p className="text-emerald-200/90 text-sm font-medium mt-1.5 flex items-center gap-1.5">
               <Calendar className="w-4 h-4 opacity-80" />
               {dateString} • {season.name}
@@ -96,7 +82,7 @@ export default async function DashboardPage() {
         <section>
           <div className="grid grid-cols-2 gap-4">
             
-            {/* Nouveau Widget : À arroser */}
+            {/* Widget : À arroser */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 relative z-10 ${urgentCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-stone-50 text-stone-400'}`}>
                 {urgentCount > 0 ? <Droplets className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
@@ -111,7 +97,7 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            {/* Widget Nombre de plantes (Conservé) */}
+            {/* Widget : Nombre de plantes */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10">
                 <Sprout className="w-5 h-5" />
