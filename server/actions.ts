@@ -210,3 +210,67 @@ export async function deletePlant(plantId: string, imageUrl: string | null) {
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }
+
+
+// METTRE À JOUR L'ENVIRONNEMENT ET RÉGÉNÉRER L'AVIS IA
+export async function updatePlantEnvironmentWithAI(plantId: string, room: string, light: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return { error: "Non autorisé" };
+
+    // 1. On récupère le nom et l'espèce de la plante pour donner du contexte à l'IA
+    const { data: plant, error: fetchError } = await supabase
+      .from("plants")
+      .select("name, species")
+      .eq("id", plantId)
+      .single();
+
+    if (fetchError || !plant) return { error: "Plante introuvable" };
+
+    // 2. On interroge Gemini uniquement avec du texte
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `
+      Tu es un expert en plantes d'intérieur.
+      L'utilisateur possède la plante suivante : Nom commun "${plant.name}", Espèce "${plant.species}".
+      Il vient de la déplacer dans un nouvel environnement.
+      Nouvelle pièce : "${room}"
+      Nouvelle luminosité : "${light}"
+
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      {
+        "room_advice": "Ton avis d'expert court sur ce nouvel emplacement. Est-ce adapté à cette plante ?",
+        "light_advice": "Ton avis d'expert court sur la nouvelle luminosité. Est-ce suffisant ou trop fort pour cette espèce ?"
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const adviceData = JSON.parse(cleanedText);
+
+    // 3. On met à jour la base de données
+    const { error: updateError } = await supabase
+      .from("plants")
+      .update({
+        room: room,
+        exposure: light,
+        room_advice: adviceData.room_advice,
+        light_advice: adviceData.light_advice
+      })
+      .eq("id", plantId);
+
+    if (updateError) throw updateError;
+
+    // 4. On rafraîchit la page pour afficher les nouvelles données
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    
+    return { success: true };
+
+  } catch (error) {
+    console.error("Update Env Error:", error);
+    return { error: "Erreur lors de l'analyse IA du nouvel emplacement." };
+  }
+}
