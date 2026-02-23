@@ -57,21 +57,17 @@ export default async function DashboardPage() {
   const dateString = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    // Ajout de overflow-x-hidden sur le conteneur principal pour bloquer tout scroll horizontal
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-24 overflow-x-hidden">
       
       {/* =========================================
           HERO SECTION : Vert Forêt corrigé
           ========================================= */}
-      {/* Remplacement du gradient complexe par des classes natives et ajout de overflow-hidden pour piéger les cercles décoratifs */}
       <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
         
-        {/* Motifs décoratifs pris au piège par l'overflow-hidden, ils ne casseront plus la largeur */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
 
         <div className="max-w-md mx-auto relative z-10">
-          {/* Header */}
           <header className="flex items-center justify-between mb-8">
             <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
               <Leaf className="w-6 h-6 text-emerald-300" />
@@ -83,7 +79,6 @@ export default async function DashboardPage() {
             </form>
           </header>
 
-          {/* Titre de la page (Maintenant bien lisible sur le fond sombre garanti) */}
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Tableau de bord
@@ -99,7 +94,6 @@ export default async function DashboardPage() {
             ========================================= */}
         <section>
           <div className="grid grid-cols-2 gap-4">
-            {/* Widget Date / Saison */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${season.bg} ${season.color} mb-2 relative z-10`}>
                 <season.icon className="w-5 h-5" />
@@ -114,7 +108,6 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            {/* Widget Nombre de plantes */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10">
                 <Sprout className="w-5 h-5" />
@@ -143,7 +136,6 @@ export default async function DashboardPage() {
             <div className="h-px bg-stone-200 flex-1 ml-2"></div>
           </div>
 
-          {/* État vide */}
           {!sortedPlants || sortedPlants.length === 0 ? (
             <div className="bg-white rounded-[2rem] border border-stone-100 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg shadow-stone-200/40 relative overflow-hidden">
               <div className="absolute -right-6 -top-6 text-emerald-50">
@@ -163,12 +155,17 @@ export default async function DashboardPage() {
               </Button>
             </div>
           ) : (
-            /* VUE LISTE PLEINE LARGEUR */
             <div className="flex flex-col gap-3">
               {sortedPlants.map((plant) => {
                 const snoozeDays = plant.snooze_days || 0;
                 const history = plant.watering_history || [];
                 const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+
+                // Détermination de la couleur Tailwind en fonction du statut
+                const badgeColorClass = 
+                  status.color === 'red' ? 'text-rose-600' :
+                  status.color === 'orange' ? 'text-amber-500' :
+                  'text-emerald-600'; // Vert par défaut
 
                 return (
                   <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
@@ -209,7 +206,10 @@ export default async function DashboardPage() {
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
-                        <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
+                        {/* NOUVEAU BADGE DE DATE :
+                            Il utilise maintenant la variable badgeColorClass ! 
+                        */}
+                        <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${badgeColorClass}`}>
                           <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                           <span className="truncate">{status.text}</span>
                         </div>
@@ -233,7 +233,6 @@ export default async function DashboardPage() {
 
       </main>
 
-      {/* FAB: Passé en z-50 pour être certain qu'il surmonte tout le reste */}
       <div className="fixed bottom-6 right-6 md:hidden z-50">
         <Button asChild size="icon" className="w-16 h-16 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white shadow-xl shadow-emerald-900/30 transition-transform active:scale-95 border-2 border-emerald-700">
           <Link href="/dashboard/add">
