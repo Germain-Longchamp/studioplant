@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Droplets, Sun, AlignLeft, Sparkles, Info, LeafyGreen, ChevronDown, Calendar } from "lucide-react";
+import { ArrowLeft, Droplets, AlignLeft, Info, LeafyGreen, ChevronDown, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import DeleteButton from "./DeleteButton";
 import { getWateringStatus } from "@/lib/utils";
 import { waterPlant, snoozeWatering } from "@/server/actions";
+import EnvironmentAccordion from "./EnvironmentAccordion";
 
 // Fonction pour adapter le texte de conseil en fonction de la saison
 const getSeasonAdvice = () => {
@@ -211,43 +212,8 @@ export default async function PlantDetailPage({
             </div>
           </details>
 
-          {/* === 2. ACCORDÉON : ENVIRONNEMENT === */}
-          <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
-            <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
-              <div className="flex items-center gap-4 overflow-hidden">
-                <div className="p-3 bg-amber-50 rounded-2xl text-amber-500 shrink-0">
-                  <Sun className="w-5 h-5" />
-                </div>
-                <div className="flex flex-col text-left overflow-hidden pr-2">
-                  <span className="text-stone-800 font-bold text-lg">Environnement</span>
-                  <span className="text-stone-500 text-sm truncate font-medium mt-0.5">
-                    {plant.room || "Pièce inconnue"} • {plant.exposure || "Lumière non précisée"}
-                  </span>
-                </div>
-              </div>
-              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-stone-50 group-hover:bg-white transition-colors shrink-0">
-                <ChevronDown className="h-5 w-5 text-stone-400 transition-transform duration-300 group-open:-rotate-180" />
-              </div>
-            </summary>
-            <div className="px-5 pb-6 pt-1 space-y-3 text-stone-600 animate-in fade-in duration-300">
-              {plant.room_advice && (
-                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
-                  <h4 className="text-purple-800 font-semibold text-sm mb-1.5 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" /> Avis sur la pièce
-                  </h4>
-                  <p className="text-sm text-stone-700 leading-relaxed">{plant.room_advice}</p>
-                </div>
-              )}
-              {plant.light_advice && (
-                <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
-                  <h4 className="text-amber-800 font-semibold text-sm mb-1.5 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" /> Avis sur la lumière
-                  </h4>
-                  <p className="text-sm text-stone-700 leading-relaxed">{plant.light_advice}</p>
-                </div>
-              )}
-            </div>
-          </details>
+          {/* === 2. ACCORDÉON : ENVIRONNEMENT (Dynamique avec le nouveau composant) === */}
+          <EnvironmentAccordion plant={plant} />
 
           {/* === 3. ACCORDÉON : GUIDE D'ENTRETIEN === */}
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
