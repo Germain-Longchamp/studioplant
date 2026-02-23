@@ -8,6 +8,15 @@ import DeleteButton from "./DeleteButton";
 import { getWateringStatus } from "@/lib/utils";
 import { waterPlant, snoozeWatering } from "@/server/actions";
 
+// Fonction pour adapter le texte de conseil en fonction de la saison
+const getSeasonAdvice = () => {
+  const month = new Date().getMonth();
+  if (month >= 2 && month <= 4) return "au printemps, la terre peut sécher plus vite avec la reprise de la croissance";
+  if (month >= 5 && month <= 7) return "en été avec la chaleur, les besoins en eau sont souvent plus importants";
+  if (month >= 8 && month <= 10) return "en automne, la baisse des températures réduit progressivement les besoins";
+  return "en hiver, les plantes entrent en dormance et nécessitent beaucoup moins d'eau";
+};
+
 export default async function PlantDetailPage({
   params,
 }: {
@@ -32,6 +41,9 @@ export default async function PlantDetailPage({
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
   const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+  
+  // Conseil saisonnier dynamique
+  const seasonAdvice = getSeasonAdvice();
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] pb-24 font-sans text-stone-800 overflow-x-hidden">
@@ -73,16 +85,15 @@ export default async function PlantDetailPage({
             </p>
           </div>
 
-          {/* === 1. ACCORDÉON : ARROSAGE === */}
+          {/* === 1. ACCORDÉON : ARROSAGE (Passé en Vert Forêt) === */}
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4 overflow-hidden">
-                <div className="p-3 bg-sky-50 rounded-2xl text-sky-500 shrink-0">
+                <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 shrink-0">
                   <Droplets className="w-5 h-5" />
                 </div>
                 <div className="flex flex-col text-left overflow-hidden pr-2">
                   <span className="text-stone-800 font-bold text-lg">Arrosage</span>
-                  {/* Statut cohérent avec le Dashboard (Calendrier + Format court) */}
                   <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide mt-0.5 ${status.urgent ? 'text-rose-600' : 'text-stone-400'}`}>
                     <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                     <span className="truncate">{status.text}</span>
@@ -99,7 +110,7 @@ export default async function PlantDetailPage({
               {/* Actions d'arrosage Premium */}
               <div className="flex gap-3">
                 <form action={waterPlant.bind(null, plant.id, history)} className="flex-1">
-                  <Button type="submit" className="w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[1.25rem] shadow-lg shadow-sky-500/20 h-12 font-bold transition-all active:scale-95">
+                  <Button type="submit" className="w-full bg-emerald-800 hover:bg-emerald-900 text-white rounded-[1.25rem] shadow-lg shadow-emerald-900/20 h-12 font-bold transition-all active:scale-95">
                     <Droplets className="w-4 h-4 mr-2" /> Arrosée
                   </Button>
                 </form>
@@ -119,7 +130,7 @@ export default async function PlantDetailPage({
                       const date = new Date(dateStr);
                       return (
                         <li key={index} className="flex items-center gap-3 text-sm text-stone-700 font-medium">
-                          <div className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                           {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </li>
                       );
@@ -128,11 +139,12 @@ export default async function PlantDetailPage({
                 </div>
               )}
 
-              {/* Conseil IA */}
-              <div className="p-4 bg-sky-50/50 rounded-2xl border border-sky-100 flex items-start gap-3 mt-2">
-                <Info className="w-5 h-5 text-sky-500 shrink-0 mt-0.5" />
+              {/* Conseil Saisonnier et Naturel */}
+              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-start gap-3 mt-2">
+                <Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-stone-700 leading-relaxed">
-                  L'IA recommande tous les <strong>{plant.watering_frequency} jours</strong>. Touchez la terre : si elle est encore humide, utilisez le bouton "+3 jours".
+                  Il est recommandé d'arroser cette plante tous les <strong>{plant.watering_frequency} jours</strong> en moyenne. 
+                  Attention, {seasonAdvice}. En cas de doute, touchez la terre : si elle est encore humide, utilisez le bouton "+3 jours".
                 </p>
               </div>
 
