@@ -16,7 +16,13 @@ const getSeasonInfo = () => {
   return { name: "Hiver", icon: Snowflake, color: "text-sky-500", bg: "bg-sky-50" };
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage(props: {
+  searchParams: Promise<{ [key: string]: string | undefined }>
+}) {
+  // Récupération des paramètres d'URL pour le filtre (ex: ?room=Salon)
+  const searchParams = await props.searchParams;
+  const roomFilter = searchParams.room;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -24,13 +30,21 @@ export default async function DashboardPage() {
     redirect("/auth/login");
   }
 
-  // Récupération des plantes
+  // 1. Récupération de toutes les plantes
   const { data: plants } = await supabase
     .from("plants")
     .select("*");
 
-  // Tri dynamique par urgence d'arrosage
-  const sortedPlants = plants?.sort((a, b) => {
+  // 2. Extraction dynamique des pièces existantes (pour créer les boutons de filtre)
+  const rooms = Array.from(new Set(plants?.map((p) => p.room).filter(Boolean))) as string[];
+
+  // 3. Application du filtre si une pièce est sélectionnée
+  const filteredPlantsData = roomFilter 
+    ? plants?.filter((p) => p.room === roomFilter) 
+    : plants;
+
+  // 4. Tri dynamique par urgence d'arrosage
+  const sortedPlants = filteredPlantsData?.sort((a, b) => {
     const nextDateA = new Date(a.last_watered_at);
     nextDateA.setDate(nextDateA.getDate() + a.watering_frequency + (a.snooze_days || 0));
     
@@ -48,7 +62,7 @@ export default async function DashboardPage() {
   };
 
   const season = getSeasonInfo();
-  const plantCount = plants?.length || 0;
+  const plantCount = plants?.length || 0; // On garde le total absolu pour le widget du haut
   
   const today = new Date();
   const formattedDate = new Intl.DateTimeFormat('fr-FR', { 
@@ -60,10 +74,9 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-24 overflow-x-hidden">
       
       {/* =========================================
-          HERO SECTION : Vert Forêt corrigé
+          HERO SECTION : Vert Forêt
           ========================================= */}
       <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
-        
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
 
@@ -129,13 +142,48 @@ export default async function DashboardPage() {
             BLOC 2 : LA LISTE
             ========================================= */}
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold text-stone-800 tracking-tight">
-              Mes plantes
-            </h2>
-            <div className="h-px bg-stone-200 flex-1 ml-2"></div>
+          <div className="flex flex-col gap-4 mb-4">
+            {/* Titre et séparateur */}
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-stone-800 tracking-tight">
+                Mes plantes
+              </h2>
+              <div className="h-px bg-stone-200 flex-1 ml-2"></div>
+            </div>
+
+            {/* BARRE DE FILTRES HORIZONTALE (S'affiche s'il y a au moins 1 pièce enregistrée) */}
+            {rooms.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 [&::-webkit-scrollbar]:hidden">
+                <Link 
+                  href="/dashboard" 
+                  scroll={false}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                    !roomFilter 
+                      ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20' 
+                      : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  Toutes
+                </Link>
+                {rooms.map((room) => (
+                  <Link 
+                    key={room}
+                    href={`/dashboard?room=${encodeURIComponent(room)}`}
+                    scroll={false}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                      roomFilter === room 
+                        ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20' 
+                        : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
+                    }`}
+                  >
+                    {room}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
+          {/* État vide (Si 0 plante au total, ou 0 plante dans le filtre) */}
           {!sortedPlants || sortedPlants.length === 0 ? (
             <div className="bg-white rounded-[2rem] border border-stone-100 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg shadow-stone-200/40 relative overflow-hidden">
               <div className="absolute -right-6 -top-6 text-emerald-50">
@@ -155,17 +203,17 @@ export default async function DashboardPage() {
               </Button>
             </div>
           ) : (
+            /* VUE LISTE PLEINE LARGEUR */
             <div className="flex flex-col gap-3">
               {sortedPlants.map((plant) => {
                 const snoozeDays = plant.snooze_days || 0;
                 const history = plant.watering_history || [];
                 const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
 
-                // Détermination de la couleur Tailwind en fonction du statut
                 const badgeColorClass = 
                   status.color === 'red' ? 'text-rose-600' :
                   status.color === 'orange' ? 'text-amber-500' :
-                  'text-emerald-600'; // Vert par défaut
+                  'text-emerald-600';
 
                 return (
                   <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
@@ -206,9 +254,6 @@ export default async function DashboardPage() {
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
-                        {/* NOUVEAU BADGE DE DATE :
-                            Il utilise maintenant la variable badgeColorClass ! 
-                        */}
                         <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${badgeColorClass}`}>
                           <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                           <span className="truncate">{status.text}</span>
