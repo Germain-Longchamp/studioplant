@@ -5,6 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// NOUVELLE FONCTION DE CALCUL D'ARROSAGE (Avec gestion des couleurs Vert/Orange/Rouge)
 export function getWateringStatus(lastWateredAt: string, frequency: number, snoozeDays: number = 0) {
   const lastDate = new Date(lastWateredAt);
   const nextDate = new Date(lastDate);
@@ -17,12 +18,15 @@ export function getWateringStatus(lastWateredAt: string, frequency: number, snoo
   const diffTime = nextDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
-  // En retard (diffDays est négatif) -> Affiche "+X J" et passe en urgent (rouge)
-  if (diffDays < 0) return { urgent: true, text: `+${Math.abs(diffDays)} J`, state: 'late' };
+  // ROUGE : En retard
+  if (diffDays < 0) return { urgent: true, text: `+${Math.abs(diffDays)} J`, color: 'red' };
   
-  // Le jour J -> Affiche "Aujourd'hui" (reste en urgent/rouge pour attirer l'attention)
-  if (diffDays === 0) return { urgent: true, text: "Aujourd'hui", state: 'today' };
+  // ROUGE : Le jour même (Raccourci pour éviter l'overflow)
+  if (diffDays === 0) return { urgent: true, text: "Jour J", color: 'red' };
   
-  // Dans le futur -> Affiche "-X J" et reste normal (gris)
-  return { urgent: false, text: `-${diffDays} J`, state: 'ok' };
+  // ORANGE : J-1 (C'est pour demain !)
+  if (diffDays === 1) return { urgent: false, text: "-1 J", color: 'orange' };
+  
+  // VERT : Tout va bien, on a le temps (J-2 et plus)
+  return { urgent: false, text: `-${diffDays} J`, color: 'green' };
 }
