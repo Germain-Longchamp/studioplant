@@ -1,25 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Leaf, MapPin, Sprout, Calendar, Snowflake, Sun, Flower2 } from "lucide-react";
+import { LogOut, Plus, Leaf, MapPin, Sprout, Calendar, Snowflake, Sun, Flower2, Droplets } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
 import WaterButton from "./WaterButton";
 
-// Petite fonction utilitaire pour déterminer la saison actuelle et ses couleurs
+// Petite fonction utilitaire pour déterminer la saison actuelle
 const getSeasonInfo = () => {
   const month = new Date().getMonth();
-  if (month >= 2 && month <= 4) return { name: "Printemps", icon: Flower2, color: "text-rose-500", bg: "bg-rose-50" };
-  if (month >= 5 && month <= 7) return { name: "Été", icon: Sun, color: "text-amber-500", bg: "bg-amber-50" };
-  if (month >= 8 && month <= 10) return { name: "Automne", icon: Leaf, color: "text-orange-500", bg: "bg-orange-50" };
-  return { name: "Hiver", icon: Snowflake, color: "text-sky-500", bg: "bg-sky-50" };
+  if (month >= 2 && month <= 4) return { name: "Printemps", icon: Flower2 };
+  if (month >= 5 && month <= 7) return { name: "Été", icon: Sun };
+  if (month >= 8 && month <= 10) return { name: "Automne", icon: Leaf };
+  return { name: "Hiver", icon: Snowflake };
 };
 
 export default async function DashboardPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
 }) {
-  // Récupération des paramètres d'URL pour le filtre (ex: ?room=Salon)
   const searchParams = await props.searchParams;
   const roomFilter = searchParams.room;
 
@@ -35,10 +34,10 @@ export default async function DashboardPage(props: {
     .from("plants")
     .select("*");
 
-  // 2. Extraction dynamique des pièces existantes (pour créer les boutons de filtre)
+  // 2. Extraction dynamique des pièces
   const rooms = Array.from(new Set(plants?.map((p) => p.room).filter(Boolean))) as string[];
 
-  // 3. Application du filtre si une pièce est sélectionnée
+  // 3. Application du filtre de pièce
   const filteredPlantsData = roomFilter 
     ? plants?.filter((p) => p.room === roomFilter) 
     : plants;
@@ -61,9 +60,19 @@ export default async function DashboardPage(props: {
     redirect("/auth/login");
   };
 
+  // ==========================================
+  // PRÉPARATION DES DONNÉES WIDGETS ET HEADER
+  // ==========================================
   const season = getSeasonInfo();
-  const plantCount = plants?.length || 0; // On garde le total absolu pour le widget du haut
+  const plantCount = plants?.length || 0;
   
+  // Calcul du nombre de plantes à arroser (urgent) parmi TOUTES les plantes
+  const plantsToWater = plants?.filter((plant) => {
+    const snoozeDays = plant.snooze_days || 0;
+    return getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays).urgent;
+  }).length || 0;
+  
+  // Formatage de la date du jour
   const today = new Date();
   const formattedDate = new Intl.DateTimeFormat('fr-FR', { 
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' 
@@ -92,10 +101,18 @@ export default async function DashboardPage(props: {
             </form>
           </header>
 
+          {/* Titre & Nouveau Sous-titre avec Date/Saison */}
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Tableau de bord
             </h1>
+            <div className="flex items-center gap-1.5 mt-2 text-emerald-100/90 font-medium text-sm">
+              <Calendar className="w-4 h-4 opacity-70" />
+              <span>{dateString}</span>
+              <span className="opacity-50 mx-1">•</span>
+              <season.icon className="w-4 h-4 opacity-70" />
+              <span>{season.name}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -107,20 +124,8 @@ export default async function DashboardPage(props: {
             ========================================= */}
         <section>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${season.bg} ${season.color} mb-2 relative z-10`}>
-                <season.icon className="w-5 h-5" />
-              </div>
-              <div className="relative z-10">
-                <p className="text-stone-800 font-bold text-sm sm:text-[15px] leading-tight capitalize mb-1.5">
-                  {dateString}
-                </p>
-                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">
-                  Saison : {season.name}
-                </p>
-              </div>
-            </div>
-
+            
+            {/* Widget 1 : Total des plantes */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10">
                 <Sprout className="w-5 h-5" />
@@ -134,16 +139,31 @@ export default async function DashboardPage(props: {
                 </p>
               </div>
             </div>
+
+            {/* Widget 2 : Plantes à arroser */}
+            <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 relative z-10 ${plantsToWater > 0 ? 'bg-sky-50 text-sky-500' : 'bg-stone-50 text-stone-400'}`}>
+                <Droplets className="w-5 h-5" />
+              </div>
+              <div className="relative z-10">
+                <p className={`font-bold text-lg sm:text-xl leading-tight mb-1 ${plantsToWater > 0 ? 'text-stone-800' : 'text-stone-400'}`}>
+                  {plantsToWater} à arroser
+                </p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${plantsToWater > 0 ? 'text-rose-500' : 'text-stone-400'}`}>
+                  {plantsToWater > 0 ? "Action requise" : "Tout va bien"}
+                </p>
+              </div>
+            </div>
+
           </div>
         </section>
 
 
         {/* =========================================
-            BLOC 2 : LA LISTE
+            BLOC 2 : LA LISTE (Filtres & Cartes)
             ========================================= */}
         <section>
           <div className="flex flex-col gap-4 mb-4">
-            {/* Titre et séparateur */}
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-stone-800 tracking-tight">
                 Mes plantes
@@ -151,7 +171,7 @@ export default async function DashboardPage(props: {
               <div className="h-px bg-stone-200 flex-1 ml-2"></div>
             </div>
 
-            {/* BARRE DE FILTRES HORIZONTALE (S'affiche s'il y a au moins 1 pièce enregistrée) */}
+            {/* BARRE DE FILTRES HORIZONTALE */}
             {rooms.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 [&::-webkit-scrollbar]:hidden">
                 <Link 
@@ -183,7 +203,6 @@ export default async function DashboardPage(props: {
             )}
           </div>
 
-          {/* État vide (Si 0 plante au total, ou 0 plante dans le filtre) */}
           {!sortedPlants || sortedPlants.length === 0 ? (
             <div className="bg-white rounded-[2rem] border border-stone-100 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg shadow-stone-200/40 relative overflow-hidden">
               <div className="absolute -right-6 -top-6 text-emerald-50">
@@ -203,7 +222,6 @@ export default async function DashboardPage(props: {
               </Button>
             </div>
           ) : (
-            /* VUE LISTE PLEINE LARGEUR */
             <div className="flex flex-col gap-3">
               {sortedPlants.map((plant) => {
                 const snoozeDays = plant.snooze_days || 0;
