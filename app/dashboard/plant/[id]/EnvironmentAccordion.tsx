@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Sun, ChevronDown, Sparkles, MapPin, Edit2, Loader2, X } from "lucide-react";
+import { Sun, ChevronDown, Sparkles, Edit2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -118,24 +118,14 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
              MODE VUE
              ========================================= */
           <>
-            {/* NOUVEAU BOUTON : Façon "Carte de réglages iOS" */}
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="w-full flex items-center justify-between p-4 mb-2 bg-[#FDFCF8] hover:bg-emerald-50/50 border border-stone-200/60 rounded-2xl transition-all group text-left shadow-sm"
-            >
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-stone-400" /> Localisation actuelle
-                </div>
-                <div className="text-stone-700 font-semibold text-sm">
-                  {plant.room || "Pièce non définie"} <span className="text-stone-300 mx-1">•</span> {plant.exposure || "Lumière non définie"}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-600 group-hover:border-emerald-200 group-hover:text-emerald-700 group-hover:bg-emerald-50/50 shadow-sm transition-all">
+            <div className="flex justify-end mb-2">
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-600 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50/50 shadow-sm transition-all active:scale-95"
+              >
                 <Edit2 className="w-3.5 h-3.5" /> Modifier
-              </div>
-            </button>
+              </button>
+            </div>
 
             {/* AVIS IA */}
             {plant.room_advice && (
