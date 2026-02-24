@@ -137,6 +137,70 @@ export async function addPlantWithAI(formData: FormData) {
   }
 }
 
+// METTRE À JOUR LES CONSEILS (VIA TEXTE)
+export async function updatePlantAdvice(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    // 1. On récupère la plante
+    const { data: plant } = await supabase.from("plants").select("*").eq("id", plantId).single();
+    if (!plant) return { error: "Plante introuvable" };
+
+    // 2. On récupère le contexte utilisateur
+    const meta = user.user_metadata || {};
+    const contextPrompt = meta.home_type ? `
+      CONTEXTE GLOBAL DU DOMICILE DE L'UTILISATEUR :
+      - Type : ${meta.home_type}
+      - Ville/Climat : ${meta.city || 'Non précisé'}
+      - Orientation : ${meta.orientation}
+      - Luminosité moyenne : ${meta.light_level}
+      -> Prends IMPÉRATIVEMENT ce contexte global en compte pour tes conseils.
+    ` : "";
+
+    // 3. On demande à Gemini de réévaluer
+    const prompt = `
+      Tu es un expert en botanique. L'utilisateur souhaite mettre à jour les conseils d'entretien pour sa plante avec les données suivantes :
+      - Nom commun : ${plant.name}
+      - Espèce : ${plant.species}
+      - Pièce actuelle : ${plant.room || "Non précisé"}
+      - Exposition actuelle : ${plant.exposure || "Non précisée"}
+
+      ${contextPrompt}
+
+      Génère de nouveaux conseils adaptés. Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      {
+        "watering_frequency": 7,
+        "room_advice": "Avis expert court sur la pièce...",
+        "light_advice": "Avis expert court sur la lumière...",
+        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
+      }
+    `;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    const plantData = JSON.parse(cleanedText);
+
+    // 4. On sauvegarde en base
+    const { error } = await supabase.from("plants").update({
+      watering_frequency: plantData.watering_frequency,
+      room_advice: plantData.room_advice,
+      light_advice: plantData.light_advice,
+      care_notes: plantData.care_notes,
+    }).eq("id", plantId);
+
+    if (error) throw error;
+    
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Update Advice Error:", error);
+    return { error: "Erreur lors de la mise à jour des conseils." };
+  }
+}
+
 // ARROSER LA PLANTE (Sans retour pour TS)
 export async function waterPlant(plantId: string, currentHistory: string[] = []) {
   try {
