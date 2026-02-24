@@ -47,7 +47,7 @@ export async function addPlantWithAI(formData: FormData) {
       model: "gemini-2.5-flash", 
     });
 
-    // --- NOUVEAU : INJECTION DU CONTEXTE UTILISATEUR ---
+    // --- INJECTION DU CONTEXTE UTILISATEUR ---
     const meta = user.user_metadata || {};
     const contextPrompt = meta.home_type ? `
       CONTEXTE GLOBAL DU DOMICILE :
@@ -58,7 +58,7 @@ export async function addPlantWithAI(formData: FormData) {
       -> Prends IMPÉRATIVEMENT ce contexte global en compte pour rédiger tes 'room_advice', 'light_advice' et 'care_notes'.
     ` : "";
 
-    // PROMPT MIS À JOUR
+    // PROMPT MIS À JOUR (Correction du formatage du guide d'entretien)
     const prompt = `
       Analyse cette photo de plante d'intérieur. 
       L'utilisateur indique qu'elle est située ici : "${room || "Non précisé"}".
@@ -73,7 +73,7 @@ export async function addPlantWithAI(formData: FormData) {
         "watering_frequency": 7,
         "room_advice": "Ton avis d'expert court sur le choix de la pièce en fonction du contexte global du domicile.",
         "light_advice": "Ton avis d'expert court sur la luminosité actuelle.",
-        "care_notes": "Un paragraphe très détaillé sur l'entretien global adapté à la plante ET au climat/contexte de l'utilisateur."
+        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte. Détaille le type de terreau idéal, l'humidité requise, le besoin en engrais et le nettoyage des feuilles."
       }
       Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
     `;
