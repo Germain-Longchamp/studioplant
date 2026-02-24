@@ -18,13 +18,14 @@ export function getWateringStatus(lastWateredAt: string, frequency: number, snoo
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   // ROUGE : En retard
-  if (diffDays < 0) return { urgent: true, text: `+${Math.abs(diffDays)} J`, color: 'red', buttonText: `Arroser (retard ${Math.abs(diffDays)} j)` };
+  if (diffDays < 0) return { urgent: true, text: `Retard ${Math.abs(diffDays)}j`, color: 'red' };
   
   // ROUGE : Le jour même
-  if (diffDays === 0) return { urgent: true, text: "Jour J", color: 'red', buttonText: "Arroser" };
+  if (diffDays === 0) return { urgent: true, text: "Aujourd'hui", color: 'red' };
   
-  // GRIS (Non urgent) : À venir
-  if (diffDays === 1) return { urgent: false, text: "-1 J", color: 'orange', buttonText: "Arroser dans 1 jour" };
+  // ORANGE : J-1
+  if (diffDays === 1) return { urgent: false, text: "Demain", color: 'orange' };
   
-  return { urgent: false, text: `-${diffDays} J`, color: 'green', buttonText: `Arroser dans ${diffDays} jours` };
+  // VERT : Tout va bien
+  return { urgent: false, text: `Dans ${diffDays}j`, color: 'green' };
 }
