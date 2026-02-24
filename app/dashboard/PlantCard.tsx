@@ -34,13 +34,13 @@ export default function PlantCard({ plant }: { plant: any }) {
           )}
         </div>
         
-        {/* LA NOUVELLE ZONE DU BOUTON (On a retiré l'icône calendrier) */}
+        {/* LE NOUVEAU BOUTON COMPOSITE EST ICI */}
         <div className="mt-4 pt-3 border-t border-stone-100 relative z-20">
           <WaterButton 
             plantId={plant.id} 
             history={history} 
             urgent={status.urgent} 
-            buttonText={status.buttonText} 
+            timeText={status.text} 
           />
         </div>
       </div>
