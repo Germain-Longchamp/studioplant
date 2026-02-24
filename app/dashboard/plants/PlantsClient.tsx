@@ -9,12 +9,15 @@ import PlantCard from "../PlantCard";
 export default function PlantsClient({ plants }: { plants: any[] }) {
   const [filter, setFilter] = useState("Toutes");
 
-  // On extrait dynamiquement toutes les pièces utilisées
-  const rooms = Array.from(new Set(plants.map(p => p.room).filter(Boolean)));
+  // On extrait dynamiquement toutes les pièces utilisées ET on les trie par ordre alphabétique
+  const rooms = Array.from(new Set(plants.map(p => p.room).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+    
   const filters = ["Toutes", ...rooms];
 
-  // On applique le filtre
-  const filteredPlants = filter === "Toutes" ? plants : plants.filter(p => p.room === filter);
+  // On applique le filtre ET on trie les plantes par ordre alphabétique (insensible à la casse/accents)
+  const filteredPlants = (filter === "Toutes" ? [...plants] : plants.filter(p => p.room === filter))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
   // Calcul des statistiques pour l'en-tête
   const totalCount = plants.length;
@@ -59,7 +62,6 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
         {rooms.length > 0 && (
           <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
             {filters.map((f: string) => {
-              // NOUVEAU : On calcule le nombre de plantes pour chaque filtre
               const count = f === "Toutes" ? totalCount : plants.filter(p => p.room === f).length;
               
               return (
@@ -73,7 +75,6 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
                   }`}
                 >
                   <span>{f}</span>
-                  {/* NOUVEAU : Le badge de compteur */}
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
                     filter === f 
                       ? 'bg-emerald-900/50 text-emerald-50' 
