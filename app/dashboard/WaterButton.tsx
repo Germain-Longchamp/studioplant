@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Droplets, Loader2 } from "lucide-react";
+import { Droplets, Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { waterPlant } from "@/server/actions";
 import confetti from "canvas-confetti";
@@ -11,12 +11,12 @@ export default function WaterButton({
   plantId,
   history,
   urgent,
-  buttonText // Nouveau paramètre
+  timeText // NOUVEAU PARAMÈTRE
 }: {
   plantId: string;
   history: string[];
   urgent: boolean;
-  buttonText?: string; 
+  timeText?: string; 
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -45,19 +45,34 @@ export default function WaterButton({
       type="button"
       onClick={handleWater}
       disabled={isPending}
-      // CLASSES : Bouton pleine largeur, gris si pas urgent, rouge si urgent
-      className={`w-full h-11 rounded-[1rem] text-sm font-bold transition-all active:scale-95 ${
+      // Design du bloc principal (Gris par défaut, Rouge si urgent)
+      className={`w-full h-12 flex items-center justify-between p-1 rounded-[1.25rem] transition-all active:scale-95 ${
         urgent
-          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20 border border-rose-600/50'
-          : 'bg-stone-100 border border-stone-200/60 text-stone-500 hover:bg-stone-200 hover:text-stone-700 shadow-none'
+          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20'
+          : 'bg-stone-50 border border-stone-200/60 text-stone-500 hover:bg-stone-100 hover:text-stone-700 shadow-sm'
       }`}
     >
-      {isPending ? (
-        <Loader2 className={`w-4 h-4 mr-2 animate-spin ${urgent ? 'text-rose-100' : 'text-stone-400'}`} />
-      ) : (
-        <Droplets className={`w-4 h-4 mr-2 ${urgent ? 'text-rose-100' : 'text-stone-400'}`} />
-      )}
-      {buttonText || "Arroser"}
+      
+      {/* PARTIE GAUCHE : L'information de temps */}
+      <div className="flex items-center gap-2 pl-3 font-medium text-[13px] tracking-tight">
+        <Calendar className={`w-4 h-4 ${urgent ? 'text-rose-200' : 'text-stone-400'}`} />
+        <span className="truncate">{timeText}</span>
+      </div>
+
+      {/* PARTIE DROITE : L'action visuelle */}
+      <div className={`flex items-center gap-1.5 px-4 h-full rounded-xl font-bold text-xs sm:text-sm transition-colors ${
+        urgent
+          ? 'bg-white/20 text-white' // Contraste doux sur fond rouge
+          : 'bg-white text-stone-700 shadow-sm border border-stone-200/50' // Style bouton encastré sur fond gris
+      }`}>
+        {isPending ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Droplets className="w-3.5 h-3.5" />
+        )}
+        Arroser
+      </div>
+
     </Button>
   );
 }
