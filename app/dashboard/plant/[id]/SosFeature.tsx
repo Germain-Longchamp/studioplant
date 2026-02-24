@@ -11,12 +11,10 @@ export default function SosFeature({ plantId }: { plantId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [diagnosisResult, setDiagnosisResult] = useState<any>(null);
 
-  // Déclenche l'ouverture de la caméra/galerie
   const handleTriggerClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Gère l'envoi de la photo
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -31,12 +29,10 @@ export default function SosFeature({ plantId }: { plantId: string }) {
       } else if (result.success && result.data) {
         setDiagnosisResult(result.data);
       }
-      // On reset l'input pour pouvoir reprendre une photo si besoin
       if (fileInputRef.current) fileInputRef.current.value = "";
     });
   };
 
-  // Couleurs dynamiques selon l'urgence
   const getUrgencyStyles = (urgency: string) => {
     if (urgency === "Haute") return "bg-rose-100 text-rose-800 border-rose-200";
     if (urgency === "Moyenne") return "bg-amber-100 text-amber-800 border-amber-200";
@@ -45,32 +41,30 @@ export default function SosFeature({ plantId }: { plantId: string }) {
 
   return (
     <>
-      {/* INPUT CACHÉ POUR LA CAMÉRA */}
       <input
         type="file"
         accept="image/*"
-        capture="environment" // Sur mobile, privilégie l'appareil photo arrière
+        capture="environment"
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
       />
 
-      {/* BOUTON D'APPEL SOS */}
+      {/* NOUVEAU DESIGN : Carte blanche avec icône douce, fondue dans le décor */}
       <button 
         onClick={handleTriggerClick}
         disabled={isPending}
-        className="w-full relative overflow-hidden group bg-gradient-to-r from-rose-500 to-rose-600 rounded-[1.5rem] p-4 flex items-center gap-4 shadow-lg shadow-rose-500/20 transition-transform active:scale-95"
+        className="w-full bg-white rounded-[2rem] p-5 flex items-center gap-4 shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all hover:shadow-xl hover:border-rose-100 active:scale-95 group"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors"></div>
-        <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white shrink-0 relative z-10">
+        <div className="p-3 bg-rose-50 text-rose-400 rounded-2xl shrink-0 transition-transform group-hover:scale-105">
           {isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Stethoscope className="w-6 h-6" />}
         </div>
-        <div className="text-left relative z-10 flex-1">
-          <h3 className="font-bold text-white text-lg leading-tight">
-            {isPending ? "Analyse en cours..." : "SOS Plante Malade"}
+        <div className="text-left flex-1">
+          <h3 className="font-bold text-stone-800 text-lg leading-tight">
+            {isPending ? "Analyse en cours..." : "Docteur Plante"}
           </h3>
-          <p className="text-rose-100 text-xs font-medium mt-0.5">
-            {isPending ? "Gemini examine la photo" : "Prenez une photo de la feuille malade"}
+          <p className="text-stone-500 text-sm font-medium mt-0.5">
+            {isPending ? "L'IA examine vos feuilles" : "Un problème ? Prenez une photo."}
           </p>
         </div>
       </button>
@@ -91,7 +85,6 @@ export default function SosFeature({ plantId }: { plantId: string }) {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Le diagnostic */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Ce qu'il se passe</h4>
                 <p className="text-sm text-stone-700 leading-relaxed font-medium">
@@ -99,7 +92,6 @@ export default function SosFeature({ plantId }: { plantId: string }) {
                 </p>
               </div>
 
-              {/* L'urgence */}
               <div>
                 <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${getUrgencyStyles(diagnosisResult.urgency)}`}>
                   <AlertTriangle className="w-3.5 h-3.5" />
@@ -107,7 +99,6 @@ export default function SosFeature({ plantId }: { plantId: string }) {
                 </div>
               </div>
 
-              {/* L'action à prendre */}
               <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2 flex items-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5" /> Plan d'action
