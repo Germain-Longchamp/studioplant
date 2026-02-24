@@ -9,6 +9,7 @@ import { waterPlant, snoozeWatering } from "@/server/actions";
 import EnvironmentAccordion from "./EnvironmentAccordion";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
+import SosFeature from "./SosFeature"; // NOUVEL IMPORT ICI
 
 // Fonction pour adapter le texte de conseil en fonction de la saison
 const getSeasonAdvice = () => {
@@ -144,6 +145,9 @@ export default async function PlantDetailPage({
             </p>
           </div>
 
+          {/* INTÉGRATION DE LA BANNIÈRE SOS ICI */}
+          <SosFeature plantId={plant.id} />
+
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4 overflow-hidden">
@@ -178,7 +182,6 @@ export default async function PlantDetailPage({
                 </form>
               </div>
 
-              {/* NOUVEAU BLOC : Affichage direct du dernier arrosage uniquement */}
               {plant.last_watered_at && (
                 <div className="p-4 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm flex items-center justify-between">
                   <span className="text-stone-500 font-medium text-sm">Dernier arrosage</span>
