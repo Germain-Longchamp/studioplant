@@ -10,10 +10,11 @@ export default function PlantCard({ plant }: { plant: any }) {
   const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
 
   return (
-    <div className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
+    <div className="group relative flex flex-row bg-white rounded-[1.5rem] sm:rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
       <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
       
-      <div className="relative w-[35%] min-w-[120px] max-w-[140px] bg-stone-100 shrink-0 border-r border-stone-100/50">
+      {/* IMAGE PLUS FINE : On gratte 24 pixels ici (min-w-[96px] au lieu de 120) */}
+      <div className="relative w-[28%] min-w-[96px] max-w-[120px] bg-stone-100 shrink-0 border-r border-stone-100/50">
         {plant.image_path ? (
           <Image src={plant.image_path} alt={plant.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 33vw, 25vw" />
         ) : (
@@ -23,19 +24,21 @@ export default function PlantCard({ plant }: { plant: any }) {
         )}
       </div>
       
-      <div className="flex flex-col flex-1 p-4">
+      {/* PADDING RÉDUIT : p-3 au lieu de p-4 sur mobile */}
+      <div className="flex flex-col flex-1 p-3 sm:p-4">
         <div className="flex-1">
-          <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">{plant.name}</h3>
-          <p className="text-sm text-stone-500 italic mt-0.5 line-clamp-1">{plant.species}</p>
+          <h3 className="font-bold text-stone-800 text-base sm:text-lg leading-tight line-clamp-1 pr-1">{plant.name}</h3>
+          <p className="text-xs sm:text-sm text-stone-500 italic mt-0.5 line-clamp-1">{plant.species}</p>
+          
           {plant.room && (
-            <div className="inline-flex items-center gap-1 mt-2.5 bg-[#FDFCF8] px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-stone-500 border border-stone-200/60">
-              <MapPin className="w-3 h-3 text-emerald-700" /> {plant.room}
+            <div className="inline-flex items-center gap-1 mt-2 bg-[#FDFCF8] px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-700 border border-emerald-100/50">
+              <MapPin className="w-2.5 h-2.5" /> {plant.room}
             </div>
           )}
         </div>
         
-        {/* LE NOUVEAU BOUTON COMPOSITE EST ICI */}
-        <div className="mt-4 pt-3 border-t border-stone-100 relative z-20">
+        {/* ESPACEMENTS RÉDUITS EN HAUT DU BOUTON */}
+        <div className="mt-3 pt-3 border-t border-stone-100 relative z-20">
           <WaterButton 
             plantId={plant.id} 
             history={history} 
