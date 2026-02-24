@@ -7,8 +7,8 @@ import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
 import { waterPlant, snoozeWatering } from "@/server/actions";
 import EnvironmentAccordion from "./EnvironmentAccordion";
-import BottomNav from "@/components/BottomNav"; // NOUVEAU IMPORT
-import PlantMenu from "./PlantMenu"; // NOUVEAU IMPORT
+import BottomNav from "@/components/BottomNav";
+import PlantMenu from "./PlantMenu";
 
 // Fonction pour adapter le texte de conseil en fonction de la saison
 const getSeasonAdvice = () => {
@@ -19,7 +19,7 @@ const getSeasonAdvice = () => {
   return "en hiver, les plantes entrent en dormance et nécessitent beaucoup moins d'eau";
 };
 
-// COMPOSANT : Formateur de texte ultra-robuste (CONSERVÉ INTACT)
+// COMPOSANT : Formateur de texte ultra-robuste
 function FormatCareNotes({ text }: { text: string }) {
   if (!text) return <p className="text-sm text-stone-700">Aucun guide disponible pour le moment.</p>;
   
@@ -42,10 +42,8 @@ function FormatCareNotes({ text }: { text: string }) {
         
         const formattedLine = parts.map((part, j) => {
           if (j % 2 === 1) {
-            // Index impair = c'était entre des **
             return <strong key={j} className="text-stone-900 font-bold">{part}</strong>;
           }
-          // Index pair = texte normal, on nettoie les résidus d'étoiles
           return part.replace(/\*/g, '');
         });
 
@@ -59,7 +57,6 @@ function FormatCareNotes({ text }: { text: string }) {
           );
         }
 
-        // Cas bonus : Titres Markdown
         if (content.startsWith('#')) {
           return (
             <h4 key={i} className="text-stone-900 font-bold text-[15px] pt-2">
@@ -98,41 +95,37 @@ export default async function PlantDetailPage({
 
   if (error || !plant) redirect("/dashboard");
 
-  // Récupération sécurisée des valeurs d'arrosage
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
   const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
   
-  // Raccord couleur du statut d'arrosage
   const badgeColorClass = 
     status.color === 'red' ? 'text-rose-600' :
     status.color === 'orange' ? 'text-amber-500' :
     'text-emerald-600';
 
-  // Conseil saisonnier dynamique
   const seasonAdvice = getSeasonAdvice();
 
   return (
-    // AJOUT DE pb-32 POUR LA BOTTOM NAV
     <div className="min-h-screen bg-[#FDFCF8] pb-32 font-sans text-stone-800 overflow-x-hidden">
       
       {/* HEADER : Glassmorphism flottant avec justify-between */}
       <header className="fixed top-0 w-full z-[60] bg-gradient-to-b from-black/50 via-black/10 to-transparent pt-6 pb-4">
         <div className="max-w-md mx-auto px-5 flex items-center justify-between">
-          <Button variant="ghost" size="icon" asChild className="text-white bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/20 shadow-lg rounded-full transition-all active:scale-95">
-            <Link href="/dashboard">
+          
+          {/* BOUTON RETOUR MIS À JOUR : Lien vers /dashboard/plants et contraste renforcé */}
+          <Button variant="ghost" size="icon" asChild className="text-white bg-stone-900/40 backdrop-blur-md hover:bg-stone-900/60 border border-white/10 shadow-md rounded-full transition-all active:scale-95">
+            <Link href="/dashboard/plants">
               <ArrowLeft className="w-6 h-6" />
             </Link>
           </Button>
 
-          {/* NOUVEAU COMPOSANT MENU (3 points) */}
           <PlantMenu plantId={plant.id} imageUrl={plant.image_path} />
         </div>
       </header>
 
       <main className="max-w-md mx-auto">
         
-        {/* HERO IMAGE */}
         <div className="relative w-full h-[55vh] bg-emerald-900 overflow-hidden">
           {plant.image_path ? (
             <Image src={plant.image_path} alt={plant.name} fill className="object-cover" priority sizes="100vw" />
@@ -142,7 +135,6 @@ export default async function PlantDetailPage({
           <div className="absolute bottom-0 w-full h-40 bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/80 to-transparent" />
         </div>
 
-        {/* CONTENU PRINCIPAL */}
         <div className="px-5 relative -mt-24 z-20 space-y-4">
           
           <div className="mb-6 drop-shadow-sm">
@@ -154,7 +146,6 @@ export default async function PlantDetailPage({
             </p>
           </div>
 
-          {/* === 1. ACCORDÉON : ARROSAGE === */}
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4 overflow-hidden">
@@ -217,10 +208,8 @@ export default async function PlantDetailPage({
             </div>
           </details>
 
-          {/* === 2. ACCORDÉON : ENVIRONNEMENT (Dynamique avec le nouveau composant) === */}
           <EnvironmentAccordion plant={plant} />
 
-          {/* === 3. ACCORDÉON : GUIDE D'ENTRETIEN === */}
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4">
@@ -235,15 +224,11 @@ export default async function PlantDetailPage({
             </summary>
             <div className="px-5 pb-6 pt-1 text-stone-600 animate-in fade-in duration-300">
               <div className="p-5 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm">
-                
-                {/* APPLICATION DU FORMATEUR INTACT */}
                 <FormatCareNotes text={plant.care_notes} />
-
               </div>
             </div>
           </details>
 
-          {/* === 4. ACCORDÉON : MON CARNET === */}
           {plant.description && (
             <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
               <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
@@ -273,7 +258,6 @@ export default async function PlantDetailPage({
         </div>
       </main>
 
-      {/* AJOUT DE LA BOTTOM NAV */}
       <BottomNav />
     </div>
   );
