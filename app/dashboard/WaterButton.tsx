@@ -20,18 +20,41 @@ export default function WaterButton({
 }) {
   const [isPending, startTransition] = useTransition();
 
-  const handleWater = () => {
+  // On récupère l'événement du clic pour avoir les coordonnées
+  const handleWater = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Calcul de la position du clic par rapport à l'écran
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (rect.left + rect.width / 2) / window.innerWidth;
+    const y = (rect.top + rect.height / 2) / window.innerHeight;
+
     const waterColors = ['#e0f2fe', '#bae6fd', '#38bdf8', '#0284c7'];
     
+    // 1. Grosses gouttes lourdes (tombent vite)
     confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
+      particleCount: 30,
+      spread: 60,
+      origin: { x, y },
+      colors: waterColors,
+      shapes: ['circle'],
+      gravity: 1.8,
+      scalar: 1.2,
+      ticks: 80,
+      startVelocity: 25,
+      zIndex: 100 // S'assure de passer au-dessus des menus
+    });
+
+    // 2. Fine brume légère (jaillit plus haut, s'éparpille plus)
+    confetti({
+      particleCount: 50,
+      spread: 100,
+      origin: { x, y },
       colors: waterColors,
       shapes: ['circle'],
       gravity: 1.2,
-      scalar: 1.2,
-      ticks: 100
+      scalar: 0.5,
+      ticks: 120,
+      startVelocity: 45,
+      zIndex: 100
     });
 
     startTransition(async () => {
@@ -45,7 +68,6 @@ export default function WaterButton({
       type="button"
       onClick={handleWater}
       disabled={isPending}
-      // Hauteur réduite (h-11 au lieu de h-12) et nouvelles couleurs Vertes
       className={`w-full h-11 flex items-center justify-between p-1 rounded-[1.25rem] transition-all active:scale-95 ${
         urgent
           ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20'
@@ -53,13 +75,11 @@ export default function WaterButton({
       }`}
     >
       
-      {/* PARTIE GAUCHE : L'information de temps plus compacte */}
       <div className="flex items-center gap-1.5 pl-2.5 font-semibold text-[11px] sm:text-xs tracking-tight">
         <Calendar className={`w-3.5 h-3.5 ${urgent ? 'text-rose-200' : 'text-emerald-500/70'}`} />
         <span className="truncate">{timeText}</span>
       </div>
 
-      {/* PARTIE DROITE : L'action visuelle affinée */}
       <div className={`flex items-center gap-1.5 px-3 h-full rounded-xl font-bold text-[11px] sm:text-xs transition-colors ${
         urgent
           ? 'bg-white/20 text-white' 
