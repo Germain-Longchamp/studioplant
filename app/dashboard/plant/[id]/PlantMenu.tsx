@@ -32,7 +32,6 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
 
   return (
     <>
-      {/* BOUTON "3 PETITS POINTS" */}
       <Button 
         variant="ghost" 
         size="icon" 
@@ -42,12 +41,10 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
         <MoreVertical className="w-6 h-6" />
       </Button>
 
-      {/* OVERLAY ET TIROIR (ACTION SHEET) */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setIsOpen(false)}>
-          
+        // MODIFICATION ICI : z-[100] pour passer obligatoirement au-dessus de la Bottom Nav
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-stone-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setIsOpen(false)}>
           <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2rem] p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-300" onClick={e => e.stopPropagation()}>
-            
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-stone-800 text-xl">Options de la plante</h3>
               <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-stone-400 hover:text-stone-600 hover:bg-stone-200/50 rounded-full">
@@ -57,14 +54,14 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
 
             <Button onClick={handleUpdate} disabled={isPendingUpdate || isPendingDelete} className="w-full justify-start h-14 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold text-base transition-colors shadow-sm border border-emerald-100">
               {isPendingUpdate ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <Sparkles className="w-5 h-5 mr-3 text-emerald-500" />}
-              {isPendingUpdate ? "Réflexion de l'IA..." : "Rafraîchir les conseils (IA)"}
+              {/* MODIFICATION ICI : Retrait de "(IA)" */}
+              {isPendingUpdate ? "Réflexion de l'IA..." : "Rafraîchir les conseils"}
             </Button>
 
             <Button onClick={handleDelete} disabled={isPendingDelete || isPendingUpdate} className="w-full justify-start h-14 rounded-2xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-base transition-colors shadow-sm">
               {isPendingDelete ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <Trash2 className="w-5 h-5 mr-3" />}
               Supprimer la plante
             </Button>
-
           </div>
         </div>
       )}
