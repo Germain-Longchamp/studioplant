@@ -201,6 +201,70 @@ export async function updatePlantAdvice(plantId: string) {
   }
 }
 
+
+// DIAGNOSTIC D'UNE PLANTE MALADE (SOS)
+export async function diagnoseSickPlant(plantId: string, formData: FormData) {
+  try {
+    const file = formData.get("image") as File;
+    if (!file) return { error: "Aucune image fournie." };
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    // 1. Récupération des infos de la plante
+    const { data: plant } = await supabase.from("plants").select("*").eq("id", plantId).single();
+    if (!plant) return { error: "Plante introuvable" };
+
+    // 2. Conversion de l'image pour Gemini
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString("base64");
+    const mimeType = file.type;
+
+    // 3. Récupération du contexte utilisateur
+    const meta = user.user_metadata || {};
+    const contextPrompt = meta.home_type ? `
+      CONTEXTE GLOBAL DE L'UTILISATEUR :
+      - Type d'habitation : ${meta.home_type}
+      - Luminosité moyenne : ${meta.light_level}
+      - Orientation : ${meta.orientation}
+      - Ville/Climat : ${meta.city || 'Non précisé'}
+    ` : "";
+
+    // 4. Prompt pour le rôle de Docteur des plantes
+    const prompt = `
+      Tu es un botaniste expert en maladies des plantes d'intérieur.
+      L'utilisateur a utilisé un bouton "SOS" pour cette plante : ${plant.name} (${plant.species}).
+      Son dernier arrosage date du : ${plant.last_watered_at}.
+      
+      ${contextPrompt}
+
+      Analyse attentivement cette photo de la plante malade.
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      {
+        "diagnosis": "Un diagnostic précis mais formulé de manière simple et rassurante (2 phrases max).",
+        "urgency": "Faible", // Choisir STRICTEMENT parmi: Faible, Moyenne, Haute
+        "action": "Une instruction claire, étape par étape (avec des tirets -), de ce qu'il faut faire immédiatement pour la sauver."
+      }
+    `;
+
+    // 5. Appel à Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent([
+      prompt,
+      { inlineData: { data: base64Image, mimeType } }
+    ]);
+
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    return { success: true, data: JSON.parse(cleanedText) };
+
+  } catch (error) {
+    console.error("Diagnosis error:", error);
+    return { error: "Impossible d'analyser l'image. L'IA a rencontré un problème." };
+  }
+}
+
 // ARROSER LA PLANTE (Sans retour pour TS)
 export async function waterPlant(plantId: string, currentHistory: string[] = []) {
   try {
