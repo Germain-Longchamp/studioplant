@@ -9,9 +9,8 @@ import { waterPlant, snoozeWatering } from "@/server/actions";
 import EnvironmentAccordion from "./EnvironmentAccordion";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
-import SosFeature from "./SosFeature"; // NOUVEL IMPORT ICI
+import SosFeature from "./SosFeature";
 
-// Fonction pour adapter le texte de conseil en fonction de la saison
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
   if (month >= 2 && month <= 4) return "au printemps, la terre peut sécher plus vite avec la reprise de la croissance";
@@ -20,7 +19,6 @@ const getSeasonAdvice = () => {
   return "en hiver, les plantes entrent en dormance et nécessitent beaucoup moins d'eau";
 };
 
-// COMPOSANT : Formateur de texte ultra-robuste
 function FormatCareNotes({ text }: { text: string }) {
   if (!text) return <p className="text-sm text-stone-700">Aucun guide disponible pour le moment.</p>;
   
@@ -31,14 +29,12 @@ function FormatCareNotes({ text }: { text: string }) {
       {lines.map((line, i) => {
         if (!line.trim()) return null;
         
-        // 1. Détection et nettoyage des puces
         const isBullet = line.trim().startsWith('-') || line.trim().startsWith('* ');
         let content = line.trim();
         if (isBullet) {
-          content = content.replace(/^[-*]\s*/, ''); // Retire la puce
+          content = content.replace(/^[-*]\s*/, '');
         }
         
-        // 2. Découpage infaillible du gras
         const parts = content.split(/\*\*(.*?)\*\*/g);
         
         const formattedLine = parts.map((part, j) => {
@@ -48,7 +44,6 @@ function FormatCareNotes({ text }: { text: string }) {
           return part.replace(/\*/g, '');
         });
 
-        // 3. Rendu
         if (isBullet) {
           return (
             <div key={i} className="flex gap-2.5 text-sm text-stone-700 leading-relaxed ml-1">
@@ -110,7 +105,6 @@ export default async function PlantDetailPage({
   return (
     <div className="min-h-screen bg-[#FDFCF8] pb-32 font-sans text-stone-800 overflow-x-hidden">
       
-      {/* HEADER : Glassmorphism flottant avec justify-between */}
       <header className="fixed top-0 w-full z-[60] bg-gradient-to-b from-black/50 via-black/10 to-transparent pt-6 pb-4">
         <div className="max-w-md mx-auto px-5 flex items-center justify-between">
           <Button variant="ghost" size="icon" asChild className="text-white bg-stone-900/40 backdrop-blur-md hover:bg-stone-900/60 border border-white/10 shadow-md rounded-full transition-all active:scale-95">
@@ -144,9 +138,6 @@ export default async function PlantDetailPage({
               {plant.species}
             </p>
           </div>
-
-          {/* INTÉGRATION DE LA BANNIÈRE SOS ICI */}
-          <SosFeature plantId={plant.id} />
 
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
@@ -248,6 +239,9 @@ export default async function PlantDetailPage({
               </div>
             </details>
           )}
+
+          {/* LA FEATURE SOS EST DÉSORMAIS PLACÉE ICI TOUT EN BAS */}
+          <SosFeature plantId={plant.id} />
 
         </div>
       </main>
