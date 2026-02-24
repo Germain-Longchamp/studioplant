@@ -40,7 +40,6 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Toutes mes plantes
             </h1>
-            {/* Sous-titre avec les compteurs */}
             <div className="flex items-center gap-2 mt-2 text-emerald-200/90 text-sm font-medium">
               <span className="flex items-center gap-1.5">
                 <Leaf className="w-3.5 h-3.5 opacity-80" /> {totalCount} plante{totalCount > 1 ? 's' : ''}
@@ -54,29 +53,41 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
         </div>
       </div>
 
-      {/* MAIN SANS OVERLAP */}
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
         
-        {/* BARRE DE FILTRES PLUS FINE ET DISCRÈTE */}
+        {/* BARRE DE FILTRES AVEC COMPTEURS INTÉGRÉS */}
         {rooms.length > 0 && (
           <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
-            {filters.map((f: string) => (
-              <button 
-                key={f}
-                onClick={() => setFilter(f)} 
-                className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-                  filter === f 
-                    ? 'bg-emerald-800 text-white border border-emerald-700 shadow-emerald-900/20' 
-                    : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+            {filters.map((f: string) => {
+              // NOUVEAU : On calcule le nombre de plantes pour chaque filtre
+              const count = f === "Toutes" ? totalCount : plants.filter(p => p.room === f).length;
+              
+              return (
+                <button 
+                  key={f}
+                  onClick={() => setFilter(f)} 
+                  className={`shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+                    filter === f 
+                      ? 'bg-emerald-800 text-white border border-emerald-700 shadow-emerald-900/20' 
+                      : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  <span>{f}</span>
+                  {/* NOUVEAU : Le badge de compteur */}
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                    filter === f 
+                      ? 'bg-emerald-900/50 text-emerald-50' 
+                      : 'bg-stone-100 text-stone-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* LISTE FILTRÉE (Maintenant avec le composant PlantCard !) */}
+        {/* LISTE FILTRÉE */}
         <div className="flex flex-col gap-3">
           {filteredPlants.map((plant) => (
             <PlantCard key={plant.id} plant={plant} />
