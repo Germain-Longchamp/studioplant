@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LayoutGrid, MapPin, Leaf, Calendar } from "lucide-react";
+import { LayoutGrid, MapPin, Leaf, Calendar, Droplets } from "lucide-react"; // NOUVEAU : Import de Droplets
 import { getWateringStatus } from "@/lib/utils";
 import WaterButton from "../WaterButton";
 import BottomNav from "@/components/BottomNav";
@@ -18,10 +18,18 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
   // On applique le filtre
   const filteredPlants = filter === "Toutes" ? plants : plants.filter(p => p.room === filter);
 
+  // NOUVEAU : Calcul des statistiques pour l'en-tête
+  const totalCount = plants.length;
+  const urgentCount = plants.filter((plant) => {
+    const snoozeDays = plant.snooze_days || 0;
+    const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+    return status.urgent;
+  }).length;
+
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
       
-      {/* HEADER VERT PLUS COMPACT (pb-10 au lieu de pb-24) */}
+      {/* HEADER VERT PLUS COMPACT */}
       <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-10 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="max-w-md mx-auto relative z-10">
@@ -34,11 +42,21 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Toutes mes plantes
             </h1>
+            {/* NOUVEAU : Sous-titre avec les compteurs */}
+            <div className="flex items-center gap-2 mt-2 text-emerald-200/90 text-sm font-medium">
+              <span className="flex items-center gap-1.5">
+                <Leaf className="w-3.5 h-3.5 opacity-80" /> {totalCount} plante{totalCount > 1 ? 's' : ''}
+              </span>
+              <span className="opacity-50">•</span>
+              <span className={`flex items-center gap-1.5 ${urgentCount > 0 ? 'text-rose-300 font-bold' : ''}`}>
+                <Droplets className="w-3.5 h-3.5 opacity-80" /> {urgentCount} arrosage{urgentCount > 1 ? 's' : ''}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* MAIN SANS OVERLAP (mt-6 au lieu de -mt-14) */}
+      {/* MAIN SANS OVERLAP */}
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
         
         {/* BARRE DE FILTRES PLUS FINE ET DISCRÈTE */}
