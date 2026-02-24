@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { LayoutGrid, MapPin, Leaf, Calendar, Droplets } from "lucide-react"; // NOUVEAU : Import de Droplets
+import { LayoutGrid, Leaf, Droplets } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
-import WaterButton from "../WaterButton";
 import BottomNav from "@/components/BottomNav";
+import PlantCard from "../PlantCard";
 
 export default function PlantsClient({ plants }: { plants: any[] }) {
   const [filter, setFilter] = useState("Toutes");
@@ -18,7 +16,7 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
   // On applique le filtre
   const filteredPlants = filter === "Toutes" ? plants : plants.filter(p => p.room === filter);
 
-  // NOUVEAU : Calcul des statistiques pour l'en-tête
+  // Calcul des statistiques pour l'en-tête
   const totalCount = plants.length;
   const urgentCount = plants.filter((plant) => {
     const snoozeDays = plant.snooze_days || 0;
@@ -42,7 +40,7 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
               Toutes mes plantes
             </h1>
-            {/* NOUVEAU : Sous-titre avec les compteurs */}
+            {/* Sous-titre avec les compteurs */}
             <div className="flex items-center gap-2 mt-2 text-emerald-200/90 text-sm font-medium">
               <span className="flex items-center gap-1.5">
                 <Leaf className="w-3.5 h-3.5 opacity-80" /> {totalCount} plante{totalCount > 1 ? 's' : ''}
@@ -78,52 +76,13 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
           </div>
         )}
 
-        {/* LISTE FILTRÉE */}
+        {/* LISTE FILTRÉE (Maintenant avec le composant PlantCard !) */}
         <div className="flex flex-col gap-3">
-          {filteredPlants.map((plant) => {
-            const snoozeDays = plant.snooze_days || 0;
-            const history = plant.watering_history || [];
-            const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
-            const badgeColorClass = status.color === 'red' ? 'text-rose-600' : status.color === 'orange' ? 'text-amber-500' : 'text-emerald-600';
-
-            return (
-              <div key={plant.id} className="group relative flex flex-row bg-white rounded-[1.75rem] overflow-hidden shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all duration-300 hover:shadow-xl hover:border-emerald-200">
-                <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
-                
-                <div className="relative w-[35%] min-w-[120px] max-w-[140px] bg-stone-100 shrink-0 border-r border-stone-100/50">
-                  {plant.image_path ? (
-                    <Image src={plant.image_path} alt={plant.name} fill className="object-cover" sizes="(max-width: 768px) 33vw, 25vw" />
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-full text-stone-300 bg-emerald-50/50">
-                      <Leaf className="w-8 h-8 opacity-40 text-emerald-600" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex flex-col flex-1 p-4">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1 pr-2">{plant.name}</h3>
-                    <p className="text-sm text-stone-500 italic mt-0.5 line-clamp-1">{plant.species}</p>
-                    {plant.room && (
-                      <div className="inline-flex items-center gap-1 mt-2.5 bg-[#FDFCF8] px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-stone-500 border border-stone-200/60">
-                        <MapPin className="w-3 h-3 text-emerald-700" /> {plant.room}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2 relative z-20">
-                    <div className={`flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap overflow-hidden ${badgeColorClass}`}>
-                      <Calendar className={`w-3.5 h-3.5 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
-                      <span className="truncate">{status.text}</span>
-                    </div>
-                    <div className="shrink-0">
-                      <WaterButton plantId={plant.id} history={history} urgent={status.urgent} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredPlants.map((plant) => (
+            <PlantCard key={plant.id} plant={plant} />
+          ))}
         </div>
+        
       </main>
 
       <BottomNav />
