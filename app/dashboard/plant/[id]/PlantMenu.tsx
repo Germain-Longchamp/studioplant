@@ -32,11 +32,12 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
 
   return (
     <>
+      {/* BOUTON MIS À JOUR : Contraste sombre pour rester visible au scroll */}
       <Button 
         variant="ghost" 
         size="icon" 
         onClick={() => setIsOpen(true)} 
-        className="text-white bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/20 shadow-lg rounded-full transition-all active:scale-95"
+        className="text-white bg-stone-900/40 backdrop-blur-md hover:bg-stone-900/60 border border-white/10 shadow-md rounded-full transition-all active:scale-95"
       >
         <MoreVertical className="w-6 h-6" />
       </Button>
@@ -53,7 +54,6 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
 
             <Button onClick={handleUpdate} disabled={isPendingUpdate || isPendingDelete} className="w-full justify-start h-14 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold text-base transition-colors shadow-sm border border-emerald-100">
               {isPendingUpdate ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <Sparkles className="w-5 h-5 mr-3 text-emerald-500" />}
-              {/* MODIFICATION ICI : Nouveau texte */}
               {isPendingUpdate ? "Mise à jour en cours..." : "Rafraîchir les conseils"}
             </Button>
 
