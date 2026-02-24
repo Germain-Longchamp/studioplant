@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Droplets, AlignLeft, Info, LeafyGreen, ChevronDown, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import DeleteButton from "./DeleteButton";
 import { getWateringStatus } from "@/lib/utils";
 import { waterPlant, snoozeWatering } from "@/server/actions";
 import EnvironmentAccordion from "./EnvironmentAccordion";
+import BottomNav from "@/components/BottomNav"; // NOUVEAU IMPORT
+import PlantMenu from "./PlantMenu"; // NOUVEAU IMPORT
 
 // Fonction pour adapter le texte de conseil en fonction de la saison
 const getSeasonAdvice = () => {
@@ -18,7 +19,7 @@ const getSeasonAdvice = () => {
   return "en hiver, les plantes entrent en dormance et nécessitent beaucoup moins d'eau";
 };
 
-// NOUVEAU COMPOSANT : Formateur de texte ultra-robuste
+// COMPOSANT : Formateur de texte ultra-robuste (CONSERVÉ INTACT)
 function FormatCareNotes({ text }: { text: string }) {
   if (!text) return <p className="text-sm text-stone-700">Aucun guide disponible pour le moment.</p>;
   
@@ -112,16 +113,20 @@ export default async function PlantDetailPage({
   const seasonAdvice = getSeasonAdvice();
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] pb-24 font-sans text-stone-800 overflow-x-hidden">
+    // AJOUT DE pb-32 POUR LA BOTTOM NAV
+    <div className="min-h-screen bg-[#FDFCF8] pb-32 font-sans text-stone-800 overflow-x-hidden">
       
-      {/* HEADER : Glassmorphism flottant */}
+      {/* HEADER : Glassmorphism flottant avec justify-between */}
       <header className="fixed top-0 w-full z-30 bg-gradient-to-b from-black/50 via-black/10 to-transparent pt-6 pb-4">
-        <div className="max-w-md mx-auto px-5 flex items-center">
+        <div className="max-w-md mx-auto px-5 flex items-center justify-between">
           <Button variant="ghost" size="icon" asChild className="text-white bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/20 shadow-lg rounded-full transition-all active:scale-95">
             <Link href="/dashboard">
               <ArrowLeft className="w-6 h-6" />
             </Link>
           </Button>
+
+          {/* NOUVEAU COMPOSANT MENU (3 points) */}
+          <PlantMenu plantId={plant.id} imageUrl={plant.image_path} />
         </div>
       </header>
 
@@ -231,7 +236,7 @@ export default async function PlantDetailPage({
             <div className="px-5 pb-6 pt-1 text-stone-600 animate-in fade-in duration-300">
               <div className="p-5 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm">
                 
-                {/* APPLICATION DU NOUVEAU FORMATEUR ICI */}
+                {/* APPLICATION DU FORMATEUR INTACT */}
                 <FormatCareNotes text={plant.care_notes} />
 
               </div>
@@ -265,12 +270,11 @@ export default async function PlantDetailPage({
             </details>
           )}
 
-          <div className="pt-8 pb-4">
-            <DeleteButton plantId={plant.id} imageUrl={plant.image_path} />
-          </div>
-
         </div>
       </main>
+
+      {/* AJOUT DE LA BOTTOM NAV */}
+      <BottomNav />
     </div>
   );
 }
