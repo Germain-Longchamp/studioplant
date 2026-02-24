@@ -112,8 +112,6 @@ export default async function PlantDetailPage({
       {/* HEADER : Glassmorphism flottant avec justify-between */}
       <header className="fixed top-0 w-full z-[60] bg-gradient-to-b from-black/50 via-black/10 to-transparent pt-6 pb-4">
         <div className="max-w-md mx-auto px-5 flex items-center justify-between">
-          
-          {/* BOUTON RETOUR MIS À JOUR : Lien vers /dashboard/plants et contraste renforcé */}
           <Button variant="ghost" size="icon" asChild className="text-white bg-stone-900/40 backdrop-blur-md hover:bg-stone-900/60 border border-white/10 shadow-md rounded-full transition-all active:scale-95">
             <Link href="/dashboard/plants">
               <ArrowLeft className="w-6 h-6" />
@@ -180,20 +178,13 @@ export default async function PlantDetailPage({
                 </form>
               </div>
 
-              {(history && history.length > 0) && (
-                <div className="p-4 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm">
-                  <h4 className="text-stone-400 font-bold text-[10px] uppercase tracking-wider mb-3">Derniers arrosages</h4>
-                  <ul className="space-y-2.5">
-                    {history.map((dateStr: string, index: number) => {
-                      const date = new Date(dateStr);
-                      return (
-                        <li key={index} className="flex items-center gap-3 text-sm text-stone-700 font-medium">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                          {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        </li>
-                      );
-                    })}
-                  </ul>
+              {/* NOUVEAU BLOC : Affichage direct du dernier arrosage uniquement */}
+              {plant.last_watered_at && (
+                <div className="p-4 bg-[#FDFCF8] rounded-2xl border border-stone-200/60 shadow-sm flex items-center justify-between">
+                  <span className="text-stone-500 font-medium text-sm">Dernier arrosage</span>
+                  <span className="text-stone-800 font-bold text-sm capitalize">
+                    {new Date(plant.last_watered_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '')}
+                  </span>
                 </div>
               )}
 
