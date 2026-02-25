@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useTransition, useEffect } from "react";
-import { createPortal } from "react-dom"; // NOUVEAU : Import de createPortal
+import { createPortal } from "react-dom"; 
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Loader2, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +12,6 @@ export default function SosFeature({ plantId }: { plantId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [diagnosisResult, setDiagnosisResult] = useState<any>(null);
   
-  // NOUVEAU : État pour s'assurer que le composant est monté (requis pour les Portals dans Next.js)
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -46,16 +45,10 @@ export default function SosFeature({ plantId }: { plantId: string }) {
     return "bg-emerald-100 text-emerald-800 border-emerald-200";
   };
 
-  // NOUVEAU : On isole le contenu de la popup
   const popupContent = diagnosisResult ? (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200" onClick={() => setDiagnosisResult(null)}>
-      {/* MODIFICATIONS CSS ICI : 
-        - flex flex-col (pour séparer le header du corps)
-        - max-h-[85vh] (hauteur max à 85% de l'écran)
-      */}
       <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2rem] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
         
-        {/* HEADER FIXE : shrink-0 pour l'empêcher de s'écraser */}
         <div className="bg-rose-50 p-6 text-center relative border-b border-rose-100 shrink-0 rounded-t-[2rem]">
           <Button variant="ghost" size="icon" onClick={() => setDiagnosisResult(null)} className="absolute top-4 right-4 text-rose-400 hover:text-rose-600 hover:bg-rose-100/50 rounded-full">
             <X className="w-5 h-5" />
@@ -66,7 +59,6 @@ export default function SosFeature({ plantId }: { plantId: string }) {
           <h3 className="font-bold text-rose-900 text-xl tracking-tight">Diagnostic terminé</h3>
         </div>
 
-        {/* CORPS SCROLLABLE : overflow-y-auto */}
         <div className="p-6 space-y-6 overflow-y-auto">
           <div>
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Ce qu'il se passe</h4>
@@ -110,25 +102,25 @@ export default function SosFeature({ plantId }: { plantId: string }) {
         className="hidden"
       />
 
+      {/* NOUVEAU DESIGN : Même logique que le "Scan rapide" (Pastel + Icône vive) */}
       <button 
         onClick={handleTriggerClick}
         disabled={isPending}
-        className="w-full bg-white rounded-[2rem] p-5 flex items-center gap-4 shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all hover:shadow-xl hover:border-rose-100 active:scale-95 group"
+        className="w-full bg-rose-50/80 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm border border-rose-200/60 transition-all hover:bg-rose-100/50 hover:shadow-md active:scale-95 group mt-4"
       >
-        <div className="p-3 bg-rose-50 text-rose-400 rounded-2xl shrink-0 transition-transform group-hover:scale-105">
+        <div className="p-3 bg-rose-500 text-white rounded-2xl shrink-0 transition-transform group-hover:scale-105 shadow-sm shadow-rose-500/20">
           {isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Stethoscope className="w-6 h-6" />}
         </div>
         <div className="text-left flex-1">
-          <h3 className="font-bold text-stone-800 text-lg leading-tight">
+          <h3 className="font-bold text-rose-950 text-lg leading-tight">
             {isPending ? "Analyse en cours..." : "Docteur Plante"}
           </h3>
-          <p className="text-stone-500 text-sm font-medium mt-0.5">
-            {isPending ? "L'IA examine vos feuilles" : "Un problème ? Prenez une photo."}
+          <p className="text-rose-700/80 text-sm font-medium mt-0.5">
+            {isPending ? "On examine vos feuilles" : "Un problème ? Prenez une photo."}
           </p>
         </div>
       </button>
 
-      {/* NOUVEAU : On injecte la popup directement dans le <body> avec un Portal ! */}
       {mounted && diagnosisResult && createPortal(popupContent, document.body)}
     </>
   );
