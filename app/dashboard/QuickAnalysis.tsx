@@ -135,21 +135,21 @@ export default function QuickAnalysis() {
         className="hidden"
       />
 
-      {/* NOUVEAU DESIGN : Très doux, clair et harmonieux */}
+      {/* DESIGN INTERMÉDIAIRE : Fond vert pastel doux, icône vert vif pour accrocher l'œil */}
       <button 
         onClick={handleTriggerClick}
         disabled={isPending}
-        className="w-full bg-white rounded-[2rem] p-5 flex items-center gap-4 shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all hover:shadow-xl hover:border-emerald-200 active:scale-95 group"
+        className="w-full bg-emerald-50/80 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm border border-emerald-200/60 transition-all hover:bg-emerald-100/50 hover:shadow-md active:scale-95 group"
       >
-        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 transition-transform group-hover:scale-105">
+        <div className="p-3 bg-emerald-500 text-white rounded-2xl shrink-0 transition-transform group-hover:scale-105 shadow-sm shadow-emerald-500/20">
           {isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <ScanLine className="w-6 h-6" />}
         </div>
         <div className="text-left flex-1">
-          <h3 className="font-bold text-stone-800 text-lg leading-tight">
+          <h3 className="font-bold text-emerald-950 text-lg leading-tight">
             {isPending ? "Analyse en cours..." : "Scan rapide"}
           </h3>
-          <p className="text-stone-500 text-sm font-medium mt-0.5">
-            {isPending ? "Recherche de la plante..." : "Obtenez une analyse rapide d'une plante"}
+          <p className="text-emerald-700/80 text-sm font-medium mt-0.5">
+            {isPending ? "Recherche de la plante..." : "Obtenez une analyse rapide d'une nouvelle plante"}
           </p>
         </div>
       </button>
