@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
+import { createPortal } from "react-dom"; // NOUVEAU : Import de createPortal
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Loader2, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { diagnoseSickPlant } from "@/server/actions";
 
@@ -10,6 +11,12 @@ export default function SosFeature({ plantId }: { plantId: string }) {
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [diagnosisResult, setDiagnosisResult] = useState<any>(null);
+  
+  // NOUVEAU : État pour s'assurer que le composant est monté (requis pour les Portals dans Next.js)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleTriggerClick = () => {
     fileInputRef.current?.click();
@@ -39,6 +46,59 @@ export default function SosFeature({ plantId }: { plantId: string }) {
     return "bg-emerald-100 text-emerald-800 border-emerald-200";
   };
 
+  // NOUVEAU : On isole le contenu de la popup
+  const popupContent = diagnosisResult ? (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200" onClick={() => setDiagnosisResult(null)}>
+      {/* MODIFICATIONS CSS ICI : 
+        - flex flex-col (pour séparer le header du corps)
+        - max-h-[85vh] (hauteur max à 85% de l'écran)
+      */}
+      <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2rem] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+        
+        {/* HEADER FIXE : shrink-0 pour l'empêcher de s'écraser */}
+        <div className="bg-rose-50 p-6 text-center relative border-b border-rose-100 shrink-0 rounded-t-[2rem]">
+          <Button variant="ghost" size="icon" onClick={() => setDiagnosisResult(null)} className="absolute top-4 right-4 text-rose-400 hover:text-rose-600 hover:bg-rose-100/50 rounded-full">
+            <X className="w-5 h-5" />
+          </Button>
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-rose-500">
+            <Stethoscope className="w-8 h-8" />
+          </div>
+          <h3 className="font-bold text-rose-900 text-xl tracking-tight">Diagnostic terminé</h3>
+        </div>
+
+        {/* CORPS SCROLLABLE : overflow-y-auto */}
+        <div className="p-6 space-y-6 overflow-y-auto">
+          <div>
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Ce qu'il se passe</h4>
+            <p className="text-sm text-stone-700 leading-relaxed font-medium">
+              {diagnosisResult.diagnosis}
+            </p>
+          </div>
+
+          <div>
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${getUrgencyStyles(diagnosisResult.urgency)}`}>
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Urgence : {diagnosisResult.urgency}
+            </div>
+          </div>
+
+          <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2 flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5" /> Plan d'action
+            </h4>
+            <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">
+              {diagnosisResult.action}
+            </p>
+          </div>
+
+          <Button onClick={() => setDiagnosisResult(null)} className="w-full h-12 shrink-0 rounded-[1.25rem] bg-stone-900 hover:bg-stone-800 text-white font-bold shadow-lg shadow-stone-900/20 active:scale-95 transition-all">
+            J'ai compris, merci !
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       <input
@@ -50,7 +110,6 @@ export default function SosFeature({ plantId }: { plantId: string }) {
         className="hidden"
       />
 
-      {/* NOUVEAU DESIGN : Carte blanche avec icône douce, fondue dans le décor */}
       <button 
         onClick={handleTriggerClick}
         disabled={isPending}
@@ -69,52 +128,8 @@ export default function SosFeature({ plantId }: { plantId: string }) {
         </div>
       </button>
 
-      {/* POPUP DE DIAGNOSTIC */}
-      {diagnosisResult && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200" onClick={() => setDiagnosisResult(null)}>
-          <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-            
-            <div className="bg-rose-50 p-6 text-center relative border-b border-rose-100">
-              <Button variant="ghost" size="icon" onClick={() => setDiagnosisResult(null)} className="absolute top-4 right-4 text-rose-400 hover:text-rose-600 hover:bg-rose-100/50 rounded-full">
-                <X className="w-5 h-5" />
-              </Button>
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-rose-500">
-                <Stethoscope className="w-8 h-8" />
-              </div>
-              <h3 className="font-bold text-rose-900 text-xl tracking-tight">Diagnostic terminé</h3>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Ce qu'il se passe</h4>
-                <p className="text-sm text-stone-700 leading-relaxed font-medium">
-                  {diagnosisResult.diagnosis}
-                </p>
-              </div>
-
-              <div>
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${getUrgencyStyles(diagnosisResult.urgency)}`}>
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  Urgence : {diagnosisResult.urgency}
-                </div>
-              </div>
-
-              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2 flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" /> Plan d'action
-                </h4>
-                <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">
-                  {diagnosisResult.action}
-                </p>
-              </div>
-
-              <Button onClick={() => setDiagnosisResult(null)} className="w-full h-12 rounded-[1.25rem] bg-stone-900 hover:bg-stone-800 text-white font-bold shadow-lg shadow-stone-900/20 active:scale-95 transition-all">
-                J'ai compris, merci !
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* NOUVEAU : On injecte la popup directement dans le <body> avec un Portal ! */}
+      {mounted && diagnosisResult && createPortal(popupContent, document.body)}
     </>
   );
 }
