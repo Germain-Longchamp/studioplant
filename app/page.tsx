@@ -23,10 +23,9 @@ export default function Home() {
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top", 
-          // On réduit considérablement le temps de blocage (de 200% à 100%)
-          end: "+=100%", 
+          // SCROLL BEAUCOUP PLUS COURT : L'animation se termine très vite (+60% au lieu de +100%)
+          end: "+=60%", 
           pin: true,
-          // Scrub plus réactif
           scrub: 0.5, 
         }
       });
@@ -43,7 +42,7 @@ export default function Home() {
           opacity: 1,    
           y: 0,          
           rotationX: 0,  
-          ease: "power2.out", // Animation plus vive
+          ease: "power2.out", 
           duration: 1
         }
       );
@@ -103,20 +102,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION ANIMATION : Beaucoup plus courte (150vh au lieu de 300vh) */}
-        <div ref={containerRef} className="relative w-full h-[150vh] bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
+        {/* SECTION ANIMATION : Hauteur réduite à 120vh pour un défilement rapide */}
+        <div ref={containerRef} className="relative w-full h-[120vh] bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
            <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden perspective-[1000px]">
               
-              {/* IMAGE WRAPPER : Adieu le fond blanc et les bordures ! 
-                  On limite la largeur à la taille d'un téléphone (max-w-[320px] sur mobile, 400px sur desktop)
+              {/* IMAGE WRAPPER : Beaucoup plus grand ! 
+                  - Mobile : jusqu'à 380px de large (presque toute la largeur)
+                  - Desktop : jusqu'à 480px de large
+                  - Hauteur : 85vh pour prendre un maximum de place verticale
               */}
-              <div ref={imageWrapperRef} className="relative w-[85%] max-w-[320px] sm:max-w-[400px] h-[70vh] sm:h-[80vh]">
+              <div ref={imageWrapperRef} className="relative w-[90%] max-w-[380px] sm:max-w-[480px] h-[75vh] sm:h-[85vh]">
                  <Image 
                     src="/app-mockup.png"
                     alt="Aperçu de l'application StudioPlant"
                     fill
-                    // object-contain : L'image n'est JAMAIS coupée
-                    // drop-shadow-2xl : Crée une magnifique ombre portée directement depuis les pixels de ton PNG
                     className="object-contain drop-shadow-2xl"
                     priority
                  />
@@ -124,7 +123,6 @@ export default function Home() {
 
            </div>
         </div>
-
 
         <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8]">
 
