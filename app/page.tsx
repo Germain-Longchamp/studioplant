@@ -19,7 +19,12 @@ export default function Home() {
           <Leaf className="w-6 h-6 text-emerald-500" />
           StudioPlant
         </div>
-        <Button variant="ghost" className="font-semibold text-stone-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-colors" asChild>
+        
+        {/* BOUTON CONNEXION MIS EN AVANT */}
+        <Button 
+          className="font-bold bg-white text-stone-700 border border-stone-200/60 shadow-sm hover:shadow-md hover:bg-stone-50 hover:text-emerald-700 rounded-full px-6 h-10 transition-all active:scale-95" 
+          asChild
+        >
           <Link href="/auth/login">Connexion</Link>
         </Button>
       </header>
