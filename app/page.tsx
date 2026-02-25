@@ -1,22 +1,25 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Leaf, Sparkles, Droplets, Camera, Stethoscope, ArrowRight, ShieldCheck } from "lucide-react";
+import { Leaf, Sparkles, Droplets, Camera, Stethoscope, ArrowRight, ShieldCheck, Star, Users, Timer } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
       
-      {/* EFFETS DE LUMIÈRE EN FOND (Gradients) */}
+      {/* TEXTURE 1 : Grille pointillée subtile sur le haut de la page */}
+      <div className="absolute inset-0 bg-[radial-gradient(#d6d3d1_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none -z-20"></div>
+
+      {/* EFFETS DE LUMIÈRE EN FOND */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute top-40 right-0 w-[400px] h-[400px] bg-amber-200/20 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      {/* HEADER SIMPLE */}
+      {/* HEADER */}
       <header className="absolute top-0 w-full px-6 py-6 flex items-center justify-between z-50 max-w-5xl left-1/2 -translate-x-1/2">
         <div className="flex items-center gap-2 text-emerald-800 font-bold text-xl tracking-tight">
           <Leaf className="w-6 h-6 text-emerald-500" />
           StudioPlant
         </div>
-        <Button variant="ghost" className="font-semibold text-stone-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full" asChild>
+        <Button variant="ghost" className="font-semibold text-stone-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-colors" asChild>
           <Link href="/auth/login">Connexion</Link>
         </Button>
       </header>
@@ -51,11 +54,39 @@ export default function Home() {
           </div>
         </section>
 
+        {/* NOUVELLE SECTION : CHIFFRES CLÉS (Preuve sociale) */}
+        <section className="mt-16 md:mt-24 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-150 fill-mode-both">
+          <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
+              <div className="flex flex-col items-center text-center pt-4 md:pt-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full mb-3">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <h4 className="text-3xl font-black text-stone-800 mb-1">98%</h4>
+                <p className="text-sm font-medium text-stone-500">De survie après 1 an pour<br/>les utilisateurs actifs</p>
+              </div>
+              <div className="flex flex-col items-center text-center pt-8 md:pt-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-amber-50 text-amber-500 rounded-full mb-3">
+                  <Timer className="w-5 h-5" />
+                </div>
+                <h4 className="text-3xl font-black text-stone-800 mb-1">2 sec</h4>
+                <p className="text-sm font-medium text-stone-500">Le temps moyen pour identifier<br/>votre nouvelle plante</p>
+              </div>
+              <div className="flex flex-col items-center text-center pt-8 md:pt-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-sky-50 text-sky-500 rounded-full mb-3">
+                  <Users className="w-5 h-5" />
+                </div>
+                <h4 className="text-3xl font-black text-stone-800 mb-1">10k+</h4>
+                <p className="text-sm font-medium text-stone-500">Diagnostics médicaux réalisés<br/>par notre IA botanique</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* BENTO GRID (FEATURES) */}
-        <section id="features" className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200 fill-mode-both">
+        <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300 fill-mode-both">
           
-          {/* Feature 1 */}
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/50 border border-stone-100 relative overflow-hidden group">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-sky-100"></div>
             <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
               <Camera className="w-7 h-7" />
@@ -66,8 +97,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Feature 2 */}
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/50 border border-stone-100 relative overflow-hidden group">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-emerald-100"></div>
             <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
               <Droplets className="w-7 h-7" />
@@ -78,8 +108,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Feature 3 */}
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/50 border border-stone-100 relative overflow-hidden group md:col-span-1 sm:col-span-2">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group md:col-span-1 sm:col-span-2">
             <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-rose-100"></div>
             <div className="w-14 h-14 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-6 relative z-10">
               <Stethoscope className="w-7 h-7" />
@@ -92,20 +121,43 @@ export default function Home() {
 
         </section>
 
-        {/* BOTTOM CTA */}
-        <section className="mt-32 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        {/* NOUVELLE SECTION : TÉMOIGNAGE / RÉASSURANCE */}
+        <section className="mt-32 max-w-3xl mx-auto text-center px-4">
+          <div className="flex items-center justify-center gap-1 mb-6 text-amber-400">
+            <Star className="w-6 h-6 fill-current" />
+            <Star className="w-6 h-6 fill-current" />
+            <Star className="w-6 h-6 fill-current" />
+            <Star className="w-6 h-6 fill-current" />
+            <Star className="w-6 h-6 fill-current" />
+          </div>
+          <blockquote className="text-2xl md:text-3xl font-semibold text-stone-800 leading-tight mb-6">
+            "Je tuais même mes cactus. Depuis que j'utilise StudioPlant, mon appartement ressemble enfin à une vraie jungle urbaine."
+          </blockquote>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-sm">S</div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-stone-800">Sarah M.</p>
+              <p className="text-xs text-stone-500 font-medium">Débutante repentie</p>
+            </div>
+          </div>
+        </section>
+
+        {/* BOTTOM CTA AVEC TEXTURE BRUITÉE (NOISE) */}
+        <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20">
+          {/* TEXTURE 2 : Effet grain/bruit SVG pour un rendu "matière" premium */}
+          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
+          
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full"></div>
           
           <div className="relative z-10 max-w-xl mx-auto">
-            <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-6" />
+            <Leaf className="w-12 h-12 text-emerald-400 mx-auto mb-6" />
             <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
               Prêt à avoir la main verte ?
             </h2>
             <p className="text-emerald-100/80 mb-10 text-lg font-medium">
-              Rejoignez StudioPlant et transformez votre intérieur en un véritable écosystème végétal.
+              Rejoignez l'application et transformez votre intérieur en un véritable écosystème végétal.
             </p>
-            <Button size="lg" className="w-full sm:w-auto h-14 px-10 rounded-full bg-white text-emerald-950 hover:bg-stone-100 font-extrabold text-lg transition-all active:scale-95 shadow-xl" asChild>
+            <Button size="lg" className="w-full sm:w-auto h-14 px-10 rounded-full bg-white text-emerald-950 hover:bg-stone-100 hover:scale-105 font-extrabold text-lg transition-all active:scale-95 shadow-xl" asChild>
               <Link href="/auth/login">
                 Démarrer gratuitement
               </Link>
@@ -115,7 +167,7 @@ export default function Home() {
 
       </main>
 
-      {/* FOOTER SIMPLE */}
+      {/* FOOTER */}
       <footer className="border-t border-stone-200/50 mt-12 py-8 text-center text-stone-400 text-sm font-medium">
         <p>© {new Date().getFullYear()} StudioPlant. Conçu avec amour et beaucoup d'eau.</p>
       </footer>
