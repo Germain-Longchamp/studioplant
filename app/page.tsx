@@ -19,13 +19,13 @@ export default function Home() {
 
     let ctx = gsap.context(() => {
       
-      // 1. L'ANIMATION : Ultra nerveuse, commence dès le premier coup de molette
+      // 1. ANIMATION : Commence tout de suite, réagit au moindre scroll
       gsap.fromTo(imageWrapperRef.current, 
         {
-          scale: 0.3,    // Part de très petit
+          scale: 0.6,    
           opacity: 0,    
-          y: 250,        // Part de bien plus bas
-          rotationX: 25, // Incliné
+          y: 200,        
+          rotationX: 20, 
         },
         {
           scale: 1,      
@@ -35,18 +35,18 @@ export default function Home() {
           ease: "power2.out", 
           scrollTrigger: {
             trigger: containerRef.current,
-            start: "top 100%", // Démarre EXACTEMENT quand le conteneur entre en bas de l'écran (soit au premier scroll)
-            end: "top 30%",    // Se termine très vite
-            scrub: 0.1,        // Extrêmement réactif
+            start: "top 90%", // Démarre quand le haut du bloc touche le bas de l'écran
+            end: "top 20%",   // Se termine très vite
+            scrub: 0.1,       // Hyper réactif au doigt/molette
           }
         }
       );
 
-      // 2. LE BLOCAGE (PIN) : Très court pour ne pas frustrer l'utilisateur
+      // 2. PIN : Bloque l'image au centre pendant une courte durée
       ScrollTrigger.create({
         trigger: containerRef.current,
-        start: "top top", 
-        end: "+=30%", // Le blocage ne dure que 30% d'un écran, juste pour marquer le coup
+        start: "top 15%", // Déclenche le blocage quand l'image est bien centrée
+        end: "+=400px",   // Maintient le blocage sur une courte distance (400px)
         pin: true,
       });
 
@@ -55,17 +55,28 @@ export default function Home() {
     return () => ctx.revert(); 
   }, []);
 
-
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
       
-      {/* TEXTURE DE FOND : Grille architecturale fondue vers le bas */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none -z-20"></div>
+      {/* 🟢 FONDS & TEXTURES CORRIGÉS (z-0 au lieu de -z-10 pour être sûr de les voir) */}
       
-      {/* HALO CENTRAL : Casse l'effet "tout blanc" du fond */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-tr from-emerald-100/60 to-emerald-50/20 blur-[100px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-40 right-0 w-[400px] h-[400px] bg-amber-200/10 blur-[100px] rounded-full pointer-events-none -z-10" />
+      {/* Grille de points texturée avec dégradé transparent */}
+      <div 
+        className="absolute inset-0 z-0 pointer-events-none opacity-50"
+        style={{
+          backgroundImage: 'radial-gradient(#a8a29e 2px, transparent 2px)',
+          backgroundSize: '32px 32px',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)'
+        }}
+      />
+      
+      {/* Halos de couleur en arrière-plan */}
+      <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="absolute top-[10%] right-[-10%] w-[400px] h-[400px] bg-amber-300/20 blur-[120px] rounded-full pointer-events-none z-0" />
 
+
+      {/* 🟢 HEADER */}
       <header className="absolute top-0 w-full px-6 py-6 flex items-center justify-between z-50 max-w-5xl left-1/2 -translate-x-1/2">
         <div className="flex items-center gap-2 text-emerald-800 font-bold text-xl tracking-tight">
           <Leaf className="w-6 h-6 text-emerald-500" />
@@ -79,11 +90,11 @@ export default function Home() {
         </Button>
       </header>
 
-      <main>
+      {/* 🟢 CONTENU PRINCIPAL (Mis en z-10 pour passer au-dessus de la texture de fond) */}
+      <main className="relative z-10">
         
-        {/* HERO SECTION : Espacement du bas réduit à pb-0 pour coller à l'animation */}
-        <section className="max-w-5xl mx-auto px-6 pt-32 pb-0 md:pt-40 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
+        <section className="max-w-5xl mx-auto px-6 pt-32 pb-0 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé par l'IA
           </div>
           
@@ -109,12 +120,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION ANIMATION : La div prend juste 100vh pour aller droit au but */}
-        <div ref={containerRef} className="relative w-full h-screen mt-8">
-           <div className="absolute top-0 w-full h-full flex items-center justify-center overflow-hidden perspective-[1200px]">
+        {/* 🟢 BLOC GSAP (Taille fixée à 90vh pour prendre l'écran sans créer de vide) */}
+        <div ref={containerRef} className="relative w-full h-[90vh] flex items-center justify-center mt-12">
+           <div className="w-full h-full flex items-center justify-center overflow-hidden perspective-[1200px]">
               
-              {/* IMAGE WRAPPER */}
-              <div ref={imageWrapperRef} className="relative w-[95%] max-w-[420px] sm:max-w-[550px] md:max-w-[700px] h-[85vh] sm:h-[95vh]">
+              <div ref={imageWrapperRef} className="relative w-[95%] max-w-[420px] sm:max-w-[550px] md:max-w-[700px] h-[80vh] sm:h-[90vh] will-change-transform">
                  <Image 
                     src="/app-mockup.png"
                     alt="Aperçu de l'application StudioPlant"
@@ -127,11 +137,11 @@ export default function Home() {
            </div>
         </div>
 
-        {/* RESTE DU CONTENU */}
-        <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8] pt-12 md:pt-20">
+        {/* 🟢 SUITE DU SITE (Fond blanc pur pour cacher l'image quand on scroll par dessus) */}
+        <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-20 bg-[#FDFCF8] pt-12 md:pt-24 mt-[-1px]">
 
           <section>
-            <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
+            <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm relative z-20">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
                 <div className="flex flex-col items-center text-center pt-4 md:pt-0">
                   <div className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full mb-3">
@@ -158,8 +168,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+          <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-20">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-sky-100"></div>
               <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
@@ -192,10 +201,9 @@ export default function Home() {
                 Une feuille jaune ? Une tache suspecte ? Prenez une photo et obtenez un diagnostic médical et un plan de sauvetage.
               </p>
             </div>
-
           </section>
 
-          <section className="mt-32 max-w-3xl mx-auto text-center px-4">
+          <section className="mt-32 max-w-3xl mx-auto text-center px-4 relative z-20">
             <div className="flex items-center justify-center gap-1 mb-6 text-amber-400">
               <Star className="w-6 h-6 fill-current" />
               <Star className="w-6 h-6 fill-current" />
@@ -215,9 +223,8 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20">
+          <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20 z-20">
             <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-            
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full"></div>
             
             <div className="relative z-10 max-w-xl mx-auto">
@@ -239,7 +246,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-stone-200/50 mt-12 py-8 text-center text-stone-400 text-sm font-medium relative z-10 bg-[#FDFCF8]">
+      <footer className="border-t border-stone-200/50 py-8 text-center text-stone-400 text-sm font-medium relative z-20 bg-[#FDFCF8]">
         <p>© {new Date().getFullYear()} StudioPlant. Conçu avec amour et beaucoup d'eau.</p>
       </footer>
     </div>
