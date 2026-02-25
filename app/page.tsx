@@ -23,27 +23,27 @@ export default function Home() {
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top", 
-          // SCROLL BEAUCOUP PLUS COURT : L'animation se termine très vite (+60% au lieu de +100%)
-          end: "+=60%", 
+          // SCROLL ULTRA-COURT : L'animation se joue sur un très court espace
+          end: "+=40%", 
           pin: true,
-          scrub: 0.5, 
+          // RÉACTIVITÉ MAXIMALE : Le scrub à 0.2 colle presque au doigt/à la souris
+          scrub: 0.2, 
         }
       });
 
       tl.fromTo(imageWrapperRef.current, 
         {
-          scale: 0.85,    
+          scale: 0.6,    // Part de beaucoup plus petit
           opacity: 0,    
-          y: 80,        
-          rotationX: 10, 
+          y: 150,        // Part de beaucoup plus bas
+          rotationX: 15, // Incliné vers l'arrière
         },
         {
-          scale: 1,      
+          scale: 1,      // Arrive à 100% (et la base est énorme)
           opacity: 1,    
           y: 0,          
           rotationX: 0,  
-          ease: "power2.out", 
-          duration: 1
+          ease: "power3.out", // Courbe d'animation plus agressive et dynamique
         }
       );
 
@@ -102,16 +102,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION ANIMATION : Hauteur réduite à 120vh pour un défilement rapide */}
-        <div ref={containerRef} className="relative w-full h-[120vh] bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
-           <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden perspective-[1000px]">
+        {/* SECTION ANIMATION : Hauteur réduite à 110vh (à peine plus que l'écran pour un flow continu) */}
+        <div ref={containerRef} className="relative w-full h-[110vh] bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
+           <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden perspective-[1200px]">
               
-              {/* IMAGE WRAPPER : Beaucoup plus grand ! 
-                  - Mobile : jusqu'à 380px de large (presque toute la largeur)
-                  - Desktop : jusqu'à 480px de large
-                  - Hauteur : 85vh pour prendre un maximum de place verticale
+              {/* IMAGE WRAPPER : GIGANTESQUE !
+                  - Mobile : Jusqu'à 420px de large
+                  - Tablette : Jusqu'à 550px
+                  - Desktop : Jusqu'à 700px !
+                  - Hauteur : 85vh (mobile) à 95vh (desktop)
               */}
-              <div ref={imageWrapperRef} className="relative w-[90%] max-w-[380px] sm:max-w-[480px] h-[75vh] sm:h-[85vh]">
+              <div ref={imageWrapperRef} className="relative w-[95%] max-w-[420px] sm:max-w-[550px] md:max-w-[700px] h-[85vh] sm:h-[95vh]">
                  <Image 
                     src="/app-mockup.png"
                     alt="Aperçu de l'application StudioPlant"
@@ -126,7 +127,7 @@ export default function Home() {
 
         <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8]">
 
-          <section className="mt-12 md:mt-24">
+          <section className="mt-8 md:mt-16">
             <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
                 <div className="flex flex-col items-center text-center pt-4 md:pt-0">
