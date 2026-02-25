@@ -1,12 +1,69 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import { Leaf, Sparkles, Droplets, Camera, Stethoscope, ArrowRight, ShieldCheck, Star, Users, Timer } from "lucide-react";
+import { useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+// On enregistre le plugin ScrollTrigger
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
+  // Refs pour cibler les éléments à animer avec GSAP
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imageWrapperRef = useRef<HTMLDivElement>(null);
+
+  // useLayoutEffect est préférable à useEffect pour les animations GSAP dans Next.js
+  // pour éviter les "sauts" visuels au chargement.
+  useLayoutEffect(() => {
+    if (!containerRef.current || !imageWrapperRef.current) return;
+
+    // Le contexte GSAP permet un nettoyage facile des animations
+    let ctx = gsap.context(() => {
+      
+      // Création de la timeline d'animation
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current, // L'élément qui déclenche le scroll
+          start: "top top", // Commence quand le haut du conteneur touche le haut de l'écran
+          end: "+=200%", // L'animation dure l'équivalent de 2 hauteurs d'écran (200vh)
+          pin: true, // C'EST LA CLÉ : Bloque le conteneur pendant le scroll
+          scrub: 1, // Lie l'animation à la barre de scroll avec une fluidité de 1s
+          // markers: true, // Décommente pour voir les repères de début/fin de l'animation (utile pour le debug)
+        }
+      });
+
+      // L'animation elle-même
+      tl.fromTo(imageWrapperRef.current, 
+        {
+          scale: 0.8,    // Départ : image légèrement plus petite
+          opacity: 0,    // Départ : transparente
+          y: 100,        // Départ : un peu plus bas
+          rotationX: 15, // Départ : légèrement inclinée en arrière (effet 3D)
+        },
+        {
+          scale: 1,      // Arrivée : taille normale
+          opacity: 1,    // Arrivée : opaque
+          y: 0,          // Arrivée : position centrée
+          rotationX: 0,  // Arrivée : droite
+          ease: "power2.inOut", // Une courbe d'accélération douce
+          duration: 1
+        }
+      );
+
+    }, containerRef); // Scope le sélecteur au conteneur
+
+    return () => ctx.revert(); // Nettoyage à la destruction du composant
+  }, []);
+
+
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
       
-      {/* TEXTURE 1 : Grille pointillée subtile sur le haut de la page */}
+      {/* TEXTURE 1 : Grille pointillée subtile */}
       <div className="absolute inset-0 bg-[radial-gradient(#d6d3d1_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none -z-20"></div>
 
       {/* EFFETS DE LUMIÈRE EN FOND */}
@@ -29,10 +86,10 @@ export default function Home() {
         </Button>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 pt-32 pb-24 md:pt-48 md:pb-32">
+      <main>
         
-        {/* HERO SECTION */}
-        <section className="text-center max-w-3xl mx-auto flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+        {/* HERO SECTION (Ajout de pt/pb pour l'espacement) */}
+        <section className="max-w-5xl mx-auto px-6 pt-32 pb-16 md:pt-48 md:pb-24 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" /> Propulsé par l'IA
           </div>
@@ -59,121 +116,156 @@ export default function Home() {
           </div>
         </section>
 
-        {/* NOUVELLE SECTION : CHIFFRES CLÉS (Preuve sociale) */}
-        <section className="mt-16 md:mt-24 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-150 fill-mode-both">
-          <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
-              <div className="flex flex-col items-center text-center pt-4 md:pt-0">
-                <div className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full mb-3">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <h4 className="text-3xl font-black text-stone-800 mb-1">98%</h4>
-                <p className="text-sm font-medium text-stone-500">De survie après 1 an pour<br/>les utilisateurs actifs</p>
+        {/* ================================================================ */}
+        {/* NOUVELLE SECTION : ANIMATION SCROLL (Type Squadeasy)             */}
+        {/* ================================================================ */}
+        {/* Ce conteneur est très haut (300vh) mais son contenu sera "épinglé" 
+            (sticky) pendant le scroll grâce à GSAP.
+        */}
+        <div ref={containerRef} className="relative w-full h-[300vh] bg-gradient-to-b from-transparent via-emerald-50/50 to-transparent">
+           <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden perspective-[1000px]">
+              {/* Le wrapper qui sera animé (scale, rotation, opacity) */}
+              <div ref={imageWrapperRef} className="relative w-[90%] max-w-[1000px] aspect-[16/10] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/20 border border-stone-200/50 bg-[#FDFCF8]">
+                 
+                 {/* REMPLACE '/app-mockup.png' PAR TON VRAI FICHIER DANS PUBLIC */}
+                 {/* J'utilise un placeholder pour l'instant */}
+                 <Image 
+                    src="https://placehold.co/1200x750/064e3b/ffffff?text=Visuel+de+l'application+StudioPlant&font=montserrat"
+                    alt="Aperçu de l'application StudioPlant"
+                    fill
+                    className="object-cover"
+                    priority
+                 />
+                 
+                 {/* Petit effet de reflet par dessus l'image */}
+                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none mix-blend-overlay"></div>
               </div>
-              <div className="flex flex-col items-center text-center pt-8 md:pt-0">
-                <div className="flex items-center justify-center w-10 h-10 bg-amber-50 text-amber-500 rounded-full mb-3">
-                  <Timer className="w-5 h-5" />
+           </div>
+        </div>
+        {/* ================================================================ */}
+        {/* FIN ANIMATION SCROLL                                             */}
+        {/* ================================================================ */}
+
+
+        {/* WRAPPER POUR LE RESTE DU CONTENU */}
+        <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8]">
+
+          {/* SECTION : CHIFFRES CLÉS */}
+          <section className="mt-16 md:mt-24">
+            <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
+                <div className="flex flex-col items-center text-center pt-4 md:pt-0">
+                  <div className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full mb-3">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-3xl font-black text-stone-800 mb-1">98%</h4>
+                  <p className="text-sm font-medium text-stone-500">De survie après 1 an pour<br/>les utilisateurs actifs</p>
                 </div>
-                <h4 className="text-3xl font-black text-stone-800 mb-1">2 sec</h4>
-                <p className="text-sm font-medium text-stone-500">Le temps moyen pour identifier<br/>votre nouvelle plante</p>
-              </div>
-              <div className="flex flex-col items-center text-center pt-8 md:pt-0">
-                <div className="flex items-center justify-center w-10 h-10 bg-sky-50 text-sky-500 rounded-full mb-3">
-                  <Users className="w-5 h-5" />
+                <div className="flex flex-col items-center text-center pt-8 md:pt-0">
+                  <div className="flex items-center justify-center w-10 h-10 bg-amber-50 text-amber-500 rounded-full mb-3">
+                    <Timer className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-3xl font-black text-stone-800 mb-1">2 sec</h4>
+                  <p className="text-sm font-medium text-stone-500">Le temps moyen pour identifier<br/>votre nouvelle plante</p>
                 </div>
-                <h4 className="text-3xl font-black text-stone-800 mb-1">10k+</h4>
-                <p className="text-sm font-medium text-stone-500">Diagnostics médicaux réalisés<br/>par notre IA botanique</p>
+                <div className="flex flex-col items-center text-center pt-8 md:pt-0">
+                  <div className="flex items-center justify-center w-10 h-10 bg-sky-50 text-sky-500 rounded-full mb-3">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-3xl font-black text-stone-800 mb-1">10k+</h4>
+                  <p className="text-sm font-medium text-stone-500">Diagnostics médicaux réalisés<br/>par notre IA botanique</p>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* BENTO GRID (FEATURES) */}
-        <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300 fill-mode-both">
-          
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-sky-100"></div>
-            <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
-              <Camera className="w-7 h-7" />
+          {/* BENTO GRID (FEATURES) */}
+          <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-sky-100"></div>
+              <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                <Camera className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Reconnaissance IA</h3>
+              <p className="text-stone-500 leading-relaxed font-medium relative z-10">
+                Scannez n'importe quelle plante en un clic. L'IA retrouve son nom et ses besoins spécifiques instantanément.
+              </p>
             </div>
-            <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Reconnaissance IA</h3>
-            <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-              Scannez n'importe quelle plante en un clic. L'IA retrouve son nom et ses besoins spécifiques instantanément.
-            </p>
-          </div>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-emerald-100"></div>
-            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
-              <Droplets className="w-7 h-7" />
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-emerald-100"></div>
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                <Droplets className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Arrosage millimétré</h3>
+              <p className="text-stone-500 leading-relaxed font-medium relative z-10">
+                Fini les oublis et les noyades. Suivez en temps réel les besoins en eau de votre jungle urbaine.
+              </p>
             </div>
-            <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Arrosage millimétré</h3>
-            <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-              Fini les oublis et les noyades. Suivez en temps réel les besoins en eau de votre jungle urbaine.
-            </p>
-          </div>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group md:col-span-1 sm:col-span-2">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-rose-100"></div>
-            <div className="w-14 h-14 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-6 relative z-10">
-              <Stethoscope className="w-7 h-7" />
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group md:col-span-1 sm:col-span-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-rose-100"></div>
+              <div className="w-14 h-14 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                <Stethoscope className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Docteur Plante</h3>
+              <p className="text-stone-500 leading-relaxed font-medium relative z-10">
+                Une feuille jaune ? Une tache suspecte ? Prenez une photo et obtenez un diagnostic médical et un plan de sauvetage.
+              </p>
             </div>
-            <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Docteur Plante</h3>
-            <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-              Une feuille jaune ? Une tache suspecte ? Prenez une photo et obtenez un diagnostic médical et un plan de sauvetage.
-            </p>
-          </div>
 
-        </section>
+          </section>
 
-        {/* NOUVELLE SECTION : TÉMOIGNAGE / RÉASSURANCE */}
-        <section className="mt-32 max-w-3xl mx-auto text-center px-4">
-          <div className="flex items-center justify-center gap-1 mb-6 text-amber-400">
-            <Star className="w-6 h-6 fill-current" />
-            <Star className="w-6 h-6 fill-current" />
-            <Star className="w-6 h-6 fill-current" />
-            <Star className="w-6 h-6 fill-current" />
-            <Star className="w-6 h-6 fill-current" />
-          </div>
-          <blockquote className="text-2xl md:text-3xl font-semibold text-stone-800 leading-tight mb-6">
-            "Je tuais même mes cactus. Depuis que j'utilise StudioPlant, mon appartement ressemble enfin à une vraie jungle urbaine."
-          </blockquote>
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-sm">S</div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-stone-800">Sarah M.</p>
-              <p className="text-xs text-stone-500 font-medium">Débutante repentie</p>
+          {/* NOUVELLE SECTION : TÉMOIGNAGE / RÉASSURANCE */}
+          <section className="mt-32 max-w-3xl mx-auto text-center px-4">
+            <div className="flex items-center justify-center gap-1 mb-6 text-amber-400">
+              <Star className="w-6 h-6 fill-current" />
+              <Star className="w-6 h-6 fill-current" />
+              <Star className="w-6 h-6 fill-current" />
+              <Star className="w-6 h-6 fill-current" />
+              <Star className="w-6 h-6 fill-current" />
             </div>
-          </div>
-        </section>
+            <blockquote className="text-2xl md:text-3xl font-semibold text-stone-800 leading-tight mb-6">
+              "Je tuais même mes cactus. Depuis que j'utilise StudioPlant, mon appartement ressemble enfin à une vraie jungle urbaine."
+            </blockquote>
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-sm">S</div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-stone-800">Sarah M.</p>
+                <p className="text-xs text-stone-500 font-medium">Débutante repentie</p>
+              </div>
+            </div>
+          </section>
 
-        {/* BOTTOM CTA AVEC TEXTURE BRUITÉE (NOISE) */}
-        <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20">
-          {/* TEXTURE 2 : Effet grain/bruit SVG pour un rendu "matière" premium */}
-          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-          
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full"></div>
-          
-          <div className="relative z-10 max-w-xl mx-auto">
-            <Leaf className="w-12 h-12 text-emerald-400 mx-auto mb-6" />
-            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
-              Prêt à avoir la main verte ?
-            </h2>
-            <p className="text-emerald-100/80 mb-10 text-lg font-medium">
-              Rejoignez l'application et transformez votre intérieur en un véritable écosystème végétal.
-            </p>
-            <Button size="lg" className="w-full sm:w-auto h-14 px-10 rounded-full bg-white text-emerald-950 hover:bg-stone-100 hover:scale-105 font-extrabold text-lg transition-all active:scale-95 shadow-xl" asChild>
-              <Link href="/auth/login">
-                Démarrer gratuitement
-              </Link>
-            </Button>
-          </div>
-        </section>
+          {/* BOTTOM CTA AVEC TEXTURE BRUITÉE (NOISE) */}
+          <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20">
+            {/* TEXTURE 2 : Effet grain/bruit SVG */}
+            <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
+            
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full"></div>
+            
+            <div className="relative z-10 max-w-xl mx-auto">
+              <Leaf className="w-12 h-12 text-emerald-400 mx-auto mb-6" />
+              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
+                Prêt à avoir la main verte ?
+              </h2>
+              <p className="text-emerald-100/80 mb-10 text-lg font-medium">
+                Rejoignez l'application et transformez votre intérieur en un véritable écosystème végétal.
+              </p>
+              <Button size="lg" className="w-full sm:w-auto h-14 px-10 rounded-full bg-white text-emerald-950 hover:bg-stone-100 hover:scale-105 font-extrabold text-lg transition-all active:scale-95 shadow-xl" asChild>
+                <Link href="/auth/login">
+                  Démarrer gratuitement
+                </Link>
+              </Button>
+            </div>
+          </section>
 
+        </div>
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-stone-200/50 mt-12 py-8 text-center text-stone-400 text-sm font-medium">
+      <footer className="border-t border-stone-200/50 mt-12 py-8 text-center text-stone-400 text-sm font-medium relative z-10 bg-[#FDFCF8]">
         <p>© {new Date().getFullYear()} StudioPlant. Conçu avec amour et beaucoup d'eau.</p>
       </footer>
     </div>
