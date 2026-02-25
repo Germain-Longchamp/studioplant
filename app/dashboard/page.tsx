@@ -4,6 +4,7 @@ import { Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets 
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "./PlantCard";
+import QuickAnalysis from "./QuickAnalysis";
 
 const getSeasonInfo = () => {
   const month = new Date().getMonth();
@@ -144,6 +145,11 @@ export default async function DashboardPage() {
             </div>
           )}
         </section>
+
+        <section>
+          <QuickAnalysis />
+        </section>
+
       </main>
 
       <BottomNav />
