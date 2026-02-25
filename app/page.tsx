@@ -127,15 +127,13 @@ export default function Home() {
               {/* Le wrapper qui sera animé (scale, rotation, opacity) */}
               <div ref={imageWrapperRef} className="relative w-[90%] max-w-[1000px] aspect-[16/10] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/20 border border-stone-200/50 bg-[#FDFCF8]">
                  
-                 {/* REMPLACE '/app-mockup.png' PAR TON VRAI FICHIER DANS PUBLIC */}
-                 {/* J'utilise un placeholder pour l'instant */}
                  <Image 
-                    src="https://placehold.co/1200x750/064e3b/ffffff?text=Visuel+de+l'application+StudioPlant&font=montserrat"
-                    alt="Aperçu de l'application StudioPlant"
-                    fill
-                    className="object-cover"
-                    priority
-                 />
+                     src="/app-mockup.png"
+                     alt="Aperçu de l'application StudioPlant"
+                     fill
+                     className="object-cover"
+                     priority
+                  />
                  
                  {/* Petit effet de reflet par dessus l'image */}
                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none mix-blend-overlay"></div>
