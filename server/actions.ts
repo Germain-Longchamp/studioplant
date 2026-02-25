@@ -265,6 +265,64 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
   }
 }
 
+// ANALYSE RAPIDE EN JARDINERIE (SCANNER)
+export async function quickAnalyzePlant(formData: FormData) {
+  try {
+    const file = formData.get("image") as File;
+    if (!file) return { error: "Aucune image fournie." };
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString("base64");
+    const mimeType = file.type;
+
+    // Récupération du contexte utilisateur pour le "Match"
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const meta = user?.user_metadata || {};
+    
+    const contextPrompt = meta.home_type ? `
+      CONTEXTE DE LA MAISON DU CLIENT :
+      Habitation : ${meta.home_type}
+      Luminosité : ${meta.light_level}
+      Orientation : ${meta.orientation}
+    ` : "Le client n'a pas renseigné son environnement.";
+
+    const prompt = `
+      Tu es un expert en botanique aidant un client en pleine jardinerie. Le client vient de prendre en photo cette plante.
+      Fais une identification rapide et donne-lui les informations clés pour qu'il décide de l'acheter ou non. Pas de blabla, sois direct et visuel.
+      
+      ${contextPrompt}
+
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code) :
+      {
+        "name": "Nom commun",
+        "species": "Nom scientifique",
+        "robustness": 8, // Une note sur 10 de robustesse (1 = meurt très vite, 10 = increvable pour un débutant)
+        "robustness_comment": "Explication très courte sur la note (ex: Pardonne les oublis d'eau).",
+        "light": "Exigence en lumière (court)",
+        "water": "Exigence en eau (court)",
+        "toxicity": "Toxique pour animaux ? (Oui / Non / Un peu)",
+        "match_comment": "En une phrase, est-ce que cette plante est adaptée au 'CONTEXTE DE LA MAISON DU CLIENT' ?"
+      }
+      Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "", "robustness": 0, "robustness_comment": "Ceci n'est pas une plante", "light": "", "water": "", "toxicity": "", "match_comment": ""}
+    `;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent([
+      prompt,
+      { inlineData: { data: base64Image, mimeType } }
+    ]);
+
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    return { success: true, data: JSON.parse(cleanedText) };
+  } catch (error) {
+    console.error("Scan error:", error);
+    return { error: "Analyse impossible. Veuillez réessayer." };
+  }
+}
+
+
 // ARROSER LA PLANTE (Sans retour pour TS)
 export async function waterPlant(plantId: string, currentHistory: string[] = []) {
   try {
