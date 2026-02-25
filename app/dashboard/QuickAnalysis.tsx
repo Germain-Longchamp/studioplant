@@ -151,10 +151,10 @@ export default function QuickAnalysis() {
         </div>
         <div className="text-left relative z-10 flex-1">
           <h3 className="font-bold text-white text-base leading-tight">
-            {isPending ? "Analyse en cours..." : "Scan en jardinerie"}
+            {isPending ? "Analyse en cours..." : "Scan rapide"}
           </h3>
           <p className="text-stone-300 text-xs font-medium mt-0.5">
-            {isPending ? "Recherche de la plante..." : "Analysez une plante avant achat"}
+            {isPending ? "Recherche de la plante..." : "Analysez une plante"}
           </p>
         </div>
       </button>
