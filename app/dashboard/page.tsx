@@ -112,6 +112,10 @@ export default async function DashboardPage() {
           </div>
         </section>
 
+        <section>
+          <QuickAnalysis />
+        </section>
+
         {/* LISTE : À ARROSER */}
         <section>
           <div className="flex items-center gap-2 mb-4">
@@ -146,9 +150,7 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section>
-          <QuickAnalysis />
-        </section>
+
 
       </main>
 
