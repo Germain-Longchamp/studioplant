@@ -19,34 +19,34 @@ export default function Home() {
 
     let ctx = gsap.context(() => {
       
-      // 1. L'ANIMATION : Elle se joue PENDANT que l'image remonte à l'écran
+      // 1. L'ANIMATION : Ultra nerveuse, commence dès le premier coup de molette
       gsap.fromTo(imageWrapperRef.current, 
         {
-          scale: 0.5,    // Part d'encore plus petit
+          scale: 0.3,    // Part de très petit
           opacity: 0,    
-          y: 200,        // Part de bien plus bas
-          rotationX: 20, // Effet 3D incliné
+          y: 250,        // Part de bien plus bas
+          rotationX: 25, // Incliné
         },
         {
-          scale: 1,      // Taille gigantesque atteinte
+          scale: 1,      
           opacity: 1,    
           y: 0,          
           rotationX: 0,  
           ease: "power2.out", 
           scrollTrigger: {
             trigger: containerRef.current,
-            start: "top 80%", // L'animation démarre dès que l'image pointe le bout de son nez en bas !
-            end: "top top",   // L'animation se termine pile quand elle arrive en haut
-            scrub: 0.2,       // Fluide et réactif
+            start: "top 100%", // Démarre EXACTEMENT quand le conteneur entre en bas de l'écran (soit au premier scroll)
+            end: "top 30%",    // Se termine très vite
+            scrub: 0.1,        // Extrêmement réactif
           }
         }
       );
 
-      // 2. LE BLOCAGE (PIN) : Une fois l'animation finie, on fige l'image un court instant
+      // 2. LE BLOCAGE (PIN) : Très court pour ne pas frustrer l'utilisateur
       ScrollTrigger.create({
         trigger: containerRef.current,
-        start: "top top", // Commence le blocage quand l'image est en haut
-        end: "+=50%",     // Reste bloqué pendant un court défilement (50% de l'écran)
+        start: "top top", 
+        end: "+=30%", // Le blocage ne dure que 30% d'un écran, juste pour marquer le coup
         pin: true,
       });
 
@@ -59,9 +59,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
       
-      <div className="absolute inset-0 bg-[radial-gradient(#d6d3d1_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none -z-20"></div>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-40 right-0 w-[400px] h-[400px] bg-amber-200/20 blur-[100px] rounded-full pointer-events-none -z-10" />
+      {/* TEXTURE DE FOND : Grille architecturale fondue vers le bas */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none -z-20"></div>
+      
+      {/* HALO CENTRAL : Casse l'effet "tout blanc" du fond */}
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-tr from-emerald-100/60 to-emerald-50/20 blur-[100px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-40 right-0 w-[400px] h-[400px] bg-amber-200/10 blur-[100px] rounded-full pointer-events-none -z-10" />
 
       <header className="absolute top-0 w-full px-6 py-6 flex items-center justify-between z-50 max-w-5xl left-1/2 -translate-x-1/2">
         <div className="flex items-center gap-2 text-emerald-800 font-bold text-xl tracking-tight">
@@ -78,17 +81,17 @@ export default function Home() {
 
       <main>
         
-        {/* HERO SECTION : J'ai réduit le pb-16 à pb-8 pour rapprocher l'image du texte */}
-        <section className="max-w-5xl mx-auto px-6 pt-32 pb-8 md:pt-40 md:pb-12 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" /> Propulsé par l'IA
+        {/* HERO SECTION : Espacement du bas réduit à pb-0 pour coller à l'animation */}
+        <section className="max-w-5xl mx-auto px-6 pt-32 pb-0 md:pt-40 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé par l'IA
           </div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold text-stone-900 tracking-tight leading-[1.1] mb-6 drop-shadow-sm">
             Ne laissez plus vos plantes <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">mourir de soif.</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-stone-500 mb-10 max-w-2xl leading-relaxed font-medium">
+          <p className="text-lg md:text-xl text-stone-600 mb-10 max-w-2xl leading-relaxed font-medium">
             Prenez une photo. L'IA identifie votre plante, s'adapte à votre intérieur et crée son calendrier d'arrosage sur-mesure. C'est aussi simple que ça.
           </p>
 
@@ -98,7 +101,7 @@ export default function Home() {
                 Créer ma jungle <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 rounded-full bg-white border-stone-200 text-stone-700 font-bold text-lg hover:bg-stone-50 transition-all active:scale-95" asChild>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/80 backdrop-blur-sm border-stone-200 text-stone-700 font-bold text-lg hover:bg-white transition-all active:scale-95 shadow-sm" asChild>
               <Link href="#features">
                 Découvrir
               </Link>
@@ -106,11 +109,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION ANIMATION : La div fait pile la taille de l'écran (h-screen) */}
-        <div ref={containerRef} className="relative w-full h-screen">
+        {/* SECTION ANIMATION : La div prend juste 100vh pour aller droit au but */}
+        <div ref={containerRef} className="relative w-full h-screen mt-8">
            <div className="absolute top-0 w-full h-full flex items-center justify-center overflow-hidden perspective-[1200px]">
               
-              {/* IMAGE WRAPPER : Format XXL conservé */}
+              {/* IMAGE WRAPPER */}
               <div ref={imageWrapperRef} className="relative w-[95%] max-w-[420px] sm:max-w-[550px] md:max-w-[700px] h-[85vh] sm:h-[95vh]">
                  <Image 
                     src="/app-mockup.png"
