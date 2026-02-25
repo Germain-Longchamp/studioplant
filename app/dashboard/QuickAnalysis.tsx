@@ -64,7 +64,6 @@ export default function QuickAnalysis() {
         {/* CORPS SCROLLABLE */}
         <div className="p-6 space-y-6 overflow-y-auto">
           
-          {/* Note de Robustesse avec barre de progression */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
@@ -83,7 +82,6 @@ export default function QuickAnalysis() {
 
           <div className="h-px w-full bg-stone-100" />
 
-          {/* Besoins (Lumière / Eau) */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-amber-50/50 border border-amber-100/50 p-3 rounded-2xl">
               <Sun className="w-4 h-4 text-amber-500 mb-1.5" />
@@ -97,7 +95,6 @@ export default function QuickAnalysis() {
             </div>
           </div>
 
-          {/* Toxicité & Match avec l'appart */}
           <div className="space-y-3">
             <div className="flex items-start gap-3 bg-stone-50 p-3 rounded-2xl">
               <HeartPulse className="w-4 h-4 text-stone-400 shrink-0 mt-0.5" />
@@ -118,7 +115,6 @@ export default function QuickAnalysis() {
             )}
           </div>
 
-          {/* Bouton pour fermer uniquement (pas de sauvegarde) */}
           <Button onClick={() => setAnalysisResult(null)} className="w-full h-12 shrink-0 rounded-[1.25rem] bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold active:scale-95 transition-all shadow-none">
             Fermer l'analyse
           </Button>
@@ -139,22 +135,21 @@ export default function QuickAnalysis() {
         className="hidden"
       />
 
-      {/* BOUTON WIDGET SUR LE DASHBOARD */}
+      {/* NOUVEAU DESIGN : Très doux, clair et harmonieux */}
       <button 
         onClick={handleTriggerClick}
         disabled={isPending}
-        className="w-full relative overflow-hidden group bg-gradient-to-r from-stone-800 to-stone-900 rounded-[1.5rem] p-4 flex items-center gap-4 shadow-lg shadow-stone-900/20 transition-transform active:scale-95"
+        className="w-full bg-white rounded-[2rem] p-5 flex items-center gap-4 shadow-lg shadow-stone-200/40 border border-stone-100/60 transition-all hover:shadow-xl hover:border-emerald-200 active:scale-95 group"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/10 transition-colors"></div>
-        <div className="p-3 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl text-white shrink-0 relative z-10">
-          {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <ScanLine className="w-5 h-5" />}
+        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 transition-transform group-hover:scale-105">
+          {isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <ScanLine className="w-6 h-6" />}
         </div>
-        <div className="text-left relative z-10 flex-1">
-          <h3 className="font-bold text-white text-base leading-tight">
-            {isPending ? "Analyse en cours..." : "Scan rapide"}
+        <div className="text-left flex-1">
+          <h3 className="font-bold text-stone-800 text-lg leading-tight">
+            {isPending ? "Analyse en cours..." : "Scan en jardinerie"}
           </h3>
-          <p className="text-stone-300 text-xs font-medium mt-0.5">
-            {isPending ? "Recherche de la plante..." : "Analysez une plante"}
+          <p className="text-stone-500 text-sm font-medium mt-0.5">
+            {isPending ? "Recherche de la plante..." : "Analysez une plante avant achat"}
           </p>
         </div>
       </button>
