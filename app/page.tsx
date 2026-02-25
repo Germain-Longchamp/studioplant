@@ -19,33 +19,36 @@ export default function Home() {
 
     let ctx = gsap.context(() => {
       
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top top", 
-          // SCROLL ULTRA-COURT : L'animation se joue sur un très court espace
-          end: "+=40%", 
-          pin: true,
-          // RÉACTIVITÉ MAXIMALE : Le scrub à 0.2 colle presque au doigt/à la souris
-          scrub: 0.2, 
-        }
-      });
-
-      tl.fromTo(imageWrapperRef.current, 
+      // 1. L'ANIMATION : Elle se joue PENDANT que l'image remonte à l'écran
+      gsap.fromTo(imageWrapperRef.current, 
         {
-          scale: 0.6,    // Part de beaucoup plus petit
+          scale: 0.5,    // Part d'encore plus petit
           opacity: 0,    
-          y: 150,        // Part de beaucoup plus bas
-          rotationX: 15, // Incliné vers l'arrière
+          y: 200,        // Part de bien plus bas
+          rotationX: 20, // Effet 3D incliné
         },
         {
-          scale: 1,      // Arrive à 100% (et la base est énorme)
+          scale: 1,      // Taille gigantesque atteinte
           opacity: 1,    
           y: 0,          
           rotationX: 0,  
-          ease: "power3.out", // Courbe d'animation plus agressive et dynamique
+          ease: "power2.out", 
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top 80%", // L'animation démarre dès que l'image pointe le bout de son nez en bas !
+            end: "top top",   // L'animation se termine pile quand elle arrive en haut
+            scrub: 0.2,       // Fluide et réactif
+          }
         }
       );
+
+      // 2. LE BLOCAGE (PIN) : Une fois l'animation finie, on fige l'image un court instant
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: "top top", // Commence le blocage quand l'image est en haut
+        end: "+=50%",     // Reste bloqué pendant un court défilement (50% de l'écran)
+        pin: true,
+      });
 
     }, containerRef);
 
@@ -75,7 +78,8 @@ export default function Home() {
 
       <main>
         
-        <section className="max-w-5xl mx-auto px-6 pt-32 pb-16 md:pt-40 md:pb-16 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+        {/* HERO SECTION : J'ai réduit le pb-16 à pb-8 pour rapprocher l'image du texte */}
+        <section className="max-w-5xl mx-auto px-6 pt-32 pb-8 md:pt-40 md:pb-12 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" /> Propulsé par l'IA
           </div>
@@ -102,16 +106,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION ANIMATION : Hauteur réduite à 110vh (à peine plus que l'écran pour un flow continu) */}
-        <div ref={containerRef} className="relative w-full h-[110vh] bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
-           <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden perspective-[1200px]">
+        {/* SECTION ANIMATION : La div fait pile la taille de l'écran (h-screen) */}
+        <div ref={containerRef} className="relative w-full h-screen">
+           <div className="absolute top-0 w-full h-full flex items-center justify-center overflow-hidden perspective-[1200px]">
               
-              {/* IMAGE WRAPPER : GIGANTESQUE !
-                  - Mobile : Jusqu'à 420px de large
-                  - Tablette : Jusqu'à 550px
-                  - Desktop : Jusqu'à 700px !
-                  - Hauteur : 85vh (mobile) à 95vh (desktop)
-              */}
+              {/* IMAGE WRAPPER : Format XXL conservé */}
               <div ref={imageWrapperRef} className="relative w-[95%] max-w-[420px] sm:max-w-[550px] md:max-w-[700px] h-[85vh] sm:h-[95vh]">
                  <Image 
                     src="/app-mockup.png"
@@ -125,9 +124,10 @@ export default function Home() {
            </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8]">
+        {/* RESTE DU CONTENU */}
+        <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8] pt-12 md:pt-20">
 
-          <section className="mt-8 md:mt-16">
+          <section>
             <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
                 <div className="flex flex-col items-center text-center pt-4 md:pt-0">
