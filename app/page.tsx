@@ -8,76 +8,64 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// On enregistre le plugin ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
-  // Refs pour cibler les éléments à animer avec GSAP
   const containerRef = useRef<HTMLDivElement>(null);
   const imageWrapperRef = useRef<HTMLDivElement>(null);
 
-  // useLayoutEffect est préférable à useEffect pour les animations GSAP dans Next.js
-  // pour éviter les "sauts" visuels au chargement.
   useLayoutEffect(() => {
     if (!containerRef.current || !imageWrapperRef.current) return;
 
-    // Le contexte GSAP permet un nettoyage facile des animations
     let ctx = gsap.context(() => {
       
-      // Création de la timeline d'animation
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: containerRef.current, // L'élément qui déclenche le scroll
-          start: "top top", // Commence quand le haut du conteneur touche le haut de l'écran
-          end: "+=200%", // L'animation dure l'équivalent de 2 hauteurs d'écran (200vh)
-          pin: true, // C'EST LA CLÉ : Bloque le conteneur pendant le scroll
-          scrub: 1, // Lie l'animation à la barre de scroll avec une fluidité de 1s
-          // markers: true, // Décommente pour voir les repères de début/fin de l'animation (utile pour le debug)
+          trigger: containerRef.current,
+          start: "top top", 
+          // On réduit considérablement le temps de blocage (de 200% à 100%)
+          end: "+=100%", 
+          pin: true,
+          // Scrub plus réactif
+          scrub: 0.5, 
         }
       });
 
-      // L'animation elle-même
       tl.fromTo(imageWrapperRef.current, 
         {
-          scale: 0.8,    // Départ : image légèrement plus petite
-          opacity: 0,    // Départ : transparente
-          y: 100,        // Départ : un peu plus bas
-          rotationX: 15, // Départ : légèrement inclinée en arrière (effet 3D)
+          scale: 0.85,    
+          opacity: 0,    
+          y: 80,        
+          rotationX: 10, 
         },
         {
-          scale: 1,      // Arrivée : taille normale
-          opacity: 1,    // Arrivée : opaque
-          y: 0,          // Arrivée : position centrée
-          rotationX: 0,  // Arrivée : droite
-          ease: "power2.inOut", // Une courbe d'accélération douce
+          scale: 1,      
+          opacity: 1,    
+          y: 0,          
+          rotationX: 0,  
+          ease: "power2.out", // Animation plus vive
           duration: 1
         }
       );
 
-    }, containerRef); // Scope le sélecteur au conteneur
+    }, containerRef);
 
-    return () => ctx.revert(); // Nettoyage à la destruction du composant
+    return () => ctx.revert(); 
   }, []);
 
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
       
-      {/* TEXTURE 1 : Grille pointillée subtile */}
       <div className="absolute inset-0 bg-[radial-gradient(#d6d3d1_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none -z-20"></div>
-
-      {/* EFFETS DE LUMIÈRE EN FOND */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute top-40 right-0 w-[400px] h-[400px] bg-amber-200/20 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      {/* HEADER */}
       <header className="absolute top-0 w-full px-6 py-6 flex items-center justify-between z-50 max-w-5xl left-1/2 -translate-x-1/2">
         <div className="flex items-center gap-2 text-emerald-800 font-bold text-xl tracking-tight">
           <Leaf className="w-6 h-6 text-emerald-500" />
           StudioPlant
         </div>
-        
-        {/* BOUTON CONNEXION MIS EN AVANT */}
         <Button 
           className="font-bold bg-white text-stone-700 border border-stone-200/60 shadow-sm hover:shadow-md hover:bg-stone-50 hover:text-emerald-700 rounded-full px-6 h-10 transition-all active:scale-95" 
           asChild
@@ -88,8 +76,7 @@ export default function Home() {
 
       <main>
         
-        {/* HERO SECTION (Ajout de pt/pb pour l'espacement) */}
-        <section className="max-w-5xl mx-auto px-6 pt-32 pb-16 md:pt-48 md:pb-24 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <section className="max-w-5xl mx-auto px-6 pt-32 pb-16 md:pt-40 md:pb-16 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" /> Propulsé par l'IA
           </div>
@@ -116,40 +103,32 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ================================================================ */}
-        {/* NOUVELLE SECTION : ANIMATION SCROLL (Type Squadeasy)             */}
-        {/* ================================================================ */}
-        {/* Ce conteneur est très haut (300vh) mais son contenu sera "épinglé" 
-            (sticky) pendant le scroll grâce à GSAP.
-        */}
-        <div ref={containerRef} className="relative w-full h-[300vh] bg-gradient-to-b from-transparent via-emerald-50/50 to-transparent">
+        {/* SECTION ANIMATION : Beaucoup plus courte (150vh au lieu de 300vh) */}
+        <div ref={containerRef} className="relative w-full h-[150vh] bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
            <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden perspective-[1000px]">
-              {/* Le wrapper qui sera animé (scale, rotation, opacity) */}
-              <div ref={imageWrapperRef} className="relative w-[90%] max-w-[1000px] aspect-[16/10] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/20 border border-stone-200/50 bg-[#FDFCF8]">
-                 
+              
+              {/* IMAGE WRAPPER : Adieu le fond blanc et les bordures ! 
+                  On limite la largeur à la taille d'un téléphone (max-w-[320px] sur mobile, 400px sur desktop)
+              */}
+              <div ref={imageWrapperRef} className="relative w-[85%] max-w-[320px] sm:max-w-[400px] h-[70vh] sm:h-[80vh]">
                  <Image 
-                     src="/app-mockup.png"
-                     alt="Aperçu de l'application StudioPlant"
-                     fill
-                     className="object-cover"
-                     priority
-                  />
-                 
-                 {/* Petit effet de reflet par dessus l'image */}
-                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none mix-blend-overlay"></div>
+                    src="/app-mockup.png"
+                    alt="Aperçu de l'application StudioPlant"
+                    fill
+                    // object-contain : L'image n'est JAMAIS coupée
+                    // drop-shadow-2xl : Crée une magnifique ombre portée directement depuis les pixels de ton PNG
+                    className="object-contain drop-shadow-2xl"
+                    priority
+                 />
               </div>
+
            </div>
         </div>
-        {/* ================================================================ */}
-        {/* FIN ANIMATION SCROLL                                             */}
-        {/* ================================================================ */}
 
 
-        {/* WRAPPER POUR LE RESTE DU CONTENU */}
         <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-10 bg-[#FDFCF8]">
 
-          {/* SECTION : CHIFFRES CLÉS */}
-          <section className="mt-16 md:mt-24">
+          <section className="mt-12 md:mt-24">
             <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
                 <div className="flex flex-col items-center text-center pt-4 md:pt-0">
@@ -177,7 +156,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* BENTO GRID (FEATURES) */}
           <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
             
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
@@ -215,7 +193,6 @@ export default function Home() {
 
           </section>
 
-          {/* NOUVELLE SECTION : TÉMOIGNAGE / RÉASSURANCE */}
           <section className="mt-32 max-w-3xl mx-auto text-center px-4">
             <div className="flex items-center justify-center gap-1 mb-6 text-amber-400">
               <Star className="w-6 h-6 fill-current" />
@@ -236,9 +213,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* BOTTOM CTA AVEC TEXTURE BRUITÉE (NOISE) */}
           <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20">
-            {/* TEXTURE 2 : Effet grain/bruit SVG */}
             <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
             
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full"></div>
@@ -262,7 +237,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* FOOTER */}
       <footer className="border-t border-stone-200/50 mt-12 py-8 text-center text-stone-400 text-sm font-medium relative z-10 bg-[#FDFCF8]">
         <p>© {new Date().getFullYear()} StudioPlant. Conçu avec amour et beaucoup d'eau.</p>
       </footer>
