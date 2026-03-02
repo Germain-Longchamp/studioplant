@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MoreVertical, Sparkles, Trash2, X, Loader2 } from "lucide-react";
+import { MoreVertical, Sparkles, Trash2, X, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { updatePlantAdvice, deletePlant } from "@/server/actions";
 
 export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imageUrl: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false); // Nouvel état pour la confirmation
+  
   const [isPendingUpdate, startTransitionUpdate] = useTransition();
   const [isPendingDelete, startTransitionDelete] = useTransition();
 
@@ -22,17 +24,27 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
     });
   };
 
-  const handleDelete = () => {
-    if (!confirm("Voulez-vous vraiment supprimer cette plante de votre jardin ?")) return;
+  // On lance la vraie suppression uniquement après la modale
+  const executeDelete = () => {
     startTransitionDelete(async () => {
       const result = await deletePlant(plantId, imageUrl);
-      if (result?.error) toast.error(result.error);
+      if (result?.error) {
+        toast.error(result.error);
+        setShowConfirm(false);
+      }
+      // Si succès, l'action serveur redirige automatiquement vers le dashboard
     });
+  };
+
+  // Gère la fermeture complète du menu
+  const closeAll = () => {
+    setIsOpen(false);
+    setShowConfirm(false);
   };
 
   return (
     <>
-      {/* BOUTON MIS À JOUR : Contraste sombre pour rester visible au scroll */}
+      {/* BOUTON D'OUVERTURE */}
       <Button 
         variant="ghost" 
         size="icon" 
@@ -42,12 +54,13 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
         <MoreVertical className="w-6 h-6" />
       </Button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-stone-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setIsOpen(false)}>
-          <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2rem] p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-300" onClick={e => e.stopPropagation()}>
+      {/* MENU DES OPTIONS (Affiché uniquement si on n'est pas en mode confirmation) */}
+      {isOpen && !showConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-stone-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={closeAll}>
+          <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2.5rem] p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-8 duration-300" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-stone-800 text-xl">Options de la plante</h3>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-stone-400 hover:text-stone-600 hover:bg-stone-200/50 rounded-full">
+              <Button variant="ghost" size="icon" onClick={closeAll} className="text-stone-400 hover:text-stone-600 hover:bg-stone-200/50 rounded-full transition-colors">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -57,10 +70,52 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
               {isPendingUpdate ? "Mise à jour en cours..." : "Rafraîchir les conseils"}
             </Button>
 
-            <Button onClick={handleDelete} disabled={isPendingDelete || isPendingUpdate} className="w-full justify-start h-14 rounded-2xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-base transition-colors shadow-sm">
-              {isPendingDelete ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <Trash2 className="w-5 h-5 mr-3" />}
+            {/* Au clic, on ouvre la modale de confirmation au lieu du vieux confirm() */}
+            <Button onClick={() => setShowConfirm(true)} disabled={isPendingDelete || isPendingUpdate} className="w-full justify-start h-14 rounded-2xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-base transition-colors shadow-sm">
+              <Trash2 className="w-5 h-5 mr-3" />
               Supprimer la plante
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE DE CONFIRMATION DE SUPPRESSION */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200" onClick={closeAll}>
+          <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+            
+            <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-sm border border-rose-100">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            
+            <h3 className="font-extrabold text-stone-900 text-2xl tracking-tight mb-2">
+              Êtes-vous sûr ?
+            </h3>
+            
+            <p className="text-stone-500 text-sm mb-8 leading-relaxed font-medium">
+              Cette plante et tout son historique d'arrosage seront définitivement effacés de votre jardin.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <Button 
+                onClick={executeDelete} 
+                disabled={isPendingDelete} 
+                className="w-full h-14 rounded-[1.25rem] bg-rose-500 hover:bg-rose-600 text-white font-bold text-base shadow-lg shadow-rose-500/20 active:scale-95 transition-all"
+              >
+                {isPendingDelete ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                {isPendingDelete ? "Suppression..." : "Oui, supprimer définitivement"}
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowConfirm(false)} 
+                disabled={isPendingDelete}
+                className="w-full h-12 rounded-[1.25rem] text-stone-500 font-bold hover:bg-stone-100 hover:text-stone-700 active:scale-95 transition-all"
+              >
+                Annuler
+              </Button>
+            </div>
+
           </div>
         </div>
       )}
