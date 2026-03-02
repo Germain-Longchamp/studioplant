@@ -3,14 +3,19 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { ScanLine, Loader2, X, ShieldCheck, Sun, Droplets, HeartPulse, Sparkles } from "lucide-react";
+import { ScanLine, Loader2, X, ShieldCheck, Sun, Droplets, HeartPulse, Sparkles, History, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { quickAnalyzePlant } from "@/server/actions";
+import { quickAnalyzePlant, getQuickScansHistory } from "@/server/actions";
 
 export default function QuickAnalysis() {
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // États pour les modales
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -39,17 +44,36 @@ export default function QuickAnalysis() {
     });
   };
 
+  // Charger l'historique
+  const handleOpenHistory = async () => {
+    setShowHistory(true);
+    setIsLoadingHistory(true);
+    const result = await getQuickScansHistory();
+    if (result.success && result.data) {
+      setHistoryData(result.data);
+    } else {
+      toast.error("Impossible de charger l'historique.");
+    }
+    setIsLoadingHistory(false);
+  };
+
+  // Clic sur un élément de l'historique
+  const handleHistoryClick = (scan: any) => {
+    setShowHistory(false);
+    setAnalysisResult(scan); // Réouvre la belle fiche de score
+  };
+
   const getRobustnessColor = (score: number) => {
     if (score >= 8) return "bg-emerald-500";
     if (score >= 5) return "bg-amber-400";
     return "bg-rose-500";
   };
 
+  // MODALE : FICHE DE SCORE (inchangée)
   const popupContent = analysisResult ? (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200" onClick={() => setAnalysisResult(null)}>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200" onClick={() => setAnalysisResult(null)}>
       <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2rem] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
         
-        {/* EN-TÊTE FIXE */}
         <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 p-6 relative shrink-0">
           <Button variant="ghost" size="icon" onClick={() => setAnalysisResult(null)} className="absolute top-4 right-4 text-emerald-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5" />
@@ -61,9 +85,7 @@ export default function QuickAnalysis() {
           <p className="text-emerald-300/80 font-medium italic text-sm mt-0.5">{analysisResult.species}</p>
         </div>
 
-        {/* CORPS SCROLLABLE */}
         <div className="p-6 space-y-6 overflow-y-auto">
-          
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
@@ -116,16 +138,67 @@ export default function QuickAnalysis() {
           </div>
 
           <Button onClick={() => setAnalysisResult(null)} className="w-full h-12 shrink-0 rounded-[1.25rem] bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold active:scale-95 transition-all shadow-none">
-            Fermer l'analyse
+            Fermer
           </Button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
+  // MODALE : HISTORIQUE
+  const historyContent = showHistory ? (
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-sm sm:p-5 animate-in fade-in duration-200" onClick={() => setShowHistory(false)}>
+      <div className="bg-[#FDFCF8] w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] sm:rounded-[2rem] rounded-t-[2rem] shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300 flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        
+        <div className="p-6 text-center relative border-b border-stone-100 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => setShowHistory(false)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full">
+            <X className="w-5 h-5" />
+          </Button>
+          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-600">
+            <History className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-stone-900 text-xl tracking-tight">Historique des scans</h3>
+        </div>
+
+        <div className="p-4 overflow-y-auto flex-1 bg-stone-50/50">
+          {isLoadingHistory ? (
+            <div className="flex flex-col items-center justify-center py-12 text-stone-400">
+              <Loader2 className="w-8 h-8 animate-spin mb-4 text-emerald-500" />
+              <p className="text-sm font-medium">Chargement de vos découvertes...</p>
+            </div>
+          ) : historyData.length === 0 ? (
+            <div className="text-center py-12 px-6">
+              <ScanLine className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+              <p className="text-stone-500 font-medium">Vous n'avez pas encore scanné de plantes. Rendez-vous en jardinerie !</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {historyData.map((scan) => (
+                <div 
+                  key={scan.id} 
+                  onClick={() => handleHistoryClick(scan)}
+                  className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all active:scale-[0.98] group"
+                >
+                  <div className="flex-1 min-w-0 pr-4">
+                    <h4 className="font-bold text-stone-800 truncate mb-0.5">{scan.name}</h4>
+                    <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wide">
+                      {new Date(scan.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} • Score : <span className={scan.robustness >= 8 ? 'text-emerald-500' : scan.robustness >= 5 ? 'text-amber-500' : 'text-rose-500'}>{scan.robustness}/10</span>
+                    </p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-emerald-50 text-stone-400 group-hover:text-emerald-600 transition-colors shrink-0">
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   ) : null;
 
   return (
-    <>
+    <div className="flex flex-col items-center">
       <input
         type="file"
         accept="image/*"
@@ -135,7 +208,7 @@ export default function QuickAnalysis() {
         className="hidden"
       />
 
-      {/* DESIGN INTERMÉDIAIRE : Fond vert pastel doux, icône vert vif pour accrocher l'œil */}
+      {/* BOUTON PRINCIPAL */}
       <button 
         onClick={handleTriggerClick}
         disabled={isPending}
@@ -149,12 +222,22 @@ export default function QuickAnalysis() {
             {isPending ? "Analyse en cours..." : "Scan rapide"}
           </h3>
           <p className="text-emerald-700/80 text-sm font-medium mt-0.5">
-            {isPending ? "Recherche de la plante..." : "Obtenez une analyse rapide d'une nouvelle plante"}
+            {isPending ? "Recherche de la plante..." : "Analysez une plante avant achat"}
           </p>
         </div>
       </button>
 
-      {mounted && analysisResult && createPortal(popupContent, document.body)}
-    </>
+      {/* NOUVEAU : BOUTON HISTORIQUE SOUS LE SCAN */}
+      <button 
+        onClick={handleOpenHistory}
+        className="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-emerald-700/60 hover:text-emerald-800 hover:bg-emerald-50/80 transition-all active:scale-95"
+      >
+        <History className="w-3.5 h-3.5" />
+        Voir l'historique des scans
+      </button>
+
+      {mounted && createPortal(popupContent, document.body)}
+      {mounted && createPortal(historyContent, document.body)}
+    </div>
   );
 }
