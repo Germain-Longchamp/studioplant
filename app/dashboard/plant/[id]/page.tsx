@@ -11,6 +11,7 @@ import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
 import SosFeature from "./SosFeature";
 import DetailWaterButton from "./DetailWaterButton";
+import SnoozeButton from "./SnoozeButton";
 
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
@@ -165,11 +166,9 @@ export default async function PlantDetailPage({
                 <div className="flex-1">
                   <DetailWaterButton plantId={plant.id} history={history} />
                 </div>
-                <form action={snoozeWatering.bind(null, plant.id, snoozeDays)}>
-                  <Button type="submit" variant="outline" className="w-full bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 rounded-[1.25rem] h-12 font-bold shadow-sm transition-all active:scale-95">
-                    +3 jours
-                  </Button>
-                </form>
+                <div className="flex-1">
+                  <SnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+                </div>
               </div>
 
               {plant.last_watered_at && (
