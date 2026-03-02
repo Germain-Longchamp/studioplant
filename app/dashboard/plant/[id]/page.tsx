@@ -10,6 +10,7 @@ import EnvironmentAccordion from "./EnvironmentAccordion";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
 import SosFeature from "./SosFeature";
+import DetailWaterButton from "./DetailWaterButton";
 
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
@@ -161,11 +162,9 @@ export default async function PlantDetailPage({
             <div className="px-5 pb-6 pt-1 text-stone-600 animate-in fade-in duration-300 space-y-5">
               
               <div className="flex gap-3">
-                <form action={waterPlant.bind(null, plant.id, history)} className="flex-1">
-                  <Button type="submit" className="w-full bg-emerald-800 hover:bg-emerald-900 text-white rounded-[1.25rem] shadow-lg shadow-emerald-900/20 h-12 font-bold transition-all active:scale-95">
-                    <Droplets className="w-4 h-4 mr-2" /> Arrosée
-                  </Button>
-                </form>
+                <div className="flex-1">
+                  <DetailWaterButton plantId={plant.id} history={history} />
+                </div>
                 <form action={snoozeWatering.bind(null, plant.id, snoozeDays)}>
                   <Button type="submit" variant="outline" className="w-full bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 rounded-[1.25rem] h-12 font-bold shadow-sm transition-all active:scale-95">
                     +3 jours
