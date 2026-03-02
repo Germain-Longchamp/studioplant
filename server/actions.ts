@@ -276,9 +276,10 @@ export async function quickAnalyzePlant(formData: FormData) {
     const base64Image = buffer.toString("base64");
     const mimeType = file.type;
 
-    // Récupération du contexte utilisateur pour le "Match"
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+    
     const meta = user?.user_metadata || {};
     
     const contextPrompt = meta.home_type ? `
@@ -298,8 +299,8 @@ export async function quickAnalyzePlant(formData: FormData) {
       {
         "name": "Nom commun",
         "species": "Nom scientifique",
-        "robustness": 8, // Une note sur 10 de robustesse (1 = meurt très vite, 10 = increvable pour un débutant)
-        "robustness_comment": "Explication très courte sur la note (ex: Pardonne les oublis d'eau).",
+        "robustness": 8, 
+        "robustness_comment": "Explication très courte sur la note.",
         "light": "Exigence en lumière (court)",
         "water": "Exigence en eau (court)",
         "toxicity": "Toxique pour animaux ? (Oui / Non / Un peu)",
@@ -315,10 +316,48 @@ export async function quickAnalyzePlant(formData: FormData) {
     ]);
 
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    return { success: true, data: JSON.parse(cleanedText) };
+    const parsedData = JSON.parse(cleanedText);
+
+    // NOUVEAU : Sauvegarde silencieuse dans la table quick_scans si ce n'est pas une erreur
+    if (parsedData.name && parsedData.name !== "Erreur") {
+      const { error: dbError } = await supabase.from("quick_scans").insert({
+        user_id: user.id,
+        name: parsedData.name,
+        species: parsedData.species,
+        robustness: parsedData.robustness,
+        robustness_comment: parsedData.robustness_comment,
+        light: parsedData.light,
+        water: parsedData.water,
+        toxicity: parsedData.toxicity,
+        match_comment: parsedData.match_comment
+      });
+      if (dbError) console.error("Erreur sauvegarde historique:", dbError);
+    }
+
+    return { success: true, data: parsedData };
   } catch (error) {
     console.error("Scan error:", error);
     return { error: "Analyse impossible. Veuillez réessayer." };
+  }
+}
+
+// RÉCUPÉRER L'HISTORIQUE DES SCANS RAPIDES
+export async function getQuickScansHistory() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { data, error } = await supabase
+      .from("quick_scans")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error("Fetch history error:", error);
+    return { error: "Impossible de récupérer l'historique." };
   }
 }
 
