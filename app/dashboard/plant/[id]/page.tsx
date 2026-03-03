@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-// J'ai rajouté les icônes manquantes (Globe2, ShieldCheck, Ruler, Layers, Sun)
-import { ArrowLeft, Droplets, AlignLeft, Info, LeafyGreen, ChevronDown, Calendar, Globe2, ShieldCheck, Ruler, Layers, Sun } from "lucide-react";
+import { ArrowLeft, Droplets, AlignLeft, Info, LeafyGreen, ChevronDown, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
@@ -12,6 +11,7 @@ import PlantMenu from "./PlantMenu";
 import SosFeature from "./SosFeature";
 import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
+import PlantIdentityModal from "./PlantIdentityModal"; // NOUVEL IMPORT
 
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
@@ -104,8 +104,8 @@ export default async function PlantDetailPage({
 
   const seasonAdvice = getSeasonAdvice();
 
-  // On vérifie si la plante a les nouvelles infos pour afficher le bloc
-  const hasQuickInfos = plant.origin || plant.robustness || plant.max_size || plant.ideal_substrate || plant.ideal_exposure;
+  // On vérifie si la plante a les nouvelles infos pour le passer à la modale
+  const hasQuickInfos = !!(plant.origin || plant.robustness || plant.max_size || plant.ideal_substrate || plant.ideal_exposure);
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] pb-32 font-sans text-stone-800 overflow-x-hidden">
@@ -135,7 +135,7 @@ export default async function PlantDetailPage({
 
         <div className="px-5 relative -mt-24 z-20 space-y-4">
           
-          <div className="mb-2 drop-shadow-sm">
+          <div className="mb-4 drop-shadow-sm">
             <h1 className="text-4xl font-extrabold text-stone-900 tracking-tight leading-none mb-1">
               {plant.name}
             </h1>
@@ -144,64 +144,8 @@ export default async function PlantDetailPage({
             </p>
           </div>
 
-          {/* ===== LE FAMEUX BLOC MANQUANT A ÉTÉ RÉINTÉGRÉ ICI ===== */}
-          {hasQuickInfos ? (
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              {plant.origin && (
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/50 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1 text-stone-400">
-                    <Globe2 className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Origine</span>
-                  </div>
-                  <span className="text-xs font-bold text-stone-800 leading-tight">{plant.origin}</span>
-                </div>
-              )}
-              {plant.robustness && (
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/50 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1 text-stone-400">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Robustesse</span>
-                  </div>
-                  <span className="text-xs font-bold text-stone-800 leading-tight">{plant.robustness}</span>
-                </div>
-              )}
-              {plant.max_size && (
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/50 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1 text-stone-400">
-                    <Ruler className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Taille max.</span>
-                  </div>
-                  <span className="text-xs font-bold text-stone-800 leading-tight">{plant.max_size}</span>
-                </div>
-              )}
-              {plant.ideal_exposure && (
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/50 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1 text-stone-400">
-                    <Sun className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Lumière</span>
-                  </div>
-                  <span className="text-xs font-bold text-stone-800 leading-tight">{plant.ideal_exposure}</span>
-                </div>
-              )}
-              {plant.ideal_substrate && (
-                <div className="col-span-2 bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/50 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1 text-stone-400">
-                    <Layers className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Substrat idéal</span>
-                  </div>
-                  <span className="text-xs font-bold text-stone-800 leading-tight">{plant.ideal_substrate}</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-amber-50/80 backdrop-blur-sm rounded-2xl p-4 border border-amber-100/60 mb-6 shadow-sm flex items-start gap-3">
-              <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs font-medium text-amber-800/80 leading-relaxed">
-                Votre fiche d'identité est incomplète. Cliquez sur les 3 points en haut à droite puis sur <strong>"Rafraîchir les conseils"</strong> pour que l'IA génère les infos !
-              </p>
-            </div>
-          )}
-          {/* ======================================================== */}
+          {/* ===== NOUVEAU BOUTON MODALE ===== */}
+          <PlantIdentityModal plant={plant} hasQuickInfos={hasQuickInfos} />
 
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
@@ -300,7 +244,6 @@ export default async function PlantDetailPage({
             </details>
           )}
 
-          {/* LA FEATURE SOS EST DÉSORMAIS PLACÉE ICI TOUT EN BAS */}
           <SosFeature plantId={plant.id} />
 
         </div>
