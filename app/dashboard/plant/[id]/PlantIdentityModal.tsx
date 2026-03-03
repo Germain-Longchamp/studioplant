@@ -9,7 +9,6 @@ export default function PlantIdentityModal({ plant, hasQuickInfos }: { plant: an
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Pour s'assurer que createPortal ne s'exécute que côté client
   useEffect(() => setMounted(true), []);
 
   const modalContent = isOpen ? (
@@ -24,7 +23,7 @@ export default function PlantIdentityModal({ plant, hasQuickInfos }: { plant: an
             </div>
             <h3 className="font-bold text-stone-900 text-lg">Fiche détaillée</h3>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full shrink-0 transition-colors">
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -32,52 +31,69 @@ export default function PlantIdentityModal({ plant, hasQuickInfos }: { plant: an
         {/* CONTENU DE LA MODALE */}
         <div className="p-6 overflow-y-auto">
           {hasQuickInfos ? (
-            <div className="grid grid-cols-2 gap-3">
-              {plant.origin && (
-                <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-stone-400">
-                    <Globe2 className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Origine</span>
-                  </div>
-                  <span className="text-sm font-bold text-stone-800 leading-tight">{plant.origin}</span>
-                </div>
-              )}
+            <div className="space-y-3">
+              
+              {/* ROBUSTESSE : Mise en avant comme élément principal */}
               {plant.robustness && (
-                <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-stone-400">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Robustesse</span>
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+                  <div className="bg-emerald-100 p-2.5 rounded-xl text-emerald-600 shrink-0">
+                     <ShieldCheck className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-bold text-stone-800 leading-tight">{plant.robustness}</span>
+                  <div>
+                    <h4 className="text-[11px] uppercase font-bold tracking-wider text-emerald-600 mb-1">Robustesse globale</h4>
+                    <p className="text-sm font-semibold text-emerald-950 leading-snug">{plant.robustness}</p>
+                  </div>
                 </div>
               )}
-              {plant.max_size && (
-                <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-stone-400">
-                    <Ruler className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Taille max.</span>
+
+              {/* LIGNE 2 COLONNES : Infos courtes */}
+              <div className="grid grid-cols-2 gap-3">
+                {plant.origin && (
+                  <div className="bg-white border border-stone-100 shadow-sm rounded-2xl p-4 flex flex-col gap-2.5">
+                    <Globe2 className="w-5 h-5 text-stone-400" />
+                    <div>
+                      <h4 className="text-[10px] uppercase font-bold tracking-wider text-stone-400 mb-0.5">Origine</h4>
+                      <p className="text-sm font-bold text-stone-800 leading-tight">{plant.origin}</p>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-stone-800 leading-tight">{plant.max_size}</span>
-                </div>
-              )}
+                )}
+                {plant.max_size && (
+                  <div className="bg-white border border-stone-100 shadow-sm rounded-2xl p-4 flex flex-col gap-2.5">
+                    <Ruler className="w-5 h-5 text-stone-400" />
+                    <div>
+                      <h4 className="text-[10px] uppercase font-bold tracking-wider text-stone-400 mb-0.5">Taille Max.</h4>
+                      <p className="text-sm font-bold text-stone-800 leading-tight">{plant.max_size}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* EXPOSITION : Pleine largeur pour le confort de lecture */}
               {plant.ideal_exposure && (
-                <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-stone-400">
-                    <Sun className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Lumière</span>
+                <div className="bg-amber-50/50 border border-amber-100/50 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="bg-amber-100/50 p-2.5 rounded-xl text-amber-600 shrink-0">
+                     <Sun className="w-5 h-5" />
                   </div>
-                  <span className="text-sm font-bold text-stone-800 leading-tight">{plant.ideal_exposure}</span>
+                  <div>
+                    <h4 className="text-[11px] uppercase font-bold tracking-wider text-amber-700/70 mb-0.5">Exposition idéale</h4>
+                    <p className="text-sm font-semibold text-amber-950 leading-snug">{plant.ideal_exposure}</p>
+                  </div>
                 </div>
               )}
+
+              {/* SUBSTRAT : Pleine largeur */}
               {plant.ideal_substrate && (
-                <div className="col-span-2 bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-stone-400">
-                    <Layers className="w-4 h-4" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Substrat idéal</span>
+                <div className="bg-stone-50 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="bg-stone-200/50 p-2.5 rounded-xl text-stone-500 shrink-0">
+                     <Layers className="w-5 h-5" />
                   </div>
-                  <span className="text-sm font-bold text-stone-800 leading-tight">{plant.ideal_substrate}</span>
+                  <div>
+                    <h4 className="text-[11px] uppercase font-bold tracking-wider text-stone-500 mb-0.5">Substrat recommandé</h4>
+                    <p className="text-sm font-semibold text-stone-800 leading-snug">{plant.ideal_substrate}</p>
+                  </div>
                 </div>
               )}
+
             </div>
           ) : (
             <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex items-start gap-3">
