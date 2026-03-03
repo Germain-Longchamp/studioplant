@@ -12,42 +12,27 @@ export async function addPlantWithAI(formData: FormData) {
   const room = formData.get("room") as string;
   const light = formData.get("light") as string;
   
-  // Récupération de la date d'arrosage fournie par l'utilisateur
   const lastWateredInput = formData.get("lastWateredAt") as string;
-  // Si l'utilisateur n'a rien mis, on prend la date d'aujourd'hui par défaut
   const lastWateredDate = lastWateredInput 
     ? new Date(lastWateredInput).toISOString() 
     : new Date().toISOString();
 
-  if (!imageFile || imageFile.size === 0) {
-    return { error: "Aucune image fournie." };
-  }
+  if (!imageFile || imageFile.size === 0) return { error: "Aucune image fournie." };
 
-  // Variable pour stocker l'ID de la nouvelle plante
   let newPlantId: string | null = null;
 
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
     if (!user) return { error: "Non autorisé" };
 
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64Data = buffer.toString("base64");
 
-    const imagePart = {
-      inlineData: {
-        data: base64Data,
-        mimeType: imageFile.type,
-      },
-    };
+    const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash", 
-    });
-
-    // --- INJECTION DU CONTEXTE UTILISATEUR ---
     const meta = user.user_metadata || {};
     const contextPrompt = meta.home_type ? `
       CONTEXTE GLOBAL DU DOMICILE :
@@ -55,10 +40,9 @@ export async function addPlantWithAI(formData: FormData) {
       - Ville/Climat : ${meta.city || 'Non précisé'}
       - Orientation : ${meta.orientation}
       - Luminosité moyenne : ${meta.light_level}
-      -> Prends IMPÉRATIVEMENT ce contexte global en compte pour rédiger tes 'room_advice', 'light_advice' et 'care_notes'.
+      -> Prends IMPÉRATIVEMENT ce contexte global en compte.
     ` : "";
 
-    // PROMPT MIS À JOUR (Correction du formatage du guide d'entretien)
     const prompt = `
       Analyse cette photo de plante d'intérieur. 
       L'utilisateur indique qu'elle est située ici : "${room || "Non précisé"}".
@@ -71,35 +55,32 @@ export async function addPlantWithAI(formData: FormData) {
         "name": "Nom commun (ex: Monstera Deliciosa)",
         "species": "Nom scientifique",
         "watering_frequency": 7,
+        "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
+        "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+        "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+        "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
+        "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
         "room_advice": "Ton avis d'expert court sur le choix de la pièce en fonction du contexte global du domicile.",
         "light_advice": "Ton avis d'expert court sur la luminosité actuelle.",
-        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte. Détaille le type de terreau idéal, l'humidité requise, le besoin en engrais et le nettoyage des feuilles."
+        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
       }
-      Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
+      Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "origin": "", "robustness": "", "max_size": "", "ideal_substrate": "", "ideal_exposure": "", "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
     `;
 
     const result = await model.generateContent([prompt, imagePart]);
-    const responseText = result.response.text();
-    
-    const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const plantData = JSON.parse(cleanedText);
 
-    if (plantData.name === "Erreur") {
-      return { error: "L'IA n'a pas reconnu de plante sur cette photo." };
-    }
+    if (plantData.name === "Erreur") return { error: "L'IA n'a pas reconnu de plante sur cette photo." };
 
     const fileExtension = imageFile.name.split('.').pop();
     const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
     
-    const { error: storageError } = await supabase.storage
-      .from("plant-images")
-      .upload(fileName, imageFile);
-
+    const { error: storageError } = await supabase.storage.from("plant-images").upload(fileName, imageFile);
     if (storageError) return { error: "Erreur lors de la sauvegarde de l'image." };
 
     const { data: publicUrlData } = supabase.storage.from("plant-images").getPublicUrl(fileName);
 
-    // INSERTION MISE À JOUR EN BASE DE DONNÉES
     const { data: newPlant, error: dbError } = await supabase.from("plants").insert({
       user_id: user.id,
       name: plantData.name,
@@ -107,19 +88,22 @@ export async function addPlantWithAI(formData: FormData) {
       watering_frequency: plantData.watering_frequency,
       exposure: light,
       room: room,
-      description: "", // Laissé vide pour ne pas casser la structure si la colonne n'est pas "nullable"
+      description: "", 
+      origin: plantData.origin,
+      robustness: plantData.robustness,
+      max_size: plantData.max_size,
+      ideal_substrate: plantData.ideal_substrate,
+      ideal_exposure: plantData.ideal_exposure,
       care_notes: plantData.care_notes,
       room_advice: plantData.room_advice,
       light_advice: plantData.light_advice,
       image_path: publicUrlData.publicUrl,
-      last_watered_at: lastWateredDate, // Date d'arrosage sélectionnée
-      watering_history: [lastWateredDate], // On initialise l'historique avec cette date
+      last_watered_at: lastWateredDate,
+      watering_history: [lastWateredDate],
       snooze_days: 0,
     }).select().single();
 
     if (dbError) throw dbError;
-
-    // On stocke l'ID pour l'utiliser en dehors du try...catch
     newPlantId = newPlant.id;
 
   } catch (error) {
@@ -127,28 +111,21 @@ export async function addPlantWithAI(formData: FormData) {
     return { error: "Une erreur inattendue est survenue." };
   }
 
-  // REDIRECTION
   revalidatePath("/dashboard");
-  
-  if (newPlantId) {
-    redirect(`/dashboard/plant/${newPlantId}`);
-  } else {
-    redirect("/dashboard");
-  }
+  if (newPlantId) redirect(`/dashboard/plant/${newPlantId}`);
+  else redirect("/dashboard");
 }
 
-// METTRE À JOUR LES CONSEILS (VIA TEXTE)
+
 export async function updatePlantAdvice(plantId: string) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
-    // 1. On récupère la plante
     const { data: plant } = await supabase.from("plants").select("*").eq("id", plantId).single();
     if (!plant) return { error: "Plante introuvable" };
 
-    // 2. On récupère le contexte utilisateur
     const meta = user.user_metadata || {};
     const contextPrompt = meta.home_type ? `
       CONTEXTE GLOBAL DU DOMICILE DE L'UTILISATEUR :
@@ -159,7 +136,6 @@ export async function updatePlantAdvice(plantId: string) {
       -> Prends IMPÉRATIVEMENT ce contexte global en compte pour tes conseils.
     ` : "";
 
-    // 3. On demande à Gemini de réévaluer
     const prompt = `
       Tu es un expert en botanique. L'utilisateur souhaite mettre à jour les conseils d'entretien pour sa plante avec les données suivantes :
       - Nom commun : ${plant.name}
@@ -172,6 +148,11 @@ export async function updatePlantAdvice(plantId: string) {
       Génère de nouveaux conseils adaptés. Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
         "watering_frequency": 7,
+        "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
+        "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+        "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+        "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
+        "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
         "room_advice": "Avis expert court sur la pièce...",
         "light_advice": "Avis expert court sur la lumière...",
         "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
@@ -183,9 +164,13 @@ export async function updatePlantAdvice(plantId: string) {
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const plantData = JSON.parse(cleanedText);
 
-    // 4. On sauvegarde en base
     const { error } = await supabase.from("plants").update({
       watering_frequency: plantData.watering_frequency,
+      origin: plantData.origin,
+      robustness: plantData.robustness,
+      max_size: plantData.max_size,
+      ideal_substrate: plantData.ideal_substrate,
+      ideal_exposure: plantData.ideal_exposure,
       room_advice: plantData.room_advice,
       light_advice: plantData.light_advice,
       care_notes: plantData.care_notes,
