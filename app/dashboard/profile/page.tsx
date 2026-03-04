@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { User } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileForms from "./ProfileForms";
+import EquipmentRecommendations from "./EquipmentRecommendations"; // NOUVEL IMPORT
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -33,9 +34,15 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      <main className="max-w-md mx-auto px-5 mt-6 relative z-20">
+      {/* J'ai ajouté space-y-6 ici pour espacer les différents blocs */}
+      <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
+        
         {/* On passe les données utilisateur au composant interactif */}
         <ProfileForms user={user} metadata={metadata} />
+
+        {/* NOUVEAU COMPOSANT : LA TROUSSE À OUTILS SUR-MESURE */}
+        <EquipmentRecommendations />
+
       </main>
 
       <BottomNav />
