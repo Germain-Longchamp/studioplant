@@ -550,14 +550,33 @@ export async function updateSecurity(formData: FormData) {
 }
 
 
-// GÉNÉRER LA TROUSSE À OUTILS SUR-MESURE
+// 1. LIRE LES RECOMMANDATIONS SAUVEGARDÉES
+export async function getEquipmentRecommendations() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("equipment_recommendations")
+      .select("recommendations")
+      .eq("user_id", user.id)
+      .single();
+
+    if (error || !data) return null;
+    return data.recommendations;
+  } catch (error) {
+    return null;
+  }
+}
+
+// 2. GÉNÉRER ET SAUVEGARDER LA TROUSSE À OUTILS
 export async function generateEquipmentRecommendations() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
-    // 1. Récupérer toutes les plantes de l'utilisateur
     const { data: plants, error: plantsError } = await supabase
       .from("plants")
       .select("name, species, ideal_substrate")
@@ -569,7 +588,6 @@ export async function generateEquipmentRecommendations() {
       return { error: "Vous n'avez pas encore de plantes dans votre jungle. Ajoutez-en pour obtenir des recommandations !" };
     }
 
-    // 2. Récupérer le contexte de l'environnement
     const meta = user.user_metadata || {};
     const environmentContext = `
       Type d'habitation : ${meta.home_type || 'Non précisé'}
@@ -579,7 +597,6 @@ export async function generateEquipmentRecommendations() {
 
     const plantsList = plants.map(p => `- ${p.name} (${p.species}) : substrat idéal -> ${p.ideal_substrate || 'inconnu'}`).join('\n');
 
-    // 3. Prompt pour Gemini
     const prompt = `
       Tu es un expert botaniste. L'utilisateur veut savoir quels produits et matériels il doit absolument posséder pour s'occuper de sa "jungle" spécifique.
 
@@ -589,7 +606,7 @@ export async function generateEquipmentRecommendations() {
       Liste de ses plantes actuelles :
       ${plantsList}
 
-      Déduis-en une "trousse à outils" (terreaux, engrais, accessoires, traitements préventifs) adaptée EXACTEMENT à ses plantes et son environnement. S'il a des plantes spécifiques (ex: succulentes, orchidées), adapte le terreau. 
+      Déduis-en une "trousse à outils" (terreaux, engrais, accessoires, traitements préventifs) adaptée EXACTEMENT à ses plantes et son environnement.
 
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS markdown) :
       {
@@ -614,6 +631,18 @@ export async function generateEquipmentRecommendations() {
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const recommendations = JSON.parse(cleanedText);
 
+    // SAUVEGARDE EN BASE DE DONNÉES (Upsert = Insère ou Met à jour si ça existe déjà)
+    const { error: dbError } = await supabase
+      .from("equipment_recommendations")
+      .upsert({
+        user_id: user.id,
+        recommendations: recommendations,
+        updated_at: new Date().toISOString()
+      });
+
+    if (dbError) throw dbError;
+
+    revalidatePath('/dashboard/profile'); // Rafraîchit la page
     return { success: true, data: recommendations };
   } catch (error) {
     console.error("Equipment Recs Error:", error);
