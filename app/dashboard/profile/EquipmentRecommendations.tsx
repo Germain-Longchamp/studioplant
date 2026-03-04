@@ -15,9 +15,9 @@ type RecommendationData = {
   expert_tip: string;
 };
 
-export default function EquipmentRecommendations() {
+export default function EquipmentRecommendations({ initialData }: { initialData: RecommendationData | null }) {
   const [isPending, startTransition] = useTransition();
-  const [data, setData] = useState<RecommendationData | null>(null);
+  const [data, setData] = useState<RecommendationData | null>(initialData);
 
   const handleGenerate = () => {
     startTransition(async () => {
@@ -26,7 +26,7 @@ export default function EquipmentRecommendations() {
         toast.error(result.error);
       } else if (result.success && result.data) {
         setData(result.data);
-        toast.success("Trousse à outils générée avec succès ! 🛠️");
+        toast.success("Trousse à outils générée et sauvegardée ! 🛠️");
       }
     });
   };
@@ -72,7 +72,7 @@ export default function EquipmentRecommendations() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-6 relative z-10 animate-in fade-in duration-500 pt-2">
+        <div className="space-y-6 relative z-10 pt-2">
           
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
             <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
