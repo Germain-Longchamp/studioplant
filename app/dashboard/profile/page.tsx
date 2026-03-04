@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { User } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileForms from "./ProfileForms";
-import EquipmentRecommendations from "./EquipmentRecommendations"; // NOUVEL IMPORT
+import EquipmentRecommendations from "./EquipmentRecommendations";
+import { getEquipmentRecommendations } from "@/server/actions"; // NOUVEL IMPORT
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -11,8 +12,10 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/auth/login");
 
-  // Supabase stocke les données custom dans user_metadata
   const metadata = user.user_metadata || {};
+  
+  // On va chercher les recommandations sauvegardées en base de données
+  const savedRecommendations = await getEquipmentRecommendations();
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
@@ -34,14 +37,12 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      {/* J'ai ajouté space-y-6 ici pour espacer les différents blocs */}
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
         
-        {/* On passe les données utilisateur au composant interactif */}
         <ProfileForms user={user} metadata={metadata} />
 
-        {/* NOUVEAU COMPOSANT : LA TROUSSE À OUTILS SUR-MESURE */}
-        <EquipmentRecommendations />
+        {/* On passe les données sauvegardées au composant */}
+        <EquipmentRecommendations initialData={savedRecommendations} />
 
       </main>
 
