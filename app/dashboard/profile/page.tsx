@@ -1,21 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { User } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileForms from "./ProfileForms";
-import EquipmentRecommendations from "./EquipmentRecommendations";
-import { getEquipmentRecommendations } from "@/server/actions"; // NOUVEL IMPORT
+import { Button } from "@/components/ui/button";
+import { logOut } from "@/server/actions";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
-
-  const metadata = user.user_metadata || {};
-  
-  // On va chercher les recommandations sauvegardées en base de données
-  const savedRecommendations = await getEquipmentRecommendations();
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
@@ -39,10 +34,20 @@ export default async function ProfilePage() {
 
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
         
-        <ProfileForms user={user} metadata={metadata} />
+        {/* Le formulaire allégé (Email / MDP) */}
+        <ProfileForms user={user} />
 
-        {/* On passe les données sauvegardées au composant */}
-        <EquipmentRecommendations initialData={savedRecommendations} />
+        {/* Le gros bouton de déconnexion rouge et clair */}
+        <form action={logOut}>
+          <Button 
+            type="submit" 
+            variant="ghost" 
+            className="w-full h-14 rounded-[1.25rem] bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 font-bold shadow-sm transition-all active:scale-95"
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Se déconnecter
+          </Button>
+        </form>
 
       </main>
 
