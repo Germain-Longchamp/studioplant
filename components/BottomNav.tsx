@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Plus, User, LogOut } from "lucide-react";
-import { logOut } from "@/server/actions"; // Import de la fonction
+// Changement des icônes : On importe HomeIcon pour faire la différence avec l'accueil
+import { Home, LayoutGrid, Plus, User, Home as HomeIcon } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -32,19 +32,17 @@ export default function BottomNav() {
         </Link>
       </div>
 
-      {/* 4 - Profil */}
+      {/* 4 - NOUVEAU : Ma Maison (Remplace l'ancien bouton Profil) */}
+      <Link href="/dashboard/my-home" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${pathname === '/dashboard/my-home' ? 'text-emerald-800' : 'text-stone-400 hover:text-stone-600'}`}>
+        <HomeIcon className="w-5 h-5 mb-1" />
+        <span className="text-[9px] font-bold uppercase tracking-wider">Ma Maison</span>
+      </Link>
+
+      {/* 5 - NOUVEAU : Profil (Remplace le bouton Quitter) */}
       <Link href="/dashboard/profile" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${pathname === '/dashboard/profile' ? 'text-emerald-800' : 'text-stone-400 hover:text-stone-600'}`}>
         <User className="w-5 h-5 mb-1" />
         <span className="text-[9px] font-bold uppercase tracking-wider">Profil</span>
       </Link>
-
-      {/* 5 - Déconnexion (Géré via un form direct) */}
-      <form action={logOut} className="flex-1">
-        <button type="submit" className="w-full flex flex-col items-center p-1.5 transition-colors text-stone-400 hover:text-rose-500">
-          <LogOut className="w-5 h-5 mb-1" />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Quitter</span>
-        </button>
-      </form>
       
     </div>
   );
