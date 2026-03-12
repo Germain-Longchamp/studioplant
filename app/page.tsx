@@ -4,58 +4,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { Leaf, Sparkles, Droplets, Camera, Stethoscope, ArrowRight, ShieldCheck, Star, Users, Timer } from "lucide-react";
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const imageWrapperRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    if (!containerRef.current || !imageWrapperRef.current) return;
-
-    let ctx = gsap.context(() => {
-      
-      // TIMELINE UNIQUE : Gère le blocage (pin) ET l'animation en même temps.
-      // C'est la méthode la plus fiable pour éviter que l'animation "casse".
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          // L'écran se bloque quand le haut du conteneur arrive au milieu de l'écran.
-          // Vu que c'est juste sous le texte du Hero, ça arrivera au premier coup de scroll !
-          start: "top 55%", 
-          // La durée du blocage est très courte (60% de la hauteur de l'écran) pour rester nerveux
-          end: "+=60%", 
-          pin: true,
-          scrub: 0.5, // Adoucit le mouvement pour que ça ne saccade pas
-        }
-      });
-
-      // L'animation qui se joue pendant le blocage
-      tl.fromTo(imageWrapperRef.current, 
-        {
-          scale: 0.3,    // Part de minuscule
-          opacity: 0,    // Part de transparent
-          y: 200,        // Part de bien plus bas
-          rotationX: 25, // Fortement incliné
-        },
-        {
-          scale: 1,      // Taille 100%
-          opacity: 1,    // 100% visible
-          y: 0,          
-          rotationX: 0,  
-          ease: "power2.out", 
-        }
-      );
-
-    }, containerRef);
-
-    return () => ctx.revert(); 
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
       
@@ -89,51 +39,50 @@ export default function Home() {
       {/* 🟢 CONTENU PRINCIPAL */}
       <main className="relative z-10">
         
-        <section className="max-w-5xl mx-auto px-6 pt-32 pb-0 md:pt-40 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé par l'IA
-          </div>
+        {/* BANNIÈRE (HERO) AVEC LE TÉLÉPHONE INTÉGRÉ */}
+        <section className="max-w-5xl mx-auto px-6 pt-32 md:pt-40 text-center flex flex-col items-center">
           
-          <h1 className="text-5xl md:text-7xl font-extrabold text-stone-900 tracking-tight leading-[1.1] mb-6 drop-shadow-sm">
-            Ne laissez plus vos plantes <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">mourir de soif.</span>
-          </h1>
-          
-          <p className="text-lg md:text-xl text-stone-600 mb-10 max-w-2xl leading-relaxed font-medium">
-            Prenez une photo. L'IA identifie votre plante, s'adapte à votre intérieur et crée son calendrier d'arrosage sur-mesure. C'est aussi simple que ça.
-          </p>
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 flex flex-col items-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé par l'IA
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-extrabold text-stone-900 tracking-tight leading-[1.1] mb-6 drop-shadow-sm">
+              Ne laissez plus vos plantes <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">mourir de soif.</span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-stone-600 mb-10 max-w-2xl leading-relaxed font-medium">
+              Prenez une photo. L'IA identifie votre plante, s'adapte à votre intérieur et crée son calendrier d'arrosage sur-mesure. C'est aussi simple que ça.
+            </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto h-14 px-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-lg shadow-xl shadow-emerald-900/20 transition-all active:scale-95" asChild>
-              <Link href="/auth/login">
-                Créer ma jungle <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/80 backdrop-blur-sm border-stone-200 text-stone-700 font-bold text-lg hover:bg-white transition-all active:scale-95 shadow-sm" asChild>
-              <Link href="#features">
-                Découvrir
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-16 md:mb-20">
+              <Button size="lg" className="w-full sm:w-auto h-14 px-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-lg shadow-xl shadow-emerald-900/20 transition-all active:scale-95" asChild>
+                <Link href="/auth/login">
+                  Créer ma jungle <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/80 backdrop-blur-sm border-stone-200 text-stone-700 font-bold text-lg hover:bg-white transition-all active:scale-95 shadow-sm" asChild>
+                <Link href="#features">
+                  Découvrir
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* LE TÉLÉPHONE : Intégré à la suite, avec une animation CSS décalée pour faire un bel effet d'apparition */}
+          <div 
+            className="relative w-full max-w-[320px] sm:max-w-[420px] md:max-w-[500px] h-[55vh] sm:h-[65vh] md:h-[75vh] animate-in fade-in slide-in-from-bottom-12 duration-1000 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
+          >
+            <Image 
+              src="/app-mockup.png"
+              alt="Aperçu de l'application StudioPlant"
+              fill
+              className="object-contain object-top drop-shadow-[0_30px_60px_rgba(16,185,129,0.15)]"
+              priority
+            />
           </div>
         </section>
-
-        {/* 🟢 BLOC GSAP */}
-        {/* Hauteur réduite pour que l'animation prenne le relais très vite */}
-        <div ref={containerRef} className="relative w-full h-[70vh] flex items-center justify-center mt-12 mb-12">
-           <div className="w-full h-full flex items-center justify-center overflow-hidden perspective-[1200px]">
-              
-              {/* Le wrapper a initialement une opacité à 0 via Tailwind pour éviter le flash avant le chargement de GSAP */}
-              <div ref={imageWrapperRef} className="relative w-[95%] max-w-[420px] sm:max-w-[550px] md:max-w-[700px] h-[80vh] sm:h-[90vh] opacity-0 will-change-transform">
-                 <Image 
-                    src="/app-mockup.png"
-                    alt="Aperçu de l'application StudioPlant"
-                    fill
-                    className="object-contain drop-shadow-2xl"
-                    priority
-                 />
-              </div>
-
-           </div>
-        </div>
 
         {/* 🟢 SUITE DU SITE */}
         <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-20 bg-[#FDFCF8] pt-12 md:pt-24 mt-[-1px]">
