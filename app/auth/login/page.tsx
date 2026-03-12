@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Leaf } from "lucide-react";
+import { Leaf, Mail, Lock, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +24,6 @@ export default function LoginPage() {
     setIsLoading(true);
 
     if (isSignUp) {
-      // --- LOGIQUE D'INSCRIPTION (Sans confirmation d'email) ---
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -34,12 +33,10 @@ export default function LoginPage() {
         toast.error(error.message);
       } else {
         toast.success("Compte créé avec succès ! Bienvenue.");
-        // Plus besoin de vider le mdp ou d'attendre, on est connecté !
         router.push("/dashboard");
         router.refresh(); 
       }
     } else {
-      // --- LOGIQUE DE CONNEXION ---
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -58,28 +55,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-muted/30">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-green-100 rounded-full">
-              <Leaf className="w-6 h-6 text-green-700" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">
-            {isSignUp ? "Créer un compte" : "Bon retour"}
-          </CardTitle>
-          <CardDescription>
-            {isSignUp 
-              ? "Rejoignez Studio Plantes pour suivre votre jardin." 
-              : "Connectez-vous à votre espace Studio Plantes."}
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 flex flex-col justify-center relative overflow-hidden selection:bg-emerald-100 selection:text-emerald-900">
+      
+      {/* 🟢 FONDS & TEXTURES */}
+      <div 
+        className="absolute inset-0 z-0 pointer-events-none opacity-50"
+        style={{
+          backgroundImage: 'radial-gradient(#a8a29e 2px, transparent 2px)',
+          backgroundSize: '32px 32px',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
+        }}
+      />
+      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-300/20 blur-[120px] rounded-full pointer-events-none z-0" />
+
+      {/* BOUTON RETOUR */}
+      <Link 
+        href="/" 
+        className="absolute top-6 left-6 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-stone-200/60 shadow-sm text-stone-500 hover:text-stone-800 hover:bg-stone-50 transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </Link>
+
+      <div className="relative z-10 w-full max-w-md mx-auto px-6 py-12">
         
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Adresse email</Label>
+        {/* EN-TÊTE */}
+        <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-3xl shadow-xl shadow-stone-200/50 border border-stone-100/60 mb-6 rotate-3">
+            <Leaf className="w-8 h-8 text-emerald-500 -rotate-3" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 tracking-tight mb-2">
+            {isSignUp ? "Créer un compte" : "Bon retour"}
+          </h1>
+          <p className="text-stone-500 font-medium">
+            {isSignUp 
+              ? "Rejoignez la communauté StudioPlant." 
+              : "Connectez-vous à votre jungle urbaine."}
+          </p>
+        </div>
+        
+        {/* FORMULAIRE */}
+        <div className="bg-white/80 backdrop-blur-xl border border-stone-200/50 p-6 sm:p-8 rounded-[2.5rem] shadow-2xl shadow-stone-200/40 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <form onSubmit={handleAuth} className="space-y-5">
+            
+            <div className="space-y-2.5">
+              <Label htmlFor="email" className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
+                <Mail className="w-4 h-4 text-emerald-500" /> Adresse email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -87,10 +110,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-14 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 focus:ring-emerald-500 focus:border-emerald-500 text-base px-5"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+            
+            <div className="space-y-2.5">
+              <Label htmlFor="password" className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
+                <Lock className="w-4 h-4 text-emerald-500" /> Mot de passe
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -99,32 +126,50 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6} 
+                className="h-14 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 focus:ring-emerald-500 focus:border-emerald-500 text-base px-5 tracking-widest placeholder:tracking-normal"
               />
             </div>
+
             <Button 
               type="submit" 
-              className="w-full bg-green-600 hover:bg-green-700" 
               disabled={isLoading}
+              className="w-full h-14 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-lg shadow-xl shadow-emerald-900/20 active:scale-95 transition-all mt-4 group"
             >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : null}
               {isLoading 
-                ? "Chargement..." 
-                : isSignUp ? "M'inscrire" : "Me connecter"}
+                ? "Connexion en cours..." 
+                : isSignUp ? "Créer mon compte" : "Me connecter"}
+              {!isLoading && <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />}
             </Button>
           </form>
-        </CardContent>
 
-        <CardFooter className="flex justify-center border-t pt-4">
+          {/* SÉPARATEUR */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-stone-200/60"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-4 text-stone-400 font-bold uppercase tracking-wider rounded-full">
+                Ou
+              </span>
+            </div>
+          </div>
+
           <Button
+            type="button"
             variant="ghost"
-            className="text-sm text-muted-foreground"
             onClick={() => setIsSignUp(!isSignUp)}
+            className="w-full h-12 rounded-[1.25rem] text-stone-600 font-bold hover:bg-stone-50 hover:text-stone-900 transition-colors"
           >
             {isSignUp 
-              ? "Déjà un compte ? Se connecter" 
-              : "Pas encore de compte ? S'inscrire"}
+              ? "J'ai déjà un compte" 
+              : "Je n'ai pas encore de compte"}
           </Button>
-        </CardFooter>
-      </Card>
+
+        </div>
+      </div>
     </div>
   );
 }
