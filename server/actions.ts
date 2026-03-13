@@ -7,8 +7,8 @@ import { revalidatePath } from "next/cache";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
-// 🟢 VARIABLE CENTRALISÉE POUR LE MODÈLE IA
-// Pour passer à la version gratuite sans limite journalière, changez par : "gemini-2.5-flash-lite"
+// MODÈLE IA
+// "gemini-2.5-flash-lite"
 const AI_MODEL = "gemini-2.5-flash";
 
 
