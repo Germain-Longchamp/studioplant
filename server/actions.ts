@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
+// 🟢 VARIABLE CENTRALISÉE POUR LE MODÈLE IA
+// Pour passer à la version gratuite sans limite journalière, changez par : "gemini-2.5-flash-lite"
+const AI_MODEL = "gemini-2.5-flash";
+
+
 export async function addPlantWithAI(formData: FormData) {
   const imageFile = formData.get("image") as File;
   const room = formData.get("room") as string;
@@ -31,7 +36,9 @@ export async function addPlantWithAI(formData: FormData) {
     const base64Data = buffer.toString("base64");
 
     const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    // Utilisation de la variable centralisée
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
 
     const meta = user.user_metadata || {};
     const contextPrompt = meta.home_type ? `
@@ -159,7 +166,8 @@ export async function updatePlantAdvice(plantId: string) {
       }
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Utilisation de la variable centralisée
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent(prompt);
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const plantData = JSON.parse(cleanedText);
@@ -234,8 +242,8 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
       }
     `;
 
-    // 5. Appel à Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // 5. Appel à Gemini (Utilisation de la variable centralisée)
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent([
       prompt,
       { inlineData: { data: base64Image, mimeType } }
@@ -294,7 +302,8 @@ export async function quickAnalyzePlant(formData: FormData) {
       Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "", "robustness": 0, "robustness_comment": "Ceci n'est pas une plante", "light": "", "water": "", "toxicity": "", "match_comment": ""}
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Utilisation de la variable centralisée
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent([
       prompt,
       { inlineData: { data: base64Image, mimeType } }
@@ -303,7 +312,7 @@ export async function quickAnalyzePlant(formData: FormData) {
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const parsedData = JSON.parse(cleanedText);
 
-    // NOUVEAU : Sauvegarde silencieuse dans la table quick_scans si ce n'est pas une erreur
+    // Sauvegarde silencieuse dans la table quick_scans si ce n'est pas une erreur
     if (parsedData.name && parsedData.name !== "Erreur") {
       const { error: dbError } = await supabase.from("quick_scans").insert({
         user_id: user.id,
@@ -452,8 +461,8 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
 
     if (fetchError || !plant) return { error: "Plante introuvable" };
 
-    // 2. On interroge Gemini uniquement avec du texte
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // 2. On interroge Gemini uniquement avec du texte (Utilisation de la variable centralisée)
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const prompt = `
       Tu es un expert en plantes d'intérieur.
       L'utilisateur possède la plante suivante : Nom commun "${plant.name}", Espèce "${plant.species}".
@@ -625,13 +634,14 @@ export async function generateEquipmentRecommendations() {
       Crée au maximum 3 ou 4 catégories pertinentes.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Utilisation de la variable centralisée
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent(prompt);
     
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const recommendations = JSON.parse(cleanedText);
 
-    // SAUVEGARDE EN BASE DE DONNÉES (Upsert = Insère ou Met à jour si ça existe déjà)
+    // SAUVEGARDE EN BASE DE DONNÉES
     const { error: dbError } = await supabase
       .from("equipment_recommendations")
       .upsert({
@@ -642,7 +652,7 @@ export async function generateEquipmentRecommendations() {
 
     if (dbError) throw dbError;
 
-    revalidatePath('/dashboard/profile'); // Rafraîchit la page
+    revalidatePath('/dashboard/profile'); 
     return { success: true, data: recommendations };
   } catch (error) {
     console.error("Equipment Recs Error:", error);
