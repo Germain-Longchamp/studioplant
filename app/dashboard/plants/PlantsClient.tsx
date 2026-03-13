@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, Leaf, Droplets } from "lucide-react";
+import { LayoutGrid, Leaf, Droplets, Plus } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function PlantsClient({ plants }: { plants: any[] }) {
   const [filter, setFilter] = useState("Toutes");
@@ -58,42 +60,73 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
 
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
         
-        {/* BARRE DE FILTRES AVEC COMPTEURS INTÉGRÉS */}
-        {rooms.length > 0 && (
-          <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
-            {filters.map((f: string) => {
-              const count = f === "Toutes" ? totalCount : plants.filter(p => p.room === f).length;
-              
-              return (
-                <button 
-                  key={f}
-                  onClick={() => setFilter(f)} 
-                  className={`shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-                    filter === f 
-                      ? 'bg-emerald-800 text-white border border-emerald-700 shadow-emerald-900/20' 
-                      : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
-                  }`}
-                >
-                  <span>{f}</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
-                    filter === f 
-                      ? 'bg-emerald-900/50 text-emerald-50' 
-                      : 'bg-stone-100 text-stone-400'
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+        {plants.length === 0 ? (
+          // 🟢 ÉTAT VIDE : Affiché s'il n'y a aucune plante dans le compte
+          <div className="bg-white border border-stone-100 shadow-sm rounded-[2rem] p-10 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500 mt-8">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-5 border border-emerald-100/50 shadow-inner">
+              <Leaf className="w-10 h-10 text-emerald-500 opacity-80" />
+            </div>
+            <h3 className="text-2xl font-extrabold text-stone-900 tracking-tight mb-2">
+              Votre jungle est vide
+            </h3>
+            <p className="text-stone-500 font-medium text-sm mb-8 leading-relaxed max-w-[250px]">
+              Vous n'avez pas encore de plante dans votre bibliothèque. Prenez votre première photo !
+            </p>
+            <Button asChild className="h-14 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-8 shadow-lg shadow-emerald-900/20 active:scale-95 transition-all">
+              <Link href="/dashboard/add">
+                <Plus className="w-5 h-5 mr-2" />
+                Ajouter une plante
+              </Link>
+            </Button>
           </div>
-        )}
+        ) : (
+          // 🟢 LISTE DES PLANTES : Affiché s'il y a au moins 1 plante
+          <>
+            {/* BARRE DE FILTRES AVEC COMPTEURS INTÉGRÉS */}
+            {rooms.length > 0 && (
+              <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
+                {filters.map((f: string) => {
+                  const count = f === "Toutes" ? totalCount : plants.filter(p => p.room === f).length;
+                  
+                  return (
+                    <button 
+                      key={f}
+                      onClick={() => setFilter(f)} 
+                      className={`shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+                        filter === f 
+                          ? 'bg-emerald-800 text-white border border-emerald-700 shadow-emerald-900/20' 
+                          : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
+                      }`}
+                    >
+                      <span>{f}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                        filter === f 
+                          ? 'bg-emerald-900/50 text-emerald-50' 
+                          : 'bg-stone-100 text-stone-400'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-        {/* LISTE FILTRÉE */}
-        <div className="flex flex-col gap-3">
-          {filteredPlants.map((plant) => (
-            <PlantCard key={plant.id} plant={plant} />
-          ))}
-        </div>
+            {/* LISTE FILTRÉE */}
+            <div className="flex flex-col gap-3">
+              {filteredPlants.length === 0 ? (
+                // Sous-état vide si un filtre ne retourne rien (ex: après suppression de la dernière plante d'une pièce)
+                <div className="text-center py-10 animate-in fade-in">
+                  <p className="text-stone-500 font-medium">Aucune plante dans cette pièce.</p>
+                </div>
+              ) : (
+                filteredPlants.map((plant) => (
+                  <PlantCard key={plant.id} plant={plant} />
+                ))
+              )}
+            </div>
+          </>
+        )}
         
       </main>
 
