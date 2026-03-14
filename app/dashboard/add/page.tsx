@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // 🟢 1. Ajoute l'import de useRouter
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, Sprout, CalendarClock, Leaf } from "lucide-react";
@@ -11,20 +12,23 @@ import { addPlantWithAI } from "@/server/actions";
 export default function AddPlantPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
+  
   const [room, setRoom] = useState("");
   const [light, setLight] = useState("");
   const [lastWateredAt, setLastWateredAt] = useState(new Date().toISOString().split('T')[0]);
 
+  // 🟢 2. On utilise useTransition et useRouter
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
   useEffect(() => {
-    if (isAnalyzing) {
+    if (isPending) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [isAnalyzing]);
+  }, [isPending]);
 
   const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
     e.currentTarget.value = "";
@@ -48,35 +52,40 @@ export default function AddPlantPage() {
       return;
     }
 
-    setIsAnalyzing(true);
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("room", room);
+    formData.append("light", light);
+    formData.append("lastWateredAt", lastWateredAt);
 
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-      formData.append("room", room);
-      formData.append("light", light);
-      formData.append("lastWateredAt", lastWateredAt);
+    // 🟢 3. On encapsule l'appel serveur dans la transition
+    startTransition(async () => {
+      try {
+        const result = await addPlantWithAI(formData);
 
-      const result = await addPlantWithAI(formData);
-
-      if (result?.error) {
-        toast.error(result.error);
-        setIsAnalyzing(false);
+        if (result?.error) {
+          toast.error(result.error);
+        } else if (result?.success && result.plantId) {
+          toast.success("Plante ajoutée avec succès ! 🌱");
+          // 🟢 4. C'est le client qui redirige vers la nouvelle plante
+          router.push(`/dashboard/plant/${result.plantId}`);
+        } else {
+            // Sécurité au cas où la création réussit mais qu'il y a un souci sur l'ID
+             router.push(`/dashboard`);
+        }
+      } catch (error) {
+        toast.error("Une erreur de communication est survenue.");
       }
-    } catch (error) {
-      toast.error("Une erreur inattendue est survenue.");
-      setIsAnalyzing(false);
-    }
+    });
   };
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-24 relative overflow-x-hidden">
       
       {/* OVERLAY D'ANIMATION DE CHARGEMENT */}
-      {isAnalyzing && (
+      {isPending && ( // 🟢 On utilise isPending au lieu de isAnalyzing
         <div className="fixed inset-0 z-50 bg-stone-900/80 backdrop-blur-md flex flex-col items-center justify-center p-4 transition-all duration-500">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center max-w-sm w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden">
-            {/* Petit effet déco dans la modale */}
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-100 rounded-full blur-2xl opacity-50"></div>
             
             <div className="relative w-32 h-32 rounded-3xl overflow-hidden border-4 border-emerald-50 shadow-inner bg-stone-100">
@@ -112,7 +121,7 @@ export default function AddPlantPage() {
         <div className="max-w-md mx-auto relative z-10">
           {/* HEADER MINIMALISTE GLASSMORPHISM */}
           <header className="flex items-center gap-3 mb-8">
-            <Button variant="ghost" size="icon" asChild className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition-colors" disabled={isAnalyzing}>
+            <Button variant="ghost" size="icon" asChild className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition-colors" disabled={isPending}>
               <Link href="/dashboard">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
@@ -136,7 +145,7 @@ export default function AddPlantPage() {
               <div className="relative aspect-[4/5] w-full bg-stone-900 rounded-[2rem] overflow-hidden shadow-xl shadow-stone-200/50 border border-white/20">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={previewUrl} alt="Aperçu" className="w-full h-full object-cover opacity-90" />
-                {!isAnalyzing && (
+                {!isPending && (
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-stone-900/40 backdrop-blur-sm">
                   <label className="cursor-pointer bg-white text-stone-900 px-5 py-3 rounded-full font-semibold text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform">
                     <Camera className="w-4 h-4" /> Changer la photo
@@ -186,7 +195,7 @@ export default function AddPlantPage() {
                   className="flex h-12 w-full rounded-2xl border border-stone-200 bg-[#FDFCF8] px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
                   value={room} 
                   onChange={(e) => setRoom(e.target.value)} 
-                  disabled={isAnalyzing}
+                  disabled={isPending}
                 >
                   <option value="">Sélectionner une pièce...</option>
                   <option value="Salon">Salon</option>
@@ -209,7 +218,7 @@ export default function AddPlantPage() {
                   className="flex h-12 w-full rounded-2xl border border-stone-200 bg-[#FDFCF8] px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
                   value={light} 
                   onChange={(e) => setLight(e.target.value)} 
-                  disabled={isAnalyzing}
+                  disabled={isPending}
                 >
                   <option value="">Sélectionner l'exposition...</option>
                   <option value="Plein soleil">☀️ Plein soleil (Fenêtre Sud)</option>
@@ -229,7 +238,7 @@ export default function AddPlantPage() {
                   className="flex h-12 w-full rounded-2xl border border-stone-200 bg-[#FDFCF8] px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-all" 
                   value={lastWateredAt} 
                   onChange={(e) => setLastWateredAt(e.target.value)} 
-                  disabled={isAnalyzing} 
+                  disabled={isPending} 
                   max={new Date().toISOString().split('T')[0]} 
                 />
               </div>
@@ -237,9 +246,9 @@ export default function AddPlantPage() {
               <Button 
                 type="submit" 
                 className="w-full py-6 mt-6 rounded-full text-lg font-bold bg-emerald-800 hover:bg-emerald-900 text-white shadow-xl shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700" 
-                disabled={isAnalyzing}
+                disabled={isPending}
               >
-                {isAnalyzing ? (
+                {isPending ? (
                   "Lancement de l'analyse..."
                 ) : (
                   <><Sparkles className="w-5 h-5 mr-2 text-emerald-200" /> Identifier cette plante</>

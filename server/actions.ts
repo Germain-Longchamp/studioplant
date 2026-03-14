@@ -113,9 +113,14 @@ export async function addPlantWithAI(formData: FormData) {
     if (dbError) throw dbError;
     newPlantId = newPlant.id;
 
+    revalidatePath("/dashboard");
+    return { success: true, plantId: newPlantId };
+
   } catch (error) {
+
     console.error("Unexpected Error:", error);
     return { error: "Une erreur inattendue est survenue." };
+    
   }
 
   revalidatePath("/dashboard");
