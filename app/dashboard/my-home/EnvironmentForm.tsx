@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Map, Sun, Home as HomeIcon, MapPin, Loader2, Sparkles, Building2, Compass } from "lucide-react";
+import { Map, Sun, Home as HomeIcon, MapPin, Loader2, Sparkles, Building2, Compass, Thermometer } from "lucide-react";
 import { toast } from "sonner";
 import { updateProfileContext } from "@/server/actions";
 
@@ -35,7 +35,7 @@ export default function EnvironmentForm({ metadata }: { metadata: any }) {
     startTransitionContext(async () => {
       const result = await updateProfileContext(formData);
       if (result?.error) toast.error("Erreur : " + result.error);
-      else toast.success("Contexte mis à jour ! 🌱 L'IA s'adaptera.");
+      else toast.success("Contexte mis à jour ! 🌱 Nos conseils s'adapteront.");
     });
   };
 
@@ -138,6 +138,28 @@ export default function EnvironmentForm({ metadata }: { metadata: any }) {
               <option value="Moyenne">Moyenne</option>
               <option value="Forte">Forte</option>
             </select>
+          </div>
+        </div>
+
+        {/* NOUVEAU BLOC: TEMPÉRATURES */}
+        <div className="grid grid-cols-2 gap-5">
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1 text-sm">
+              <Thermometer className="w-4 h-4 text-rose-500" /> Temp. Été
+            </Label>
+            <div className="relative">
+              <Input type="number" name="temp_summer" defaultValue={metadata?.temp_summer || ""} placeholder="Ex: 25" className="h-12 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 pr-8" />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 font-medium">°C</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1 text-sm">
+              <Thermometer className="w-4 h-4 text-sky-500" /> Temp. Hiver
+            </Label>
+            <div className="relative">
+              <Input type="number" name="temp_winter" defaultValue={metadata?.temp_winter || ""} placeholder="Ex: 19" className="h-12 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 pr-8" />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 font-medium">°C</span>
+            </div>
           </div>
         </div>
 

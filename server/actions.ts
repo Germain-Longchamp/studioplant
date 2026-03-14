@@ -8,7 +8,6 @@ import { revalidatePath } from "next/cache";
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 // MODÈLE IA
-// "gemini-2.5-flash-lite"
 const AI_MODEL = "gemini-2.5-flash";
 
 
@@ -36,8 +35,6 @@ export async function addPlantWithAI(formData: FormData) {
     const base64Data = buffer.toString("base64");
 
     const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
-    
-    // Utilisation de la variable centralisée
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
 
     const meta = user.user_metadata || {};
@@ -47,6 +44,8 @@ export async function addPlantWithAI(formData: FormData) {
       - Ville/Climat : ${meta.city || 'Non précisé'}
       - Orientation : ${meta.orientation}
       - Luminosité moyenne : ${meta.light_level}
+      - Température moyenne Été : ${meta.temp_summer ? meta.temp_summer + '°C' : 'Non précisée'}
+      - Température moyenne Hiver : ${meta.temp_winter ? meta.temp_winter + '°C' : 'Non précisée'}
       -> Prends IMPÉRATIVEMENT ce contexte global en compte.
     ` : "";
 
@@ -78,7 +77,8 @@ export async function addPlantWithAI(formData: FormData) {
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const plantData = JSON.parse(cleanedText);
 
-    if (plantData.name === "Erreur") return { error: "L'IA n'a pas reconnu de plante sur cette photo." };
+    // 🟢 TEXTE ADOUCI
+    if (plantData.name === "Erreur") return { error: "Nous n'avons pas réussi à identifier de plante sur cette photo." };
 
     const fileExtension = imageFile.name.split('.').pop();
     const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
@@ -140,6 +140,8 @@ export async function updatePlantAdvice(plantId: string) {
       - Ville/Climat : ${meta.city || 'Non précisé'}
       - Orientation : ${meta.orientation}
       - Luminosité moyenne : ${meta.light_level}
+      - Température moyenne Été : ${meta.temp_summer ? meta.temp_summer + '°C' : 'Non précisée'}
+      - Température moyenne Hiver : ${meta.temp_winter ? meta.temp_winter + '°C' : 'Non précisée'}
       -> Prends IMPÉRATIVEMENT ce contexte global en compte pour tes conseils.
     ` : "";
 
@@ -166,7 +168,6 @@ export async function updatePlantAdvice(plantId: string) {
       }
     `;
 
-    // Utilisation de la variable centralisée
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent(prompt);
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -205,27 +206,25 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
-    // 1. Récupération des infos de la plante
     const { data: plant } = await supabase.from("plants").select("*").eq("id", plantId).single();
     if (!plant) return { error: "Plante introuvable" };
 
-    // 2. Conversion de l'image pour Gemini
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64Image = buffer.toString("base64");
     const mimeType = file.type;
 
-    // 3. Récupération du contexte utilisateur
     const meta = user.user_metadata || {};
     const contextPrompt = meta.home_type ? `
       CONTEXTE GLOBAL DE L'UTILISATEUR :
       - Type d'habitation : ${meta.home_type}
+      - Ville/Climat : ${meta.city || 'Non précisé'}
       - Luminosité moyenne : ${meta.light_level}
       - Orientation : ${meta.orientation}
-      - Ville/Climat : ${meta.city || 'Non précisé'}
+      - Température moyenne Été : ${meta.temp_summer ? meta.temp_summer + '°C' : 'Non précisée'}
+      - Température moyenne Hiver : ${meta.temp_winter ? meta.temp_winter + '°C' : 'Non précisée'}
     ` : "";
 
-    // 4. Prompt pour le rôle de Docteur des plantes
     const prompt = `
       Tu es un botaniste expert en maladies des plantes d'intérieur.
       L'utilisateur a utilisé un bouton "SOS" pour cette plante : ${plant.name} (${plant.species}).
@@ -242,7 +241,6 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
       }
     `;
 
-    // 5. Appel à Gemini (Utilisation de la variable centralisée)
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent([
       prompt,
@@ -254,7 +252,8 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
 
   } catch (error) {
     console.error("Diagnosis error:", error);
-    return { error: "Impossible d'analyser l'image. L'IA a rencontré un problème." };
+    // 🟢 TEXTE ADOUCI
+    return { error: "Impossible d'analyser l'image. Notre assistant a rencontré un problème." };
   }
 }
 
@@ -274,12 +273,13 @@ export async function quickAnalyzePlant(formData: FormData) {
     if (!user) return { error: "Non autorisé" };
     
     const meta = user?.user_metadata || {};
-    
     const contextPrompt = meta.home_type ? `
       CONTEXTE DE LA MAISON DU CLIENT :
       Habitation : ${meta.home_type}
       Luminosité : ${meta.light_level}
       Orientation : ${meta.orientation}
+      Temp. moyenne Été : ${meta.temp_summer ? meta.temp_summer + '°C' : 'Non précisée'}
+      Temp. moyenne Hiver : ${meta.temp_winter ? meta.temp_winter + '°C' : 'Non précisée'}
     ` : "Le client n'a pas renseigné son environnement.";
 
     const prompt = `
@@ -302,7 +302,6 @@ export async function quickAnalyzePlant(formData: FormData) {
       Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "", "robustness": 0, "robustness_comment": "Ceci n'est pas une plante", "light": "", "water": "", "toxicity": "", "match_comment": ""}
     `;
 
-    // Utilisation de la variable centralisée
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent([
       prompt,
@@ -312,7 +311,6 @@ export async function quickAnalyzePlant(formData: FormData) {
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const parsedData = JSON.parse(cleanedText);
 
-    // Sauvegarde silencieuse dans la table quick_scans si ce n'est pas une erreur
     if (parsedData.name && parsedData.name !== "Erreur") {
       const { error: dbError } = await supabase.from("quick_scans").insert({
         user_id: user.id,
@@ -355,14 +353,12 @@ export async function getQuickScansHistory() {
   }
 }
 
-
-// ARROSER LA PLANTE (Sans retour pour TS)
+// ARROSER LA PLANTE
 export async function waterPlant(plantId: string, currentHistory: string[] = []) {
   try {
     const supabase = await createClient();
     const now = new Date().toISOString();
     
-    // On garde uniquement les 3 dernières dates
     const newHistory = [now, ...currentHistory].slice(0, 3);
 
     const { error } = await supabase
@@ -370,7 +366,7 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
       .update({ 
         last_watered_at: now,
         watering_history: newHistory,
-        snooze_days: 0 // On remet le décalage à zéro !
+        snooze_days: 0 
       })
       .eq("id", plantId);
 
@@ -386,14 +382,14 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
   }
 }
 
-// REPOUSSER L'ARROSAGE (SNOOZE) (Sans retour pour TS)
+// REPOUSSER L'ARROSAGE (SNOOZE)
 export async function snoozeWatering(plantId: string, currentSnooze: number = 0) {
   try {
     const supabase = await createClient();
     
     const { error } = await supabase
       .from("plants")
-      .update({ snooze_days: currentSnooze + 3 }) // On ajoute 3 jours
+      .update({ snooze_days: currentSnooze + 3 }) 
       .eq("id", plantId);
 
     if (error) {
@@ -416,7 +412,6 @@ export async function deletePlant(plantId: string, imageUrl: string | null) {
   if (!user) return { error: "Non autorisé" };
 
   try {
-    // 1. Supprimer l'image du bucket Storage
     if (imageUrl) {
       const fileName = imageUrl.split('/').pop(); 
       if (fileName) {
@@ -424,7 +419,6 @@ export async function deletePlant(plantId: string, imageUrl: string | null) {
       }
     }
 
-    // 2. Supprimer la plante de la base de données
     const { error } = await supabase
       .from("plants")
       .delete()
@@ -438,13 +432,11 @@ export async function deletePlant(plantId: string, imageUrl: string | null) {
     return { error: "Une erreur inattendue est survenue." };
   }
 
-  // 3. Rafraîchir le cache et rediriger vers l'accueil
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 
-
-// METTRE À JOUR L'ENVIRONNEMENT ET RÉGÉNÉRER L'AVIS IA
+// METTRE À JOUR L'ENVIRONNEMENT ET RÉGÉNÉRER L'AVIS
 export async function updatePlantEnvironmentWithAI(plantId: string, room: string, light: string) {
   try {
     const supabase = await createClient();
@@ -452,7 +444,6 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
     
     if (!user) return { error: "Non autorisé" };
 
-    // 1. On récupère le nom et l'espèce de la plante pour donner du contexte à l'IA
     const { data: plant, error: fetchError } = await supabase
       .from("plants")
       .select("name, species")
@@ -461,7 +452,6 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
 
     if (fetchError || !plant) return { error: "Plante introuvable" };
 
-    // 2. On interroge Gemini uniquement avec du texte (Utilisation de la variable centralisée)
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const prompt = `
       Tu es un expert en plantes d'intérieur.
@@ -482,7 +472,6 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
     const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
     const adviceData = JSON.parse(cleanedText);
 
-    // 3. On met à jour la base de données
     const { error: updateError } = await supabase
       .from("plants")
       .update({
@@ -495,7 +484,6 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
 
     if (updateError) throw updateError;
 
-    // 4. On rafraîchit la page pour afficher les nouvelles données
     revalidatePath("/dashboard");
     revalidatePath(`/dashboard/plant/${plantId}`);
     
@@ -503,10 +491,10 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
 
   } catch (error) {
     console.error("Update Env Error:", error);
-    return { error: "Erreur lors de l'analyse IA du nouvel emplacement." };
+    // 🟢 TEXTE ADOUCI
+    return { error: "Erreur lors de l'analyse du nouvel emplacement." };
   }
 }
-
 
 // DÉCONNEXION
 export async function logOut() {
@@ -524,14 +512,16 @@ export async function updateProfileContext(formData: FormData) {
     const orientation = formData.get("orientation");
     const light_level = formData.get("light_level");
     const city = formData.get("city");
+    const temp_summer = formData.get("temp_summer");
+    const temp_winter = formData.get("temp_winter");
 
     const { error } = await supabase.auth.updateUser({
-      data: { home_type, orientation, light_level, city }
+      data: { home_type, orientation, light_level, city, temp_summer, temp_winter }
     });
 
     if (error) return { error: error.message };
     
-    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/my-home"); 
     return { success: true };
   } catch (error) {
     return { error: "Erreur inattendue." };
@@ -559,7 +549,7 @@ export async function updateSecurity(formData: FormData) {
 }
 
 
-// 1. LIRE LES RECOMMANDATIONS SAUVEGARDÉES
+// LIRE LES RECOMMANDATIONS SAUVEGARDÉES
 export async function getEquipmentRecommendations() {
   try {
     const supabase = await createClient();
@@ -579,7 +569,7 @@ export async function getEquipmentRecommendations() {
   }
 }
 
-// 2. GÉNÉRER ET SAUVEGARDER LA TROUSSE À OUTILS
+// GÉNÉRER ET SAUVEGARDER LA TROUSSE À OUTILS
 export async function generateEquipmentRecommendations() {
   try {
     const supabase = await createClient();
@@ -602,6 +592,8 @@ export async function generateEquipmentRecommendations() {
       Type d'habitation : ${meta.home_type || 'Non précisé'}
       Luminosité globale : ${meta.light_level || 'Non précisée'}
       Orientation : ${meta.orientation || 'Non précisée'}
+      Température moyenne Été : ${meta.temp_summer ? meta.temp_summer + '°C' : 'Non précisée'}
+      Température moyenne Hiver : ${meta.temp_winter ? meta.temp_winter + '°C' : 'Non précisée'}
     `;
 
     const plantsList = plants.map(p => `- ${p.name} (${p.species}) : substrat idéal -> ${p.ideal_substrate || 'inconnu'}`).join('\n');
@@ -634,14 +626,12 @@ export async function generateEquipmentRecommendations() {
       Crée au maximum 3 ou 4 catégories pertinentes.
     `;
 
-    // Utilisation de la variable centralisée
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent(prompt);
     
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
     const recommendations = JSON.parse(cleanedText);
 
-    // SAUVEGARDE EN BASE DE DONNÉES
     const { error: dbError } = await supabase
       .from("equipment_recommendations")
       .upsert({
@@ -652,7 +642,7 @@ export async function generateEquipmentRecommendations() {
 
     if (dbError) throw dbError;
 
-    revalidatePath('/dashboard/profile'); 
+    revalidatePath('/dashboard/my-home'); 
     return { success: true, data: recommendations };
   } catch (error) {
     console.error("Equipment Recs Error:", error);
