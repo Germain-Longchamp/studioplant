@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { generateEquipmentRecommendations } from "@/server/actions";
 import { toast } from "sonner";
-import { Loader2, ShoppingBag, Layers, Droplet, Wrench, Lightbulb, Sparkles } from "lucide-react";
+import { Loader2, ShoppingBag, Layers, Droplet, Wrench, Lightbulb, Sparkles, ChevronDown } from "lucide-react";
 
 type RecommendationData = {
   categories: {
@@ -43,7 +43,7 @@ export default function EquipmentRecommendations({ initialData }: { initialData:
   return (
     <div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden relative group mt-6">
       
-      <div className="flex items-center gap-3 mb-4 relative z-10">
+      <div className="flex items-center gap-3 mb-6 relative z-10">
         <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center shrink-0">
           <ShoppingBag className="w-6 h-6" />
         </div>
@@ -72,31 +72,56 @@ export default function EquipmentRecommendations({ initialData }: { initialData:
           </Button>
         </div>
       ) : (
-        <div className="space-y-6 relative z-10 pt-2">
+        <div className="space-y-6 relative z-10 pt-1">
           
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
-            <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-sm font-semibold text-amber-900 leading-relaxed">
-              {data.expert_tip}
+          {/* NOUVEAU DESIGN : LE CONSEIL DE L'EXPERT */}
+          <div className="relative p-5 bg-gradient-to-br from-amber-50/80 to-[#FDFCF8] rounded-2xl border border-amber-100/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-amber-600">
+               <Lightbulb className="w-4 h-4 fill-amber-100" />
+               <span className="text-[10px] font-bold uppercase tracking-wider">Le conseil du pro</span>
+            </div>
+            <p className="text-sm font-semibold text-amber-950/80 leading-relaxed italic">
+              "{data.expert_tip}"
             </p>
           </div>
 
-          <div className="space-y-5">
+          {/* ACCORDÉONS POUR LES CATÉGORIES */}
+          <div className="space-y-3">
             {data.categories.map((cat, idx) => (
-              <div key={idx}>
-                <h3 className="flex items-center gap-2 text-stone-800 font-bold text-sm uppercase tracking-wider mb-3">
-                  {getIcon(cat.icon, "w-4 h-4 text-emerald-500")}
-                  {cat.title}
-                </h3>
-                <div className="space-y-2.5">
-                  {cat.items.map((item, itemIdx) => (
-                    <div key={itemIdx} className="bg-[#FDFCF8] border border-stone-200/60 rounded-xl p-3.5 shadow-sm">
-                      <p className="font-bold text-stone-900 text-sm mb-1">{item.name}</p>
-                      <p className="text-xs font-medium text-stone-500 leading-relaxed">{item.reason}</p>
+              <details 
+                key={idx} 
+                className="group [&_summary::-webkit-details-marker]:hidden bg-[#FDFCF8] rounded-2xl border border-stone-200/60 overflow-hidden shadow-sm transition-all"
+                // On ouvre le premier accordéon par défaut pour montrer à quoi ça ressemble
+                open={idx === 0} 
+              >
+                <summary className="flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-stone-50/50 active:bg-stone-100 select-none">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600 shrink-0">
+                      {getIcon(cat.icon, "w-4 h-4")}
                     </div>
-                  ))}
+                    <span className="text-stone-800 font-bold text-sm tracking-wide">{cat.title}</span>
+                  </div>
+                  <div className="w-7 h-7 flex items-center justify-center rounded-full bg-white group-hover:bg-stone-100 transition-colors shrink-0 shadow-sm border border-stone-100">
+                    <ChevronDown className="h-4 w-4 text-stone-400 transition-transform duration-300 group-open:-rotate-180" />
+                  </div>
+                </summary>
+                
+                <div className="px-4 pb-4 pt-1 animate-in fade-in duration-300">
+                  <div className="space-y-2.5">
+                    {cat.items.map((item, itemIdx) => (
+                      <div key={itemIdx} className="bg-white border border-stone-100 rounded-xl p-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                        <p className="font-bold text-stone-900 text-[13px] mb-1 flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                           {item.name}
+                        </p>
+                        <p className="text-xs font-medium text-stone-500 leading-relaxed pl-3.5 border-l-2 border-stone-100 ml-0.5 mt-1">
+                          {item.reason}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </details>
             ))}
           </div>
 
@@ -104,10 +129,10 @@ export default function EquipmentRecommendations({ initialData }: { initialData:
             onClick={handleGenerate} 
             disabled={isPending}
             variant="outline"
-            className="w-full bg-white border border-stone-200 text-stone-600 font-bold rounded-[1.25rem] h-12 hover:bg-stone-50 transition-all active:scale-95"
+            className="w-full bg-white border border-stone-200 text-stone-600 font-bold rounded-[1.25rem] h-12 hover:bg-stone-50 transition-all active:scale-95 shadow-sm"
           >
             {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-            Mettre à jour la liste
+            {isPending ? "Analyse en cours..." : "Mettre à jour la liste"}
           </Button>
         </div>
       )}
