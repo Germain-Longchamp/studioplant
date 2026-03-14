@@ -10,6 +10,30 @@ import { toast } from "sonner";
 import { Leaf, Mail, Lock, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+// 🟢 Utilitaire pour traduire les erreurs Supabase en messages clairs et en français
+const getErrorMessage = (error: any) => {
+  const msg = error?.message || "";
+  
+  if (msg.includes("Invalid login credentials")) {
+    return "Adresse email ou mot de passe incorrect.";
+  }
+  if (msg.includes("User already registered")) {
+    return "Un compte existe déjà avec cette adresse email.";
+  }
+  if (msg.includes("Password should be at least")) {
+    return "Le mot de passe est trop court (6 caractères minimum).";
+  }
+  if (msg.includes("Email not confirmed")) {
+    return "Veuillez confirmer votre adresse email avant de vous connecter.";
+  }
+  if (msg.includes("rate limit") || msg.includes("Too many requests")) {
+    return "Trop de tentatives. Veuillez patienter quelques instants.";
+  }
+  
+  // Message par défaut si l'erreur est inconnue
+  return "Une erreur inattendue est survenue. Veuillez réessayer.";
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,26 +48,28 @@ export default function LoginPage() {
     setIsLoading(true);
 
     if (isSignUp) {
+      // --- INSCRIPTION ---
       const { error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) {
-        toast.error(error.message);
+        toast.error(getErrorMessage(error)); // Affichage de l'erreur traduite
       } else {
         toast.success("Compte créé avec succès ! Bienvenue.");
         router.push("/dashboard");
         router.refresh(); 
       }
     } else {
+      // --- CONNEXION ---
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        toast.error("Identifiants incorrects.");
+        toast.error(getErrorMessage(error)); // Affichage de l'erreur traduite
       } else {
         toast.success("Connexion réussie !");
         router.push("/dashboard");

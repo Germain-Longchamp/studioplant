@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner"; // 👈 NOUVEL IMPORT
 
 // Configuration des polices par défaut de Next.js
 const geistSans = Geist({
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Studio Plantes",
   description: "Mon jardin connecté intelligent",
-  manifest: "/manifest.json", // 👈 Déclaration de la PWA
+  manifest: "/manifest.json", 
 };
 
 export default function RootLayout({
@@ -26,12 +27,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // 👈 Langue changée en français (fr)
     <html lang="fr">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        
+        {/* 🟢 Le composant qui permet d'afficher les notifications partout */}
+        <Toaster position="top-center" richColors /> 
       </body>
     </html>
   );
