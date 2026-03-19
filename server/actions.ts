@@ -654,3 +654,80 @@ export async function generateEquipmentRecommendations() {
     return { error: "Impossible de générer les recommandations. Réessayez." };
   }
 }
+
+
+// ==========================================
+// GESTION DES PIÈCES (MICRO-CLIMATS)
+// ==========================================
+
+export async function getUserRooms() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Erreur getUserRooms:", error);
+    return [];
+  }
+}
+
+export async function saveRoom(formData: FormData) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const roomId = formData.get("id") as string;
+    
+    const roomData = {
+      user_id: user.id,
+      name: formData.get("name") as string,
+      orientation: formData.get("orientation") as string,
+      light_level: formData.get("light_level") as string,
+      humidity: formData.get("humidity") as string,
+      temp_summer: parseInt(formData.get("temp_summer") as string) || null,
+      temp_winter: parseInt(formData.get("temp_winter") as string) || null,
+    };
+
+    if (roomId) {
+      // Mise à jour
+      const { error } = await supabase.from("rooms").update(roomData).eq("id", roomId).eq("user_id", user.id);
+      if (error) throw error;
+    } else {
+      // Création
+      const { error } = await supabase.from("rooms").insert([roomData]);
+      if (error) throw error;
+    }
+
+    revalidatePath("/dashboard/my-home");
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur saveRoom:", error);
+    return { error: "Impossible de sauvegarder la pièce." };
+  }
+}
+
+export async function deleteRoom(roomId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase.from("rooms").delete().eq("id", roomId).eq("user_id", user.id);
+    if (error) throw error;
+
+    revalidatePath("/dashboard/my-home");
+    return { success: true };
+  } catch (error) {
+    return { error: "Impossible de supprimer la pièce." };
+  }
+}
