@@ -241,8 +241,8 @@ export default function RoomsManager({ rooms }: { rooms: any[] }) {
                 </div>
               </div>
 
-              {/* BOUTON SAUVEGARDER */}
-              <Button type="submit" disabled={isPending} className="w-full h-14 mt-4 rounded-2xl bg-emerald-800 text-white text-lg font-bold hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+              {/* BOUTON SAUVEGARDER - 🟢 CORRECTION ICI */}
+              <Button type="submit" disabled={isPending} className="w-full h-14 mt-4 rounded-2xl bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20 active:scale-95 border border-emerald-700">
                 {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingRoom ? "Enregistrer les modifications" : "Créer l'emplacement")}
               </Button>
             </form>
