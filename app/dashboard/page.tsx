@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
+// N'oublie pas d'importer ArrowRight ici
+import { Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets, ArrowRight } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "./PlantCard";
@@ -82,32 +83,64 @@ export default async function DashboardPage() {
         <section>
           <div className="grid grid-cols-2 gap-4">
             
-            {/* Widget : À arroser */}
-            <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 relative z-10 ${urgentCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-stone-50 text-stone-400'}`}>
-                {urgentCount > 0 ? <Droplets className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-              </div>
-              <div className="relative z-10">
-                <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">
-                  {urgentCount} action{urgentCount > 1 ? 's' : ''}
-                </p>
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${urgentCount > 0 ? 'text-rose-500' : 'text-stone-400'}`}>
-                  {urgentCount > 0 ? 'Plantes en soif' : 'Tout est arrosé'}
-                </p>
-              </div>
-            </div>
-
-            {/* Widget : Nombre de plantes (Cliquable) */}
-            <Link href="/dashboard/plants" className="block focus:outline-none">
-              <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] active:scale-95 h-full relative overflow-hidden group">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10 group-hover:bg-emerald-100 transition-colors">
-                  <Sprout className="w-5 h-5" />
+            {/* 1. Widget : Nombre de plantes (Design Premium Vert) */}
+            <Link href="/dashboard/plants" className="block focus:outline-none group">
+              <div className="bg-emerald-50/80 rounded-[1.5rem] p-4 shadow-sm border border-emerald-200/60 flex flex-col justify-between aspect-[4/3] transition-all duration-300 hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1 active:scale-95 h-full relative overflow-hidden">
+                {/* Petit éclat de lumière dans le coin */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-white rounded-full blur-2xl opacity-60"></div>
+                
+                <div className="flex items-start justify-between mb-2 relative z-10">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
+                    <Sprout className="w-5 h-5" />
+                  </div>
+                  {/* Flèche d'indication de clic */}
+                  <div className="w-6 h-6 rounded-full bg-white/50 flex items-center justify-center backdrop-blur-sm">
+                    <ArrowRight className="w-3 h-3 text-emerald-700 transition-transform transform group-hover:translate-x-0.5" />
+                  </div>
                 </div>
                 <div className="relative z-10">
-                  <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">
+                  <p className="text-emerald-950 font-bold text-lg sm:text-xl leading-tight mb-1">
                     {plantCount} plante{plantCount > 1 ? 's' : ''}
                   </p>
-                  <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Dans la jungle</p>
+                  <p className="text-emerald-700/70 text-[10px] font-bold uppercase tracking-wider">Dans la jungle</p>
+                </div>
+              </div>
+            </Link>
+
+            {/* 2. Widget : À arroser (Design Premium Rose ou Gris) */}
+            <Link href="/dashboard/urgent" className="block focus:outline-none group">
+              <div className={`rounded-[1.5rem] p-4 shadow-sm border flex flex-col justify-between aspect-[4/3] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-95 h-full relative overflow-hidden ${
+                urgentCount > 0 
+                  ? 'bg-rose-50/80 border-rose-200/60 hover:shadow-rose-900/10' 
+                  : 'bg-stone-50/80 border-stone-200/60 hover:shadow-stone-900/5'
+              }`}>
+                {/* Petit éclat de lumière */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-white rounded-full blur-2xl opacity-60"></div>
+
+                <div className="flex items-start justify-between mb-2 relative z-10">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform bg-white ${
+                    urgentCount > 0 ? 'text-rose-500' : 'text-stone-400'
+                  }`}>
+                    {urgentCount > 0 ? <Droplets className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                  </div>
+                  {/* Flèche d'indication */}
+                  <div className="w-6 h-6 rounded-full bg-white/50 flex items-center justify-center backdrop-blur-sm">
+                    <ArrowRight className={`w-3 h-3 transition-transform transform group-hover:translate-x-0.5 ${
+                      urgentCount > 0 ? 'text-rose-700' : 'text-stone-500'
+                    }`} />
+                  </div>
+                </div>
+                <div className="relative z-10">
+                  <p className={`font-bold text-lg sm:text-xl leading-tight mb-1 ${
+                    urgentCount > 0 ? 'text-rose-950' : 'text-stone-800'
+                  }`}>
+                    {urgentCount} action{urgentCount > 1 ? 's' : ''}
+                  </p>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${
+                    urgentCount > 0 ? 'text-rose-700/70' : 'text-stone-500/70'
+                  }`}>
+                    {urgentCount > 0 ? 'Plantes en soif' : 'Tout est arrosé'}
+                  </p>
                 </div>
               </div>
             </Link>
@@ -146,7 +179,6 @@ export default async function DashboardPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {urgentPlants?.map((plant) => (
-                // APPEL AU NOUVEAU COMPOSANT UNIQUE
                 <PlantCard key={plant.id} plant={plant} />
               ))}
             </div>
