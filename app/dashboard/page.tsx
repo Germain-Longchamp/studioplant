@@ -7,6 +7,10 @@ import BottomNav from "@/components/BottomNav";
 import QuickAnalysis from "./QuickAnalysis";
 import DoctorPlant from "./DoctorPlant";
 
+// 🟢 IMPORT DU NOUVEAU COMPOSANT ET DE L'ACTION
+import RoomOnboarding from "./RoomOnboarding";
+import { getUserRooms } from "@/server/actions";
+
 const getSeasonInfo = () => {
   const month = new Date().getMonth();
   if (month >= 2 && month <= 4) return { name: "Printemps", icon: Flower2, color: "text-rose-500", bg: "bg-rose-50" };
@@ -22,6 +26,10 @@ export default async function DashboardPage() {
   if (!user) redirect("/auth/login");
 
   const { data: plants } = await supabase.from("plants").select("*");
+
+  // 🟢 VÉRIFICATION DES PIÈCES DE L'UTILISATEUR POUR L'ONBOARDING
+  const rooms = await getUserRooms();
+  const hasNoRooms = rooms.length === 0;
 
   const sortedPlants = plants?.sort((a, b) => {
     const nextDateA = new Date(a.last_watered_at);
@@ -50,7 +58,7 @@ export default async function DashboardPage() {
   const dateString = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden relative">
       
       {/* HEADER VERT AVEC DATE INTEGREE */}
       <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
@@ -158,6 +166,10 @@ export default async function DashboardPage() {
       </main>
 
       <BottomNav />
+
+      {/* 🟢 AFFICHAGE CONDITIONNEL DE LA MODALE D'ONBOARDING */}
+      {hasNoRooms && <RoomOnboarding />}
+
     </div>
   );
 }
