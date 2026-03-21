@@ -1,11 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-// N'oublie pas d'importer ArrowRight ici
 import { Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets, ArrowRight } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
-import PlantCard from "./PlantCard";
 import QuickAnalysis from "./QuickAnalysis";
 
 const getSeasonInfo = () => {
@@ -150,39 +148,6 @@ export default async function DashboardPage() {
 
         <section>
           <QuickAnalysis />
-        </section>
-
-        {/* LISTE : À ARROSER */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold text-stone-800 tracking-tight">À arroser</h2>
-            <div className="h-px bg-stone-200 flex-1 ml-2"></div>
-          </div>
-
-          {plantCount === 0 ? (
-            <div className="bg-white rounded-[2rem] border border-stone-100 p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg shadow-stone-200/40 relative overflow-hidden">
-              <div className="absolute -right-6 -top-6 text-emerald-50"><Leaf className="w-32 h-32 rotate-12" /></div>
-              <div className="p-4 bg-emerald-50 rounded-full relative z-10"><Sprout className="w-8 h-8 text-emerald-600" /></div>
-              <div className="relative z-10">
-                <h3 className="font-bold text-stone-800 text-lg">Aucune plante</h3>
-                <p className="text-sm text-stone-500 mt-1">Commencez à créer votre jungle urbaine.</p>
-              </div>
-            </div>
-          ) : urgentPlants?.length === 0 ? (
-            <div className="bg-white rounded-[2rem] border border-stone-100 p-8 flex flex-col items-center justify-center text-center shadow-lg shadow-stone-200/40 relative overflow-hidden">
-              <div className="p-4 bg-emerald-50 rounded-full relative z-10 mb-3">
-                <CheckCircle className="w-8 h-8 text-emerald-600" />
-              </div>
-              <h3 className="font-bold text-stone-800 text-lg relative z-10">Tout va bien !</h3>
-              <p className="text-sm text-stone-500 mt-1 relative z-10">Aucune de vos plantes n'a soif aujourd'hui. Profitez de votre écosystème.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {urgentPlants?.map((plant) => (
-                <PlantCard key={plant.id} plant={plant} />
-              ))}
-            </div>
-          )}
         </section>
 
       </main>
