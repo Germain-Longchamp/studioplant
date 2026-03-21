@@ -1,23 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, Leaf, Droplets, Plus } from "lucide-react";
+import { LayoutGrid, Leaf, Droplets, Plus, MapPin } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function PlantsClient({ plants }: { plants: any[] }) {
+export default function PlantsClient({ plants, userRooms }: { plants: any[], userRooms: any[] }) {
   const [filter, setFilter] = useState("Toutes");
 
-  // On extrait dynamiquement toutes les pièces utilisées ET on les trie par ordre alphabétique
-  const rooms = Array.from(new Set(plants.map(p => p.room).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-    
-  const filters = ["Toutes", ...rooms];
+  // 🟢 1. On extrait les noms des pièces configurées par l'utilisateur
+  const configuredRooms = userRooms.map(r => r.name);
+  
+  // 🟢 2. On récupère les pièces des plantes qui n'existent pas (ou plus) dans la configuration (anciennes pièces)
+  const plantRooms = Array.from(new Set(plants.map(p => p.room).filter(Boolean)));
+  const orphanedRooms = plantRooms
+    .filter(r => !configuredRooms.includes(r as string))
+    .sort((a, b) => (a as string).localeCompare(b as string, 'fr', { sensitivity: 'base' }));
 
-  // On applique le filtre ET on trie les plantes par ordre alphabétique (insensible à la casse/accents)
+  // 🟢 3. On combine pour avoir la liste finale des filtres
+  const filters = ["Toutes", ...configuredRooms, ...orphanedRooms];
+
+  // On applique le filtre ET on trie les plantes par ordre alphabétique
   const filteredPlants = (filter === "Toutes" ? [...plants] : plants.filter(p => p.room === filter))
     .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
@@ -80,10 +86,10 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
             </Button>
           </div>
         ) : (
-          // 🟢 LISTE DES PLANTES : Affiché s'il y a au moins 1 plante
+          // 🟢 LISTE DES PLANTES
           <>
-            {/* BARRE DE FILTRES AVEC COMPTEURS INTÉGRÉS */}
-            {rooms.length > 0 && (
+            {/* BARRE DE FILTRES AVEC NOUVEAU DESIGN */}
+            {filters.length > 1 && (
               <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
                 {filters.map((f: string) => {
                   const count = f === "Toutes" ? totalCount : plants.filter(p => p.room === f).length;
@@ -92,17 +98,18 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
                     <button 
                       key={f}
                       onClick={() => setFilter(f)} 
-                      className={`shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+                      className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
                         filter === f 
-                          ? 'bg-emerald-800 text-white border border-emerald-700 shadow-emerald-900/20' 
-                          : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
+                          : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
                       }`}
                     >
+                      {f !== "Toutes" && <MapPin className={`w-3.5 h-3.5 ${filter === f ? 'text-emerald-500' : 'text-stone-400'}`} />}
                       <span>{f}</span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                      <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
                         filter === f 
-                          ? 'bg-emerald-900/50 text-emerald-50' 
-                          : 'bg-stone-100 text-stone-400'
+                          ? 'bg-emerald-200/50 text-emerald-800' 
+                          : 'bg-stone-100 text-stone-500'
                       }`}>
                         {count}
                       </span>
@@ -115,9 +122,9 @@ export default function PlantsClient({ plants }: { plants: any[] }) {
             {/* LISTE FILTRÉE */}
             <div className="flex flex-col gap-3">
               {filteredPlants.length === 0 ? (
-                // Sous-état vide si un filtre ne retourne rien (ex: après suppression de la dernière plante d'une pièce)
+                // Sous-état vide si un filtre ne retourne rien
                 <div className="text-center py-10 animate-in fade-in">
-                  <p className="text-stone-500 font-medium">Aucune plante dans cette pièce.</p>
+                  <p className="text-stone-500 font-medium">Aucune plante dans cet emplacement.</p>
                 </div>
               ) : (
                 filteredPlants.map((plant) => (

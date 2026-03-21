@@ -10,11 +10,19 @@ export default async function PlantsPage() {
     redirect("/auth/login");
   }
 
-  // On récupère toutes les plantes pour la bibliothèque (Index complet)
+  // 1. On récupère toutes les plantes
   const { data: plants } = await supabase
     .from("plants")
     .select("*")
     .order("created_at", { ascending: false });
 
-  return <PlantsClient plants={plants || []} />;
+  // 2. 🟢 On récupère les pièces configurées par l'utilisateur
+  const { data: userRooms } = await supabase
+    .from("rooms")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+
+  // On passe les deux tableaux au composant client
+  return <PlantsClient plants={plants || []} userRooms={userRooms || []} />;
 }
