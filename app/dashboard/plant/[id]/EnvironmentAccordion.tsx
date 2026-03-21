@@ -112,18 +112,6 @@ export default function EnvironmentAccordion({ plant }: { plant: any }) {
                     </button>
                   ))
                 )}
-                
-                <button
-                  type="button"
-                  onClick={() => setRoom("Autre (non configurée)")}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border active:scale-95 ${
-                    room === "Autre (non configurée)" 
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' 
-                      : 'border-stone-200 bg-[#FDFCF8] text-stone-600 hover:border-stone-300'
-                  }`}
-                >
-                  Autre...
-                </button>
               </div>
               
               {userRooms.length === 0 && (
