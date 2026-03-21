@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { generateEquipmentRecommendations } from "@/server/actions";
 import { toast } from "sonner";
-import { Loader2, ShoppingBag, Layers, Droplet, Wrench, Lightbulb, Sparkles, ChevronDown } from "lucide-react";
+import { Loader2, ShoppingBag, Layers, Droplet, Wrench, Sparkles, ChevronDown } from "lucide-react";
 
 type RecommendationData = {
   categories: {
@@ -56,7 +56,7 @@ export default function EquipmentRecommendations({ initialData }: { initialData:
       {!data ? (
         <div className="relative z-10">
           <p className="text-sm text-stone-600 mb-5 leading-relaxed">
-            L'IA peut analyser vos plantes actuelles et votre environnement pour vous créer une liste de courses sur-mesure (substrats, engrais, outils spécifiques).
+            Notre expert peut analyser vos plantes actuelles et vos emplacements pour vous créer une liste de courses sur-mesure (substrats, engrais, outils spécifiques).
           </p>
           <Button 
             onClick={handleGenerate} 
@@ -74,25 +74,13 @@ export default function EquipmentRecommendations({ initialData }: { initialData:
       ) : (
         <div className="space-y-6 relative z-10 pt-1">
           
-          {/* NOUVEAU DESIGN : LE CONSEIL DE L'EXPERT */}
-          <div className="relative p-5 bg-gradient-to-br from-amber-50/80 to-[#FDFCF8] rounded-2xl border border-amber-100/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-amber-600">
-               <Lightbulb className="w-4 h-4 fill-amber-100" />
-               <span className="text-[10px] font-bold uppercase tracking-wider">Le conseil du pro</span>
-            </div>
-            <p className="text-sm font-semibold text-amber-950/80 leading-relaxed italic">
-              "{data.expert_tip}"
-            </p>
-          </div>
-
           {/* ACCORDÉONS POUR LES CATÉGORIES */}
           <div className="space-y-3">
             {data.categories.map((cat, idx) => (
               <details 
                 key={idx} 
                 className="group [&_summary::-webkit-details-marker]:hidden bg-[#FDFCF8] rounded-2xl border border-stone-200/60 overflow-hidden shadow-sm transition-all"
-                // On ouvre le premier accordéon par défaut pour montrer à quoi ça ressemble
-                open={idx === 0} 
+                // 🟢 Retrait de open={idx === 0} : tous les accordéons sont fermés par défaut
               >
                 <summary className="flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-stone-50/50 active:bg-stone-100 select-none">
                   <div className="flex items-center gap-3">

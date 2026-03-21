@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { Home as HomeIcon } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import EnvironmentForm from "./EnvironmentForm";
-import RoomsManager from "./RoomsManager"; // NOUVEAU
+import RoomsManager from "./RoomsManager"; 
 import EquipmentRecommendations from "../profile/EquipmentRecommendations";
-import { getEquipmentRecommendations, getUserRooms } from "@/server/actions"; // NOUVEAU
+import { getEquipmentRecommendations, getUserRooms } from "@/server/actions"; 
 
 export default async function MyHomePage() {
   const supabase = await createClient();
@@ -38,14 +38,16 @@ export default async function MyHomePage() {
       </div>
 
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
-        {/* Paramètres globaux (Maison/Apt, Ville) */}
-        <EnvironmentForm metadata={metadata} />
         
-        {/* Gestion des pièces */}
+        {/* 1. Gestion des pièces (Remonté) */}
         <RoomsManager rooms={rooms} />
 
-        {/* Trousse à outils */}
+        {/* 2. Paramètres globaux (Région) */}
+        <EnvironmentForm metadata={metadata} />
+
+        {/* 3. Trousse à outils */}
         <EquipmentRecommendations initialData={savedRecommendations} />
+        
       </main>
 
       <BottomNav />
