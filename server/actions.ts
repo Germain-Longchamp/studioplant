@@ -166,7 +166,13 @@ export async function updatePlantAdvice(plantId: string) {
       ${contextPrompt}
 
       Génère de nouveaux conseils adaptés en croisant les besoins de la plante avec les caractéristiques de la pièce où elle se trouve.
-      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      
+      RÈGLE ABSOLUE POUR LE FORMAT DE RÉPONSE :
+      Retourne UNIQUEMENT un objet JSON valide. 
+      N'utilise JAMAIS de guillemets doubles (") à l'intérieur de tes textes (remplace-les par des guillemets simples (') si besoin).
+      N'ajoute AUCUNE balise markdown (pas de \`\`\`json) ni texte avant ou après.
+
+      Structure exacte attendue :
       {
         "watering_frequency": 7,
         "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
@@ -182,8 +188,21 @@ export async function updatePlantAdvice(plantId: string) {
 
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
     const result = await model.generateContent(prompt);
-    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    const plantData = JSON.parse(cleanedText);
+    
+    // Nettoyage plus agressif au cas où
+    let cleanedText = result.response.text()
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    // 🟢 Sécurisation du Parsing JSON
+    let plantData;
+    try {
+      plantData = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("ERREUR PARSING JSON. Texte brut renvoyé par Gemini :", cleanedText);
+      return { error: "Notre expert a formulé une réponse illisible. Veuillez réessayer." };
+    }
 
     const { error } = await supabase.from("plants").update({
       watering_frequency: plantData.watering_frequency,
