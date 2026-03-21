@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
@@ -96,18 +97,20 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            {/* Widget : Nombre de plantes */}
-            <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] relative overflow-hidden">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10">
-                <Sprout className="w-5 h-5" />
+            {/* Widget : Nombre de plantes (Cliquable) */}
+            <Link href="/dashboard/plants" className="block focus:outline-none">
+              <div className="bg-white rounded-[1.5rem] p-4 shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col justify-between aspect-[4/3] transition-transform hover:scale-[1.02] active:scale-95 h-full relative overflow-hidden group">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-700 mb-2 relative z-10 group-hover:bg-emerald-100 transition-colors">
+                  <Sprout className="w-5 h-5" />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">
+                    {plantCount} plante{plantCount > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Dans la jungle</p>
+                </div>
               </div>
-              <div className="relative z-10">
-                <p className="text-stone-800 font-bold text-lg sm:text-xl leading-tight mb-1">
-                  {plantCount} plante{plantCount > 1 ? 's' : ''}
-                </p>
-                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">Dans la jungle</p>
-              </div>
-            </div>
+            </Link>
 
           </div>
         </section>
@@ -149,8 +152,6 @@ export default async function DashboardPage() {
             </div>
           )}
         </section>
-
-
 
       </main>
 
