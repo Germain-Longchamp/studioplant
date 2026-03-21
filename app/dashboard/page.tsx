@@ -5,6 +5,7 @@ import { Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets,
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import QuickAnalysis from "./QuickAnalysis";
+import DoctorPlant from "./DoctorPlant";
 
 const getSeasonInfo = () => {
   const month = new Date().getMonth();
@@ -148,6 +149,10 @@ export default async function DashboardPage() {
 
         <section>
           <QuickAnalysis />
+
+          <div className="mt-6">
+            <DoctorPlant />
+          </div>
         </section>
 
       </main>

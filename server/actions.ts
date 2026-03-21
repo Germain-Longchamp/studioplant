@@ -735,3 +735,53 @@ export async function deleteRoom(roomId: string) {
     return { error: "Impossible de supprimer la pièce." };
   }
 }
+
+
+// DIAGNOSTIC GÉNÉRIQUE (DOCTEUR PLANTE)
+export async function quickDiagnosePlant(formData: FormData) {
+  try {
+    const file = formData.get("image") as File;
+    if (!file) return { error: "Aucune image fournie." };
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString("base64");
+    const mimeType = file.type;
+
+    const prompt = `
+      Tu es le "Docteur Plante", un botaniste expert en maladies des végétaux.
+      L'utilisateur te montre la photo d'une plante malade qu'il a trouvée, sans contexte particulier.
+      Analyse attentivement cette photo pour identifier la plante (si possible) et surtout son problème (maladie, parasites, carence, excès d'eau...).
+      
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      {
+        "name": "Nom de la plante (si identifiable, sinon 'Plante inconnue')",
+        "diagnosis": "Un diagnostic clinique précis formulé de manière claire et rassurante (2 phrases max).",
+        "urgency": "Faible", // Choisir STRICTEMENT parmi: Faible, Moyenne, Haute
+        "action": "Une instruction médicale claire, étape par étape (avec des tirets -), de ce qu'il faut faire pour la sauver."
+      }
+    `;
+
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+    const result = await model.generateContent([
+      prompt,
+      { inlineData: { data: base64Image, mimeType } }
+    ]);
+
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    
+    let diagnosisData;
+    try {
+      diagnosisData = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("Erreur de format du diagnostic:", cleanedText);
+      return { error: "Le docteur n'a pas pu rédiger l'ordonnance. Réessayez." };
+    }
+
+    return { success: true, data: diagnosisData };
+
+  } catch (error) {
+    console.error("Quick Diagnosis error:", error);
+    return { error: "Impossible de consulter le docteur. Veuillez réessayer." };
+  }
+}
