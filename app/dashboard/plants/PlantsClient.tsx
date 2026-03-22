@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, Leaf, Droplets, Plus, MapPin } from "lucide-react";
+import { LayoutGrid, Leaf, Droplets, Plus, MapPin, Sprout } from "lucide-react"; // 🟢 1. J'ai ajouté Sprout ici
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
@@ -44,7 +44,8 @@ export default function PlantsClient({ plants, userRooms }: { plants: any[], use
         <div className="max-w-md mx-auto relative z-10">
           <header className="flex items-center justify-between mb-8">
             <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
-              <LayoutGrid className="w-6 h-6 text-emerald-300" />
+              {/* 🟢 2. C'est ici ! Remplacement de LayoutGrid par Sprout */}
+              <Sprout className="w-6 h-6 text-emerald-300" />
             </div>
           </header>
           <div>
