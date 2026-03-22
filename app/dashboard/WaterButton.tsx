@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Droplets, Loader2, Calendar } from "lucide-react";
+import { Droplets, Loader2 } from "lucide-react"; // 🟢 Retrait de Calendar ici
 import { toast } from "sonner";
 import { waterPlant } from "@/server/actions";
 import confetti from "canvas-confetti";
@@ -75,8 +75,8 @@ export default function WaterButton({
       }`}
     >
       
-      <div className="flex items-center gap-1.5 pl-2.5 font-semibold text-[11px] sm:text-xs tracking-tight">
-        <Calendar className={`w-3.5 h-3.5 ${urgent ? 'text-rose-200' : 'text-emerald-500/70'}`} />
+      {/* 🟢 MODIFICATION ICI : Plus de <Calendar />, et ajustement du padding (pl-3) */}
+      <div className="flex items-center pl-3 pr-2 font-semibold text-[11px] sm:text-xs tracking-tight">
         <span className="truncate">{timeText}</span>
       </div>
 

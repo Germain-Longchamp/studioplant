@@ -21,7 +21,7 @@ export default function PlantCard({ plant }: { plant: any }) {
       <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
       
       {/* IMAGE PLUS FINE */}
-      <div className="relative w-[28%] min-w-[96px] max-w-[120px] bg-stone-100 shrink-0 border-r border-stone-100/50">
+      <div className="relative w-[26%] min-w-[86px] max-w-[120px] bg-stone-100 shrink-0 border-r border-stone-100/50">
         {plant.image_path ? (
           <Image src={plant.image_path} alt={plant.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 33vw, 25vw" />
         ) : (
@@ -32,7 +32,7 @@ export default function PlantCard({ plant }: { plant: any }) {
       </div>
       
       {/* PADDING RÉDUIT */}
-      <div className="flex flex-col flex-1 p-3 sm:p-4">
+      <div className="flex flex-col flex-1 p-2 sm:p-4">
         
         <div className="flex-1 relative">
           <div>
