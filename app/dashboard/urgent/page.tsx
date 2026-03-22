@@ -35,26 +35,43 @@ export default async function UrgentPlantsPage() {
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
       
-      {/* HEADER HERO */}
-      <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-24 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
+      {/* HEADER HERO (Padding réduit et indicateur intégré) */}
+      <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-14 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
 
         <div className="max-w-md mx-auto relative z-10">
-          <header className="flex items-center gap-3 mb-8">
-            <Button variant="ghost" size="icon" asChild className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          <header className="flex items-start gap-3">
+            <Button variant="ghost" size="icon" asChild className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition-colors mt-0.5 shrink-0">
               <Link href="/dashboard">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
             </Button>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
-              Arrosages
-            </h1>
+            
+            <div>
+              <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm mb-2">
+                Arrosages
+              </h1>
+              
+              {/* Le texte des actions est maintenant un badge dans le header ! */}
+              {urgentCount > 0 ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs font-bold uppercase tracking-wider">
+                  <Droplets className="w-4 h-4 text-rose-300" />
+                  {urgentCount} action{urgentCount > 1 ? 's' : ''} requise{urgentCount > 1 ? 's' : ''}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-bold uppercase tracking-wider">
+                  <CheckCircle className="w-4 h-4" />
+                  Tout est à jour
+                </div>
+              )}
+            </div>
           </header>
         </div>
       </div>
 
-      <main className="max-w-md mx-auto px-5 -mt-14 relative z-20 space-y-6">
+      {/* MARGE NÉGATIVE RÉDUITE (-mt-6 au lieu de -mt-14) */}
+      <main className="max-w-md mx-auto px-5 -mt-6 relative z-20">
         
         {urgentCount === 0 ? (
           <div className="bg-white rounded-[2rem] border border-stone-100 p-8 flex flex-col items-center justify-center text-center shadow-lg shadow-stone-200/40 relative overflow-hidden">
@@ -66,10 +83,7 @@ export default async function UrgentPlantsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 mb-2 px-2">
-              <Droplets className="w-5 h-5 text-rose-500" />
-              <h2 className="text-lg font-bold text-stone-800 tracking-tight">{urgentCount} action{urgentCount > 1 ? 's' : ''} requise{urgentCount > 1 ? 's' : ''}</h2>
-            </div>
+            {/* On boucle directement sur les cartes, plus de texte noir ici ! */}
             {urgentPlants.map((plant) => (
               <PlantCard key={plant.id} plant={plant} />
             ))}
