@@ -142,7 +142,7 @@ export default async function DashboardPage() {
                   <p className={`text-[11px] font-bold uppercase tracking-wider mt-1.5 ${
                     urgentCount > 0 ? 'text-rose-500' : 'text-stone-400'
                   }`}>
-                    {urgentCount > 0 ? 'En soif' : 'Tout va bien'}
+                    {urgentCount > 0 ? 'Arrosages' : 'Tout va bien'}
                   </p>
                 </div>
               </div>
