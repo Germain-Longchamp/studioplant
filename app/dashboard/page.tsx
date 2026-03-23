@@ -171,8 +171,8 @@ export default async function DashboardPage() {
       <BottomNav />
 
       {/* AFFICHAGE CONDITIONNEL DES MODALES D'ONBOARDING */}
-      {isBrandNewUser && <NewUserOnboarding />}
-      {needsRoomMigration && <RoomOnboarding />}
+      <NewUserOnboarding show={isBrandNewUser} />
+      <RoomOnboarding show={needsRoomMigration} />
 
     </div>
   );
