@@ -11,7 +11,7 @@ import PlantMenu from "./PlantMenu";
 import SosFeature from "./SosFeature";
 import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
-import PlantIdentityModal from "./PlantIdentityModal"; // NOUVEL IMPORT
+import PlantIdentityModal from "./PlantIdentityModal";
 
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
@@ -144,10 +144,11 @@ export default async function PlantDetailPage({
             </p>
           </div>
 
-          {/* ===== NOUVEAU BOUTON MODALE ===== */}
+          {/* ===== BOUTON MODALE ===== */}
           <PlantIdentityModal plant={plant} hasQuickInfos={hasQuickInfos} />
 
-          <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden" open>
+          {/* ===== 1. ARROSAGE (Fermé par défaut) ===== */}
+          <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4 overflow-hidden">
                 <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 shrink-0">
@@ -197,8 +198,7 @@ export default async function PlantDetailPage({
             </div>
           </details>
 
-          <EnvironmentAccordion plant={plant} />
-
+          {/* ===== 2. GUIDE D'ENTRETIEN (Déplacé ici) ===== */}
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4">
@@ -218,6 +218,10 @@ export default async function PlantDetailPage({
             </div>
           </details>
 
+          {/* ===== 3. EMPLACEMENT ACTUEL ===== */}
+          <EnvironmentAccordion plant={plant} />
+
+          {/* ===== 4. MON CARNET ===== */}
           {plant.description && (
             <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 overflow-hidden">
               <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
