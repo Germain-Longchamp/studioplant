@@ -34,6 +34,8 @@ export default function AdminTable({ users }: { users: any[] }) {
             <tr>
               <th className="px-6 py-4">Utilisateur</th>
               <th className="px-6 py-4">Date d'inscription</th>
+              {/* 🟢 NOUVELLE COLONNE */}
+              <th className="px-6 py-4">Dernière connexion</th>
               <th className="px-6 py-4 text-center">Plantes</th>
               <th className="px-6 py-4 text-center">Pièces</th>
               <th className="px-6 py-4 text-right">Actions</th>
@@ -50,6 +52,16 @@ export default function AdminTable({ users }: { users: any[] }) {
                   {new Date(user.created_at).toLocaleDateString('fr-FR', {
                     day: 'numeric', month: 'long', year: 'numeric'
                   })}
+                </td>
+                {/* 🟢 NOUVELLE DONNÉE */}
+                <td className="px-6 py-4 text-stone-500 font-medium">
+                  {user.last_sign_in_at ? (
+                    new Date(user.last_sign_in_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }).replace(':', 'h')
+                  ) : (
+                    <span className="text-stone-300 italic">Jamais</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-center">
                   <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-100/50">
@@ -79,7 +91,8 @@ export default function AdminTable({ users }: { users: any[] }) {
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-stone-500 font-medium">
+                {/* 🟢 J'ai passé le colSpan à 6 pour prendre en compte la nouvelle colonne */}
+                <td colSpan={6} className="px-6 py-12 text-center text-stone-500 font-medium">
                   Aucun utilisateur trouvé.
                 </td>
               </tr>
