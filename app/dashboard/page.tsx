@@ -1,14 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets, ArrowRight } from "lucide-react";
+import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import QuickAnalysis from "./QuickAnalysis";
 import DoctorPlant from "./DoctorPlant";
 
-// IMPORT DU NOUVEAU COMPOSANT ET DE L'ACTION
+// IMPORT DES COMPOSANTS D'ONBOARDING ET DE L'ACTION
 import RoomOnboarding from "./RoomOnboarding";
+import NewUserOnboarding from "./NewUserOnboarding";
 import { getUserRooms } from "@/server/actions";
 
 const getSeasonInfo = () => {
@@ -27,9 +28,14 @@ export default async function DashboardPage() {
 
   const { data: plants } = await supabase.from("plants").select("*");
 
-  // VÉRIFICATION DES PIÈCES DE L'UTILISATEUR POUR L'ONBOARDING
+  // VÉRIFICATION DES PIÈCES ET DES PLANTES POUR L'ONBOARDING
   const rooms = await getUserRooms();
   const hasNoRooms = rooms.length === 0;
+  const hasNoPlants = !plants || plants.length === 0;
+
+  // Logique de ciblage des modales
+  const isBrandNewUser = hasNoRooms && hasNoPlants; 
+  const needsRoomMigration = hasNoRooms && !hasNoPlants;
 
   const sortedPlants = plants?.sort((a, b) => {
     const nextDateA = new Date(a.last_watered_at);
@@ -164,8 +170,9 @@ export default async function DashboardPage() {
 
       <BottomNav />
 
-      {/* AFFICHAGE CONDITIONNEL DE LA MODALE D'ONBOARDING */}
-      {hasNoRooms && <RoomOnboarding />}
+      {/* AFFICHAGE CONDITIONNEL DES MODALES D'ONBOARDING */}
+      {isBrandNewUser && <NewUserOnboarding />}
+      {needsRoomMigration && <RoomOnboarding />}
 
     </div>
   );
