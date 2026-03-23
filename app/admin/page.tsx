@@ -72,7 +72,7 @@ if (roomsError) {
             <p className="text-stone-400 text-sm font-medium">{user.email}</p>
           </header>
 
-          <h1 className="text-4xl font-extrabold tracking-tight mb-2">Back-Office StudioPlant</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2">Back-Office Studio Plantes</h1>
           <p className="text-stone-400 font-medium">Gérez vos utilisateurs et observez la croissance de la plateforme.</p>
         </div>
       </div>
