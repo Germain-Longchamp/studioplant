@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Droplets, AlignLeft, Info, LeafyGreen, ChevronDown, Calendar, Sparkles } from "lucide-react";
+import { ArrowLeft, Droplets, AlignLeft, Info, LeafyGreen, ChevronDown, Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
@@ -49,7 +49,8 @@ function FormatCareNotes({ text }: { text: string }) {
         if (isBullet) {
           return (
             <div key={i} className="flex gap-3 text-[15px] text-stone-700 leading-relaxed">
-              <span className="text-emerald-500 mt-1"><Sparkles className="w-4 h-4" /></span>
+              {/* 🟢 CHANGEMENT : On a retiré l'icône Sparkles pour une puce simple et propre */}
+              <span className="text-emerald-500 font-black mt-0.5">•</span>
               <span className="flex-1">{formattedLine}</span>
             </div>
           );
@@ -106,7 +107,6 @@ export default async function PlantDetailPage({
   const hasQuickInfos = !!(plant.origin || plant.robustness || plant.max_size || plant.ideal_substrate || plant.ideal_exposure);
 
   return (
-    // 🟢 CHANGEMENT : Fond principal teinté pour faire ressortir les cartes blanches
     <div className="min-h-screen bg-[#F4F7F4] pb-32 font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-200">
       
       <header className="fixed top-0 w-full z-[60] bg-gradient-to-b from-black/60 via-black/20 to-transparent pt-6 pb-6">
@@ -123,7 +123,6 @@ export default async function PlantDetailPage({
 
       <main className="max-w-md mx-auto">
         
-        {/* 🟢 CHANGEMENT : Image un peu moins haute pour voir le contenu plus vite, dégradé de fond plus propre */}
         <div className="relative w-full h-[50vh] bg-stone-900 overflow-hidden">
           {plant.image_path ? (
             <Image src={plant.image_path} alt={plant.name} fill className="object-cover opacity-95" priority sizes="100vw" />
@@ -135,19 +134,27 @@ export default async function PlantDetailPage({
 
         <div className="relative -mt-28 z-20 px-4 space-y-5">
           
-          {/* 🟢 CHANGEMENT : Le header de la plante est maintenant une carte "Glassmorphism" magnifique */}
           <div className="bg-white/85 backdrop-blur-xl p-6 rounded-[2rem] shadow-xl shadow-stone-200/50 border border-white flex flex-col gap-4">
             <div>
-              <h1 className="text-4xl font-black text-stone-900 tracking-tight leading-none mb-1.5 drop-shadow-sm">
+              <h1 className="text-4xl font-black text-stone-900 tracking-tight leading-none mb-2 drop-shadow-sm">
                 {plant.name}
               </h1>
-              <p className="text-lg text-emerald-600 font-semibold tracking-wide flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                {plant.species}
-              </p>
+              
+              {/* 🟢 CHANGEMENT : Intégration de l'espèce et de la pièce (room) sur la même ligne ou en colonne selon la place */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <p className="text-lg text-emerald-600 font-semibold tracking-wide flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  {plant.species}
+                </p>
+                {plant.room && (
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100/60 text-stone-600 text-sm font-medium border border-stone-200/50">
+                    <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                    {plant.room}
+                  </span>
+                )}
+              </div>
             </div>
             
-            {/* On intègre la modale directement dans ce bloc identité, c'est plus logique visuellement */}
             <div className="pt-2 border-t border-stone-200/50">
               <PlantIdentityModal plant={plant} hasQuickInfos={hasQuickInfos} />
             </div>
@@ -157,7 +164,6 @@ export default async function PlantDetailPage({
           <details className="group [&_summary::-webkit-details-marker]:hidden bg-white rounded-[2rem] shadow-lg shadow-stone-200/30 border border-stone-100 overflow-hidden transition-all hover:border-emerald-100/60">
             <summary className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-stone-50/50 active:bg-stone-100">
               <div className="flex items-center gap-4 overflow-hidden">
-                {/* 🟢 CHANGEMENT : Icônes avec un léger dégradé pour plus de relief */}
                 <div className="p-3 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl text-blue-600 shrink-0 shadow-sm">
                   <Droplets className="w-5 h-5" />
                 </div>
