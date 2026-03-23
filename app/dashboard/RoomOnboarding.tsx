@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,18 +8,23 @@ import { toast } from "sonner";
 import { DoorOpen, Compass, Sun, Droplets, Thermometer, ArrowRight, X, Sparkles, Cloud, SunDim, Wind, Loader2 } from "lucide-react";
 import { saveRoom } from "@/server/actions";
 
-export default function RoomOnboarding() {
+// 🟢 1. Ajout de la prop "show"
+export default function RoomOnboarding({ show }: { show: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
 
-  // On ajoute un petit délai avant d'afficher la popup pour que l'utilisateur ait le temps de voir la page charger
-  useEffect(() => {
-    const timer = setTimeout(() => setIsOpen(true), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  // 🟢 2. Sécurisation de l'ouverture
+  const hasTriggered = useRef(false);
 
-  // Form states (identiques au RoomsManager)
+  useEffect(() => {
+    if (show && !hasTriggered.current) {
+      hasTriggered.current = true;
+      const timer = setTimeout(() => setIsOpen(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [show]);
+
   const [orientations, setOrientations] = useState<string[]>([]);
   const [lightLevel, setLightLevel] = useState("Moyenne");
   const [humidityLevel, setHumidityLevel] = useState("Normale");
