@@ -44,6 +44,7 @@ if (roomsError) {
       email: u.email,
       created_at: u.created_at,
       plantsCount: userPlants.length,
+      last_sign_in_at: u.last_sign_in_at,
       roomsCount: userRooms.length,
     };
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
