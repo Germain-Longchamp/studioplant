@@ -163,7 +163,7 @@ export default function AddPlantPage() {
               </h2>
               <p className="text-sm text-stone-500 font-medium px-4">
                 {loadingState === "analyzing" 
-                  ? "Notre expert observe votre plante pour la reconnaître." 
+                  ? "Notre expert analyse la photo afin de la reconnaître." 
                   : "Analyse de son nouvel environnement en cours."}
               </p>
             </div>
