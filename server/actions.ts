@@ -107,7 +107,7 @@ export async function analyzePlantForForm(formData: FormData) {
 }
 
 // ==========================================
-// AJOUT FINAL (ÉTAPE 2 - MODIFIÉE)
+// AJOUT FINAL
 // ==========================================
 export async function addPlantWithAI(formData: FormData) {
   const imageFile = formData.get("image") as File;
@@ -132,55 +132,86 @@ export async function addPlantWithAI(formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
-    const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Data = buffer.toString("base64");
-
-    const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
+    const contextPrompt = await getUserContextPrompt(user);
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
 
-    const contextPrompt = await getUserContextPrompt(user);
+    // 🚀 OPTIMISATION 1 : On prépare l'upload de l'image (Tâche A)
+    const fileExtension = imageFile.name.split('.').pop() || 'jpg';
+    const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
+    const uploadPromise = supabase.storage.from("plant-images").upload(fileName, imageFile);
 
-    const prompt = `
-      Analyse cette photo de plante d'intérieur. 
-      ${prefilledName ? `Note : Elle a déjà été identifiée au préalable comme étant une "${prefilledName}" (${prefilledSpecies}). Base tes conseils sur cette espèce.` : ""}
-      
-      L'utilisateur a décidé de la placer dans cette pièce précise (qui fait partie de sa maison) : "${room || "Non précisé"}".
-      La luminosité locale de cet emplacement précis est : "${light || "Non précisée"}".
+    // 🚀 OPTIMISATION 2 : On prépare l'appel à Gemini (Tâche B)
+    let geminiPromise;
 
-      ${contextPrompt}
+    if (prefilledName && prefilledSpecies) {
+      // MODE ULTRA RAPIDE : On ne renvoie pas l'image, on utilise juste le texte !
+      const textPrompt = `
+        Tu es un expert en botanique. L'utilisateur vient d'ajouter cette plante à sa collection :
+        Nom : "${prefilledName}"
+        Espèce : "${prefilledSpecies}"
+        
+        Il a décidé de la placer dans cette pièce précise (qui fait partie de sa maison) : "${room || "Non précisé"}".
+        La luminosité locale de cet emplacement précis est : "${light || "Non précisée"}".
 
-      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
-      {
-        "name": "${prefilledName ? prefilledName : "Nom commun"}",
-        "species": "${prefilledSpecies ? prefilledSpecies : "Nom scientifique"}",
-        "watering_frequency": 7,
-        "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
-        "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
-        "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
-        "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
-        "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
-        "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
-        "light_advice": "Ton avis d'expert court sur la luminosité locale choisie.",
-        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
-      }
-      Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "watering_frequency": 0, "origin": "", "robustness": "", "max_size": "", "ideal_substrate": "", "ideal_exposure": "", "room_advice": "", "light_advice": "", "care_notes": "Ceci ne semble pas être une plante."}
-    `;
+        ${contextPrompt}
 
-    const result = await model.generateContent([prompt, imagePart]);
-    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    const plantData = JSON.parse(cleanedText);
+        Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+        {
+          "name": "${prefilledName}",
+          "species": "${prefilledSpecies}",
+          "watering_frequency": 7,
+          "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
+          "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+          "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+          "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
+          "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
+          "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
+          "light_advice": "Ton avis d'expert court sur la luminosité locale choisie.",
+          "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
+        }
+      `;
+      geminiPromise = model.generateContent(textPrompt);
+    } else {
+      // MODE CLASSIQUE (Fallback si on n'a pas les données de l'étape 1 pour une raison X ou Y)
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64Data = buffer.toString("base64");
+      const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
+
+      const multimodalPrompt = `
+        Analyse cette photo de plante d'intérieur. 
+        L'utilisateur a décidé de la placer dans cette pièce précise : "${room || "Non précisé"}".
+        La luminosité locale est : "${light || "Non précisée"}".
+
+        ${contextPrompt}
+
+        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_frequency": 7, "origin": "...", "robustness": "...", "max_size": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "care_notes": "..."}
+        Si ce n'est pas une plante, retourne : {"name": "Erreur", "species": "Non reconnu"}
+      `;
+      geminiPromise = model.generateContent([multimodalPrompt, imagePart]);
+    }
+
+    // 🚀 OPTIMISATION 3 : On lance Tâche A et Tâche B EXACTEMENT EN MÊME TEMPS
+    const [uploadResult, geminiResult] = await Promise.all([uploadPromise, geminiPromise]);
+
+    // Vérification de l'upload
+    if (uploadResult.error) return { error: "Erreur lors de la sauvegarde de l'image." };
+
+    // Vérification et formatage du résultat IA
+    const cleanedText = geminiResult.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    let plantData;
+    try {
+      plantData = JSON.parse(cleanedText);
+    } catch (e) {
+      return { error: "Le laboratoire a eu du mal à rédiger la fiche. Veuillez réessayer." };
+    }
 
     if (plantData.name === "Erreur") return { error: "Nous n'avons pas réussi à identifier de plante sur cette photo." };
 
-    const fileExtension = imageFile.name.split('.').pop() || 'jpg';
-    const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
-    
-    const { error: storageError } = await supabase.storage.from("plant-images").upload(fileName, imageFile);
-    if (storageError) return { error: "Erreur lors de la sauvegarde de l'image." };
-
+    // Récupération de l'URL de l'image fraîchement uploadée
     const { data: publicUrlData } = supabase.storage.from("plant-images").getPublicUrl(fileName);
 
+    // Sauvegarde en base de données
     const { data: newPlant, error: dbError } = await supabase.from("plants").insert({
       user_id: user.id,
       name: plantData.name,
