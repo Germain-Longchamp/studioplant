@@ -246,6 +246,138 @@ export async function addPlantWithAI(formData: FormData) {
   }
 }
 
+// ==========================================
+// 🟢 ÉTAPE 2 : SAUVEGARDE ÉCLAIR (SANS IA)
+// ==========================================
+export async function saveOptimisticPlant(formData: FormData) {
+  const imageFile = formData.get("image") as File;
+  const room = formData.get("room") as string;
+  const light = formData.get("light") as string;
+  const prefilledName = formData.get("prefilled_name") as string;
+  const prefilledSpecies = formData.get("prefilled_species") as string;
+  const lastWateredInput = formData.get("lastWateredAt") as string;
+
+  if (!imageFile) return { error: "Aucune image fournie." };
+
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const lastWateredDate = lastWateredInput ? new Date(lastWateredInput).toISOString() : new Date().toISOString();
+
+    // 1. Upload de l'image (Seule tâche asynchrone, très rapide)
+    const fileExtension = imageFile.name.split('.').pop() || 'jpg';
+    const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
+    const { error: storageError } = await supabase.storage.from("plant-images").upload(fileName, imageFile);
+    if (storageError) return { error: "Erreur lors de la sauvegarde de l'image." };
+
+    const { data: publicUrlData } = supabase.storage.from("plant-images").getPublicUrl(fileName);
+
+    // 2. Sauvegarde en BDD (Immédiate) avec des champs VIDES pour la génération différée
+    const { data: newPlant, error: dbError } = await supabase.from("plants").insert({
+      user_id: user.id,
+      name: prefilledName || "Plante inconnue",
+      species: prefilledSpecies || "Espèce inconnue",
+      watering_frequency: 7, // Valeur par défaut temporaire
+      exposure: light,
+      room: room,
+      description: "",
+      image_path: publicUrlData.publicUrl,
+      last_watered_at: lastWateredDate,
+      watering_history: [lastWateredDate],
+      snooze_days: 0,
+      // 🟢 Les champs ci-dessous seront remplis par l'IA en arrière-plan :
+      origin: "",
+      robustness: "",
+      max_size: "",
+      ideal_substrate: "",
+      ideal_exposure: "",
+      care_notes: "",
+      room_advice: "",
+      light_advice: ""
+    }).select().single();
+
+    if (dbError) throw dbError;
+
+    revalidatePath("/dashboard");
+    return { success: true, plantId: newPlant.id };
+  } catch (error) {
+    return { error: "Une erreur est survenue lors de la sauvegarde." };
+  }
+}
+
+// ==========================================
+// 🟢 ÉTAPE 3 (BACKGROUND) : GÉNÉRATION DU CARNET
+// ==========================================
+export async function generateDeferredCareGuide(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    // On récupère la plante
+    const { data: plant } = await supabase.from("plants").select("*").eq("id", plantId).single();
+    if (!plant) return { error: "Plante introuvable" };
+
+    const contextPrompt = await getUserContextPrompt(user);
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+
+    // On demande à Gemini TOUT le reste, basé sur la pièce et l'espèce
+    const prompt = `
+      Tu es un expert en botanique. L'utilisateur vient d'ajouter cette plante à sa collection :
+      Nom : "${plant.name}"
+      Espèce : "${plant.species}"
+
+      Il l'a placée dans cette pièce : "${plant.room || "Non précisé"}".
+      La luminosité locale de cet emplacement est : "${plant.exposure || "Non précisée"}".
+
+      ${contextPrompt}
+
+      Génère son carnet de santé complet.
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      {
+        "watering_frequency": 7,
+        "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
+        "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+        "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+        "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
+        "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
+        "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
+        "light_advice": "Ton avis d'expert court sur la luminosité locale choisie.",
+        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis."
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    const plantData = JSON.parse(cleanedText);
+
+    // On met à jour la base de données avec les nouvelles infos
+    const { error: updateError } = await supabase.from("plants").update({
+      watering_frequency: plantData.watering_frequency,
+      origin: plantData.origin,
+      robustness: plantData.robustness,
+      max_size: plantData.max_size,
+      ideal_substrate: plantData.ideal_substrate,
+      ideal_exposure: plantData.ideal_exposure,
+      room_advice: plantData.room_advice,
+      light_advice: plantData.light_advice,
+      care_notes: plantData.care_notes,
+    }).eq("id", plantId);
+
+    if (updateError) throw updateError;
+
+    // 🟢 La magie de Next.js : On dit à la page de se rafraîchir en direct !
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Deferred Generation Error:", error);
+    return { error: "Erreur lors de la génération du carnet." };
+  }
+}
+
+
 export async function updatePlantAdvice(plantId: string) {
   try {
     const supabase = await createClient();
