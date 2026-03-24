@@ -44,7 +44,7 @@ async function getUserContextPrompt(user: any) {
 
 
 // ==========================================
-// PRÉ-ANALYSE RAPIDE (ÉTAPE 1)
+// 🟢 PRÉ-ANALYSE RAPIDE (ÉTAPE 1 - MULTI-PIÈCES)
 // ==========================================
 export async function analyzePlantForForm(formData: FormData) {
   const imageFile = formData.get("image") as File;
@@ -55,9 +55,14 @@ export async function analyzePlantForForm(formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
-    // On récupère juste les noms des pièces pour orienter le choix de l'IA
-    const { data: rooms } = await supabase.from("rooms").select("name").eq("user_id", user.id);
-    const roomNames = rooms && rooms.length > 0 ? rooms.map(r => r.name).join(', ') : "Aucune pièce configurée";
+    // On récupère toutes les infos des pièces pour que l'IA puisse juger (température, humidité, etc.)
+    const { data: rooms } = await supabase.from("rooms").select("*").eq("user_id", user.id);
+    let roomsStr = "L'utilisateur n'a configuré aucune pièce.";
+    if (rooms && rooms.length > 0) {
+      roomsStr = rooms.map(r => 
+        `- Nom: ${r.name} | Orientation: ${r.orientation || 'N/A'} | Lumière: ${r.light_level || 'N/A'} | Humidité: ${r.humidity || 'N/A'} | Temp: Été ${r.temp_summer || 'N/A'}°C, Hiver ${r.temp_winter || 'N/A'}°C`
+      ).join('\n');
+    }
 
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -68,15 +73,24 @@ export async function analyzePlantForForm(formData: FormData) {
 
     const prompt = `
       Analyse cette photo pour identifier la plante d'intérieur.
-      Voici la liste des pièces disponibles chez l'utilisateur : [${roomNames}].
+      Voici les pièces disponibles chez l'utilisateur et leurs caractéristiques : 
+      ${roomsStr}
 
-      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      Parmi cette liste exacte de pièces, détermine s'il y en a une ou plusieurs qui conviendraient parfaitement à cette plante.
+
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown) :
       {
         "name": "Nom commun (ex: Monstera Deliciosa)",
         "species": "Nom scientifique",
-        "recommended_room": "Le nom exact de la pièce la plus adaptée pour cette plante, à choisir STRICTEMENT parmi la liste fournie. Laisse une chaîne vide '' si la liste est vide."
+        "recommended_rooms": [
+          {
+            "room_name": "Le nom exact de la pièce (ex: Salon)",
+            "reason": "Justification TRÈS courte (1 phrase max). Ex: Car cette pièce est lumineuse et humide."
+          }
+        ]
       }
-      Si l'image ne montre pas de plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "recommended_room": ""}
+      S'il n'y a aucune pièce configurée, ou si aucune ne correspond vraiment, renvoie un tableau "recommended_rooms" vide [].
+      Si l'image ne montre pas de plante, retourne : {"name": "Erreur", "species": "Non reconnu", "recommended_rooms": []}
     `;
 
     const result = await model.generateContent([prompt, imagePart]);
