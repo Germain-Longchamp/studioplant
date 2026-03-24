@@ -313,7 +313,7 @@ export default function AddPlantPage() {
                 {preliminaryData.recommended_room && userRooms.some(r => r.name === preliminaryData.recommended_room) && (
                   <p className="text-[11px] text-amber-600 font-bold ml-2 mt-2 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
-                    L'IA a pré-sélectionné la pièce idéale pour cette plante !
+                    Nous avons pré-sélectionné la pièce idéale pour cette plante !
                   </p>
                 )}
                 {userRooms.length === 0 && (
