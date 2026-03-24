@@ -2,18 +2,19 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import AdminTable from "./AdminTable";
-import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft } from "lucide-react";
+// 🟢 CHANGEMENT : Import de l'icône Scan
+import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan } from "lucide-react"; 
 import Link from "next/link";
 
 export default async function AdminDashboard() {
-  // 1. VÉRIFICATION DE SÉCURITÉ (Remplace par ton vrai email admin)
+  // 1. VÉRIFICATION DE SÉCURITÉ
   const ADMIN_EMAILS = ["studiohub@test.com"]; // 🟢 METS TON EMAIL ICI
   
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user || !ADMIN_EMAILS.includes(user.email!)) {
-    redirect("/dashboard"); // Redirige les curieux vers le dashboard normal
+    redirect("/dashboard");
   }
 
   // 2. CLIENT ADMIN (Pour lire toutes les données)
@@ -27,13 +28,14 @@ export default async function AdminDashboard() {
   const allUsers = authData?.users || [];
 
   const { data: allPlants } = await supabaseAdmin.from("plants").select("id, user_id");
-  // ✅ Ligne corrigée
-const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id");
+  const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id");
+  
+  // 🟢 NOUVEAU : Récupération des Scans Rapides
+  const { data: allScans } = await supabaseAdmin.from("quick_scans").select("id");
 
-// Optionnel : si tu veux voir l'erreur dans ton terminal serveur si la table ne s'appelle pas "user_rooms"
-if (roomsError) {
-  console.warn("Erreur sur la table des pièces :", roomsError.message);
-}
+  if (roomsError) {
+    console.warn("Erreur sur la table des pièces :", roomsError.message);
+  }
 
   // 4. AGRÉGATION DES DONNÉES PAR UTILISATEUR
   const enrichedUsers = allUsers.map((u) => {
@@ -53,6 +55,7 @@ if (roomsError) {
   const totalUsers = allUsers.length;
   const totalPlants = allPlants?.length || 0;
   const totalRooms = allRooms?.length || 0;
+  const totalScans = allScans?.length || 0; // 🟢 NOUVEAU : Total des scans
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-20">
@@ -79,8 +82,8 @@ if (roomsError) {
 
       <main className="max-w-6xl mx-auto px-6 sm:px-10 -mt-8 relative z-10 space-y-8">
         
-        {/* WIDGETS DE STATS (Desktop: 3 colonnes) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* WIDGETS DE STATS (Desktop: 4 colonnes maintenant) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/50">
@@ -109,6 +112,17 @@ if (roomsError) {
             <div>
               <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Pièces créées</p>
               <p className="text-3xl font-extrabold text-stone-900">{totalRooms}</p>
+            </div>
+          </div>
+
+          {/* 🟢 NOUVELLE CARTE : SCANS RAPIDES */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/50">
+              <Scan className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Scans Rapides</p>
+              <p className="text-3xl font-extrabold text-stone-900">{totalScans}</p>
             </div>
           </div>
 
