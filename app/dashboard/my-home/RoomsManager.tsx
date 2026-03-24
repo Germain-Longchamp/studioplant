@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Pencil, Trash2, MapPin, Compass, Sun, Droplets, ThermometerSun, ThermometerSnow, Home } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, MapPin, Compass, Sun, Droplets, ThermometerSun, Snowflake, Home } from "lucide-react";
 import { deleteRoom } from "@/server/actions";
 import EnvironmentForm from "./EnvironmentForm";
 
@@ -158,7 +158,7 @@ export default function RoomsManager({ initialRooms, userId }: { initialRooms: a
                          )}
                          {room.temp_winter && (
                            <span className="flex items-center text-xs font-medium text-stone-700 bg-white border border-stone-200 px-1.5 py-0.5 rounded shadow-sm">
-                             <ThermometerSnow className="w-3 h-3 text-cyan-500 mr-1" /> {room.temp_winter}°
+                             <Snowflake className="w-3 h-3 text-cyan-500 mr-1" /> {room.temp_winter}°
                            </span>
                          )}
                        </div>
