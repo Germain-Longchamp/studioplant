@@ -42,10 +42,67 @@ async function getUserContextPrompt(user: any) {
 }
 
 
+
+// ==========================================
+// PRÉ-ANALYSE RAPIDE (ÉTAPE 1)
+// ==========================================
+export async function analyzePlantForForm(formData: FormData) {
+  const imageFile = formData.get("image") as File;
+  if (!imageFile || imageFile.size === 0) return { error: "Aucune image fournie." };
+
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    // On récupère juste les noms des pièces pour orienter le choix de l'IA
+    const { data: rooms } = await supabase.from("rooms").select("name").eq("user_id", user.id);
+    const roomNames = rooms && rooms.length > 0 ? rooms.map(r => r.name).join(', ') : "Aucune pièce configurée";
+
+    const arrayBuffer = await imageFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Data = buffer.toString("base64");
+    const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
+
+    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+
+    const prompt = `
+      Analyse cette photo pour identifier la plante d'intérieur.
+      Voici la liste des pièces disponibles chez l'utilisateur : [${roomNames}].
+
+      Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
+      {
+        "name": "Nom commun (ex: Monstera Deliciosa)",
+        "species": "Nom scientifique",
+        "recommended_room": "Le nom exact de la pièce la plus adaptée pour cette plante, à choisir STRICTEMENT parmi la liste fournie. Laisse une chaîne vide '' si la liste est vide."
+      }
+      Si l'image ne montre pas de plante, retourne exactement : {"name": "Erreur", "species": "Non reconnu", "recommended_room": ""}
+    `;
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    const data = JSON.parse(cleanedText);
+
+    if (data.name === "Erreur") return { error: "Nous n'avons pas réussi à identifier de plante sur cette photo." };
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("Pre-analysis Error:", error);
+    return { error: "Impossible d'analyser la photo pour le moment." };
+  }
+}
+
+// ==========================================
+// AJOUT FINAL (ÉTAPE 2 - MODIFIÉE)
+// ==========================================
 export async function addPlantWithAI(formData: FormData) {
   const imageFile = formData.get("image") as File;
   const room = formData.get("room") as string;
   const light = formData.get("light") as string;
+  
+  // Données pré-remplies de l'étape 1
+  const prefilledName = formData.get("prefilled_name") as string;
+  const prefilledSpecies = formData.get("prefilled_species") as string;
   
   const lastWateredInput = formData.get("lastWateredAt") as string;
   const lastWateredDate = lastWateredInput 
@@ -68,11 +125,12 @@ export async function addPlantWithAI(formData: FormData) {
     const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
 
-    // 🟢 Utilisation du Super Contexte
     const contextPrompt = await getUserContextPrompt(user);
 
     const prompt = `
       Analyse cette photo de plante d'intérieur. 
+      ${prefilledName ? `Note : Elle a déjà été identifiée au préalable comme étant une "${prefilledName}" (${prefilledSpecies}). Base tes conseils sur cette espèce.` : ""}
+      
       L'utilisateur a décidé de la placer dans cette pièce précise (qui fait partie de sa maison) : "${room || "Non précisé"}".
       La luminosité locale de cet emplacement précis est : "${light || "Non précisée"}".
 
@@ -80,8 +138,8 @@ export async function addPlantWithAI(formData: FormData) {
 
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
-        "name": "Nom commun (ex: Monstera Deliciosa)",
-        "species": "Nom scientifique",
+        "name": "${prefilledName ? prefilledName : "Nom commun"}",
+        "species": "${prefilledSpecies ? prefilledSpecies : "Nom scientifique"}",
         "watering_frequency": 7,
         "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
         "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
@@ -101,7 +159,7 @@ export async function addPlantWithAI(formData: FormData) {
 
     if (plantData.name === "Erreur") return { error: "Nous n'avons pas réussi à identifier de plante sur cette photo." };
 
-    const fileExtension = imageFile.name.split('.').pop();
+    const fileExtension = imageFile.name.split('.').pop() || 'jpg';
     const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
     
     const { error: storageError } = await supabase.storage.from("plant-images").upload(fileName, imageFile);
@@ -142,7 +200,6 @@ export async function addPlantWithAI(formData: FormData) {
     return { error: "Une erreur inattendue est survenue." };
   }
 }
-
 
 export async function updatePlantAdvice(plantId: string) {
   try {
