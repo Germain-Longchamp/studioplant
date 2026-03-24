@@ -248,7 +248,7 @@ export default function RoomsManager({ rooms }: { rooms: any[] }) {
             </form>
           </div>
         ) : (
-          /* 🟢 LISTE DES PIÈCES RÉVISÉE : UI Compacte et Grille */
+          /* 🟢 LISTE DES PIÈCES : DESIGN COMPACT & MODERNE */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             {rooms.length === 0 && (
               <div className="col-span-1 md:col-span-2 text-center p-8 bg-[#FDFCF8] border border-stone-200 border-dashed rounded-[1.5rem]">
@@ -260,19 +260,19 @@ export default function RoomsManager({ rooms }: { rooms: any[] }) {
             )}
             
             {rooms.map(room => (
-              <div key={room.id} className="relative bg-[#FDFCF8] rounded-[1.5rem] p-4 sm:p-5 shadow-sm border border-stone-200/60 transition-all hover:shadow-md hover:border-emerald-200 group overflow-hidden flex flex-col justify-between">
+              <div key={room.id} className="relative bg-white rounded-[1.5rem] p-5 shadow-sm border border-stone-200/60 transition-all hover:shadow-md hover:border-emerald-200 group flex flex-col justify-between">
                 
                 {/* En-tête : Titre + Actions */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-stone-100/80 rounded-xl text-stone-600 border border-stone-200/60 shadow-sm shrink-0">
+                    <div className="p-2.5 bg-stone-50 rounded-xl text-stone-600 border border-stone-100 shadow-sm shrink-0">
                       <DoorOpen className="w-5 h-5" />
                     </div>
-                    <h3 className="font-extrabold text-stone-800 text-lg leading-tight line-clamp-1">{room.name}</h3>
+                    <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1">{room.name}</h3>
                   </div>
 
-                  {/* Boutons d'action discrets */}
-                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Boutons d'action discrets (fantômes) */}
+                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     <button 
                       onClick={() => openForm(room)}
                       disabled={isPending}
@@ -292,48 +292,36 @@ export default function RoomsManager({ rooms }: { rooms: any[] }) {
                   </div>
                 </div>
 
-                {/* Grille d'informations (2x2) */}
-                <div className="grid grid-cols-2 gap-3 p-3 bg-white rounded-xl border border-stone-100 shadow-inner">
+                {/* Détails épurés : Flex-wrap avec icônes subtiles */}
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-4 border-t border-stone-100/60">
                   
                   {room.orientation && (
-                    <div className="flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Orientation</span>
-                        <span className="text-sm font-bold text-stone-700 truncate">{room.orientation}</span>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-stone-600">
+                      <Compass className="w-4 h-4 text-emerald-500/70" />
+                      <span className="text-sm font-medium">{room.orientation}</span>
                     </div>
                   )}
 
                   {room.light_level && (
-                    <div className="flex items-center gap-2">
-                      <Sun className="w-4 h-4 text-amber-500 shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Lumière</span>
-                        <span className="text-sm font-bold text-stone-700 truncate">{room.light_level}</span>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-stone-600">
+                      <Sun className="w-4 h-4 text-amber-500/70" />
+                      <span className="text-sm font-medium">{room.light_level}</span>
                     </div>
                   )}
 
                   {room.humidity && (
-                    <div className="flex items-center gap-2">
-                      <Droplets className="w-4 h-4 text-blue-500 shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Humidité</span>
-                        <span className="text-sm font-bold text-stone-700 truncate">{room.humidity}</span>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-stone-600">
+                      <Droplets className="w-4 h-4 text-blue-500/70" />
+                      <span className="text-sm font-medium">{room.humidity}</span>
                     </div>
                   )}
 
                   {(room.temp_summer || room.temp_winter) && (
-                    <div className="flex items-center gap-2">
-                      <Thermometer className="w-4 h-4 text-rose-500 shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Températures</span>
-                        <span className="text-sm font-bold text-stone-700 truncate">
-                          {room.temp_summer ? `${room.temp_summer}°` : '-'} / {room.temp_winter ? `${room.temp_winter}°` : '-'}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-stone-600">
+                      <Thermometer className="w-4 h-4 text-rose-400/70" />
+                      <span className="text-sm font-medium">
+                        {room.temp_summer ? `${room.temp_summer}°` : '-'} / {room.temp_winter ? `${room.temp_winter}°` : '-'}
+                      </span>
                     </div>
                   )}
                   
