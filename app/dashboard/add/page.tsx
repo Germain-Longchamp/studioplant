@@ -9,15 +9,20 @@ import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, 
 import { toast } from "sonner";
 import { addPlantWithAI, analyzePlantForForm, getUserRooms } from "@/server/actions";
 
+// Typage mis à jour pour inclure le tableau de recommandations
+type PreliminaryData = {
+  name: string;
+  species: string;
+  recommended_rooms: Array<{ room_name: string; reason: string }>;
+};
+
 export default function AddPlantPage() {
   const router = useRouter();
 
-  // 🟢 NOUVEAUX ÉTATS POUR LE FLOW EN 2 ÉTAPES
   const [step, setStep] = useState<1 | 2>(1);
   const [loadingState, setLoadingState] = useState<"idle" | "analyzing" | "saving">("idle");
-  const [preliminaryData, setPreliminaryData] = useState<{ name: string, species: string, recommended_room: string } | null>(null);
+  const [preliminaryData, setPreliminaryData] = useState<PreliminaryData | null>(null);
 
-  // Fichiers et Formulaire
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [room, setRoom] = useState("");
@@ -49,12 +54,11 @@ export default function AddPlantPage() {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setFile(selectedFile);
       setPreviewUrl(URL.createObjectURL(selectedFile));
-      setStep(1); // Si on change l'image, on repart à l'étape 1
+      setStep(1);
       setPreliminaryData(null);
     }
   };
 
-  // 🟢 ACTION ÉTAPE 1 : IDENTIFICATION
   const handleAnalyzePhoto = async () => {
     if (!file) return;
     setLoadingState("analyzing");
@@ -68,11 +72,15 @@ export default function AddPlantPage() {
         toast.error(result.error);
         setLoadingState("idle");
       } else if (result?.success && result.data) {
-        setPreliminaryData(result.data);
+        const data = result.data as PreliminaryData;
+        setPreliminaryData(data);
         
-        // Auto-sélection de la pièce recommandée si elle existe
-        if (result.data.recommended_room && userRooms.some(r => r.name === result.data.recommended_room)) {
-          setRoom(result.data.recommended_room);
+        // S'il y a des recommandations valides, on auto-sélectionne la première
+        if (data.recommended_rooms && data.recommended_rooms.length > 0) {
+          const firstRec = data.recommended_rooms[0];
+          if (userRooms.some(r => r.name === firstRec.room_name)) {
+            setRoom(firstRec.room_name);
+          }
         }
         
         setStep(2);
@@ -84,7 +92,6 @@ export default function AddPlantPage() {
     }
   };
 
-  // 🟢 ACTION ÉTAPE 2 : SAUVEGARDE FINALE
   const handleSubmitFinal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !room || !light) {
@@ -230,7 +237,6 @@ export default function AddPlantPage() {
               )}
             </div>
 
-            {/* Bouton d'analyse */}
             {previewUrl && (
               <Button 
                 onClick={handleAnalyzePhoto} 
@@ -263,7 +269,7 @@ export default function AddPlantPage() {
 
             <div className="space-y-7 bg-white p-5 sm:p-6 rounded-[2rem] border border-stone-100/80 shadow-xl shadow-stone-200/40 animate-in fade-in slide-in-from-bottom-6 duration-500 delay-100">
                
-               {/* 1. PIÈCE (Boutons Pilules dynamiques avec Recommandation) */}
+               {/* 1. PIÈCE (Boutons Pilules dynamiques avec Recommandations Multiples) */}
                <div className="space-y-3">
                 <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
                   <MapPin className="w-4 h-4 text-emerald-600" /> Dans quelle pièce ?
@@ -272,8 +278,11 @@ export default function AddPlantPage() {
                 <div className="flex flex-wrap gap-2">
                   {userRooms.length > 0 ? (
                     userRooms.map((r: any) => {
-                      const isRecommended = preliminaryData.recommended_room === r.name;
+                      // On cherche si cette pièce fait partie des recommandations de l'IA
+                      const recommendationInfo = preliminaryData.recommended_rooms?.find(rec => rec.room_name === r.name);
+                      const isRecommended = !!recommendationInfo;
                       const isSelected = room === r.name;
+                      
                       return (
                         <button
                           key={r.id}
@@ -283,12 +292,12 @@ export default function AddPlantPage() {
                             isSelected 
                               ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' 
                               : isRecommended 
-                                ? 'border-amber-300 bg-[#FDFCF8] text-stone-700 shadow-sm'
+                                ? 'border-emerald-300 bg-emerald-50/30 text-stone-700 shadow-sm'
                                 : 'border-stone-200 bg-[#FDFCF8] text-stone-600 hover:border-stone-300'
                           }`}
                         >
                           {r.name}
-                          {isRecommended && !isSelected && <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
+                          {isRecommended && !isSelected && <Sprout className="w-4 h-4 text-emerald-600" />}
                         </button>
                       )
                     })
@@ -310,15 +319,32 @@ export default function AddPlantPage() {
                   )}
                 </div>
 
-                {preliminaryData.recommended_room && userRooms.some(r => r.name === preliminaryData.recommended_room) && (
-                  <p className="text-[11px] text-amber-600 font-bold ml-2 mt-2 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Nous avons pré-sélectionné la pièce idéale pour cette plante !
+                {/* Affichage de la justification de l'expert pour la pièce sélectionnée (si elle a été recommandée) */}
+                {room && preliminaryData.recommended_rooms?.some(rec => rec.room_name === room) && (
+                  <div className="mt-2 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl animate-in fade-in duration-300">
+                    <p className="text-[12px] text-emerald-800 font-medium leading-relaxed flex items-start gap-2">
+                      <Sprout className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="block mb-0.5">Notre expert vous conseille cet emplacement :</strong>
+                        {preliminaryData.recommended_rooms.find(rec => rec.room_name === room)?.reason}
+                      </span>
+                    </p>
+                  </div>
+                )}
+                
+                {/* Petit texte global si des pièces sont recommandées mais non sélectionnées */}
+                {(!room || !preliminaryData.recommended_rooms?.some(rec => rec.room_name === room)) && preliminaryData.recommended_rooms?.length > 0 && userRooms.length > 0 && (
+                  <p className="text-[11px] text-stone-500 font-medium ml-2 mt-2 flex items-center gap-1.5">
+                    <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+                    {preliminaryData.recommended_rooms.length > 1 
+                      ? "Plusieurs pièces correspondent parfaitement à cette plante." 
+                      : "Une de vos pièces correspond parfaitement à cette plante."}
                   </p>
                 )}
+
                 {userRooms.length === 0 && (
-                  <p className="text-[11px] text-amber-600 font-bold ml-2 mt-2 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Astuce : Crée tes pièces dans l'onglet "Ma Maison" !
+                  <p className="text-[11px] text-stone-500 font-bold ml-2 mt-2 flex items-center gap-1">
+                    <Sprout className="w-3 h-3" /> Astuce : Créez des pièces dans "Ma Maison" pour que l'expert vous guide.
                   </p>
                 )}
               </div>
