@@ -10,7 +10,7 @@ export default function PlantCard({ plant }: { plant: any }) {
   const history = plant.watering_history || [];
   const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
 
-  // 🟢 OPTIMISATION DE L'ESPACE : Raccourcir le texte pour faire de la place au bouton +3j
+  // OPTIMISATION DE L'ESPACE : Raccourcir le texte pour faire de la place au bouton +3j
   let timeText = status.text;
   if (timeText.toLowerCase() === "aujourd'hui") {
     timeText = "Auj.";
@@ -47,7 +47,7 @@ export default function PlantCard({ plant }: { plant: any }) {
           </div>
         </div>
         
-        {/* 🟢 LIGNE D'ACTIONS : Arroser + Snooze (+3j) alignés horizontalement */}
+        {/* LIGNE D'ACTIONS : Arroser + Snooze (+3j) alignés horizontalement */}
         <div className="mt-3 pt-3 border-t border-stone-100 relative z-20 flex items-stretch gap-1.5">
           <div className="flex-1 min-w-0">
             <WaterButton 
@@ -57,10 +57,12 @@ export default function PlantCard({ plant }: { plant: any }) {
               timeText={timeText} 
             />
           </div>
-          {/* Le bouton Snooze vient se coller à droite */}
-          <div className="shrink-0 flex">
-            <CardSnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
-          </div>
+          {/* 🟢 CHANGEMENT : On conditionne l'affichage du bouton avec status.urgent */}
+          {status.urgent && (
+            <div className="shrink-0 flex">
+              <CardSnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+            </div>
+          )}
         </div>
 
       </div>
