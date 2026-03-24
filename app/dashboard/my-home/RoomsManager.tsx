@@ -1,127 +1,306 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Plus, Pencil, Trash2, MapPin, Compass, Sun, Droplets, ThermometerSun, Snowflake, Home } from "lucide-react";
-import { deleteRoom } from "@/server/actions";
-import EnvironmentForm from "./EnvironmentForm";
+import { DoorOpen, Plus, Thermometer, Droplets, Compass, Sun, Trash2, X, Loader2, Cloud, SunDim, Wind, Pencil } from "lucide-react";
+import { saveRoom, deleteRoom } from "@/server/actions";
 
-export default function RoomsManager({ initialRooms, userId }: { initialRooms: any[], userId: string }) {
-  const [rooms, setRooms] = useState(initialRooms);
-  const [isEditing, setIsEditing] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
+export default function RoomsManager({ rooms }: { rooms: any[] }) {
   const [isPending, startTransition] = useTransition();
 
-  const handleDelete = (roomId: string) => {
-    if (!confirm("Es-tu sûr de vouloir supprimer cette pièce ?")) return;
+  // États pour le formulaire
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
 
-    startTransition(async () => {
-      const result = await deleteRoom(roomId);
-      if (result?.error) {
-        toast.error(result.error);
+  // États pour la popup de suppression
+  const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
+
+  // Valeurs locales du formulaire
+  const [orientations, setOrientations] = useState<string[]>([]);
+  const [lightLevel, setLightLevel] = useState("Moyenne");
+  const [humidityLevel, setHumidityLevel] = useState("Normale");
+
+  const openForm = (room?: any) => {
+    if (room) {
+      setEditingRoom(room);
+      setOrientations(room.orientation ? room.orientation.split('-') : []);
+      setLightLevel(room.light_level || "Moyenne");
+      setHumidityLevel(room.humidity || "Normale");
+    } else {
+      setEditingRoom(null);
+      setOrientations([]);
+      setLightLevel("Moyenne");
+      setHumidityLevel("Normale");
+    }
+    setIsFormOpen(true);
+  };
+
+  const toggleOrientation = (dir: string) => {
+    if (orientations.includes(dir)) {
+      setOrientations(orientations.filter(d => d !== dir));
+    } else {
+      if (orientations.length < 2) {
+        setOrientations([...orientations, dir]);
       } else {
-        toast.success("Pièce supprimée");
-        setRooms(rooms.filter(r => r.id !== roomId));
+        setOrientations([orientations[0], dir]);
+      }
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    startTransition(async () => {
+      const result = await saveRoom(formData);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success(editingRoom ? "Pièce modifiée avec succès !" : "Pièce ajoutée avec succès !");
+        setIsFormOpen(false);
+      }
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    startTransition(async () => {
+      const result = await deleteRoom(id);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success("Pièce supprimée.");
+        setRoomToDelete(null);
       }
     });
   };
 
   return (
-    <div className="space-y-6">
-      
-      {/* BOUTON AJOUTER */}
-      {!isAdding && !isEditing && (
-        <button
-          onClick={() => setIsAdding(true)}
-          className="w-full py-4 border-2 border-dashed border-stone-300 rounded-2xl text-stone-500 font-bold flex items-center justify-center gap-2 hover:bg-stone-50 hover:border-stone-400 hover:text-stone-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Ajouter une nouvelle pièce
-        </button>
-      )}
-
-      {/* FORMULAIRE D'AJOUT */}
-      {isAdding && (
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
-          <h3 className="font-bold text-lg text-stone-800 mb-4 flex items-center gap-2">
-            <Home className="w-5 h-5 text-emerald-600" />
-            Nouvelle pièce
-          </h3>
-          <EnvironmentForm 
-            userId={userId} 
-            onSuccess={(newRoom) => {
-              setRooms([newRoom, ...rooms]);
-              setIsAdding(false);
-            }} 
-            onCancel={() => setIsAdding(false)} 
-          />
+    <>
+      {/* 🔴 MODALE DE SUPPRESSION */}
+      {roomToDelete && (
+        <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-[2rem] shadow-2xl w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4 border border-rose-100/50">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-extrabold text-stone-900 mb-2">Supprimer la pièce ?</h3>
+            <p className="text-stone-500 font-medium text-sm mb-6 leading-relaxed">
+              Les plantes qui y sont associées ne seront pas supprimées, mais elles perdront leur emplacement.
+            </p>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={() => setRoomToDelete(null)} className="flex-1 h-12 rounded-xl font-bold border-stone-200 text-stone-600">
+                Annuler
+              </Button>
+              <Button type="button" onClick={() => handleDelete(roomToDelete)} disabled={isPending} className="flex-1 h-12 rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-lg shadow-rose-900/20">
+                {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Supprimer"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* LISTE DES PIÈCES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {rooms.map(room => (
-          <div key={room.id} className="relative bg-white rounded-[1.5rem] p-5 shadow-sm border border-stone-200 transition-all hover:shadow-md hover:border-emerald-200 group overflow-hidden">
+      {/* 🟢 BLOC PRINCIPAL IDENTIQUE A "MA RÉGION" */}
+      <section className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-sm border border-stone-200/60 relative overflow-hidden mt-6">
+        
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-6 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600 shadow-sm border border-emerald-100/50">
+              <DoorOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-stone-800 tracking-tight">Mes pièces</h2>
+              <p className="text-sm text-stone-500 mt-0.5 font-medium">Gère tes différents emplacements.</p>
+            </div>
+          </div>
+          {!isFormOpen && (
+            <Button onClick={() => openForm()} variant="ghost" size="icon" className="bg-stone-50 text-stone-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-full h-10 w-10 transition-colors">
+              <Plus className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
+
+        {/* FORMULAIRE D'AJOUT / MODIFICATION */}
+        {isFormOpen ? (
+          <div className="bg-[#FDFCF8] p-5 rounded-[1.5rem] border border-stone-200/60 animate-in fade-in slide-in-from-top-4">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-bold text-stone-800 text-lg">
+                {editingRoom ? "Modifier l'emplacement" : "Nouvel emplacement"}
+              </h3>
+              <Button onClick={() => setIsFormOpen(false)} variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-600 bg-white rounded-full shadow-sm border border-stone-100"><X className="w-4 h-4" /></Button>
+            </div>
             
-            {isEditing === room.id ? (
-              // MODE ÉDITION
-              <div className="animate-in fade-in duration-200">
-                <h3 className="font-bold text-stone-800 mb-4">Modifier {room.name}</h3>
-                <EnvironmentForm 
-                  userId={userId} 
-                  initialData={room} 
-                  onSuccess={(updatedRoom) => {
-                    setRooms(rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r));
-                    setIsEditing(null);
-                  }}
-                  onCancel={() => setIsEditing(null)} 
-                />
+            {/* L'attribut key permet à React de bien recharger le form si on passe d'une édition à un ajout */}
+            <form key={editingRoom?.id || "new"} onSubmit={handleSave} className="space-y-6">
+              <input type="hidden" name="id" value={editingRoom?.id || ""} />
+
+              {/* 1. NOM DE LA PIÈCE */}
+              <div className="space-y-2.5">
+                <Label className="text-stone-600 font-bold ml-1">Nom de la pièce / zone</Label>
+                <Input name="name" defaultValue={editingRoom?.name || ""} required placeholder="Ex: Salon, Couloir, Véranda..." className="h-12 rounded-2xl bg-white border-stone-200 focus:ring-emerald-500 font-medium" />
               </div>
-            ) : (
-              // 🟢 MODE LECTURE (Design compact)
-              <>
+
+              {/* 2. ORIENTATION */}
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-end ml-1">
+                  <Label className="flex items-center gap-1.5 text-stone-600 font-bold"><Compass className="w-4 h-4 text-emerald-500" /> Orientation</Label>
+                  <span className="text-[10px] text-stone-400 font-medium">Jusqu'à 2 choix</span>
+                </div>
+                <input type="hidden" name="orientation" value={orientations.join('-')} />
+                <div className="grid grid-cols-4 gap-2">
+                  {['Nord', 'Sud', 'Est', 'Ouest'].map((dir) => {
+                    const isSelected = orientations.includes(dir);
+                    return (
+                      <button
+                        key={dir}
+                        type="button"
+                        onClick={() => toggleOrientation(dir)}
+                        className={`py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border active:scale-95 ${
+                          isSelected 
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' 
+                            : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300'
+                        }`}
+                      >
+                        {dir}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. LUMINOSITÉ */}
+              <div className="space-y-2.5">
+                <Label className="flex items-center gap-1.5 text-stone-600 font-bold ml-1"><Sun className="w-4 h-4 text-amber-500" /> Lumière globale</Label>
+                <input type="hidden" name="light_level" value={lightLevel} />
+                <div className="flex bg-stone-100/50 border border-stone-200/60 rounded-2xl p-1.5">
+                  {[
+                    { value: 'Faible', icon: Cloud, label: 'Faible' },
+                    { value: 'Moyenne', icon: SunDim, label: 'Moyenne' },
+                    { value: 'Forte', icon: Sun, label: 'Forte' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setLightLevel(opt.value)}
+                      className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                        lightLevel === opt.value 
+                          ? 'bg-white text-amber-600 shadow-sm border border-stone-200/50' 
+                          : 'text-stone-400 hover:text-stone-600'
+                      }`}
+                    >
+                      <opt.icon className="w-4 h-4" />
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. HUMIDITÉ */}
+              <div className="space-y-2.5">
+                <Label className="flex items-center gap-1.5 text-stone-600 font-bold ml-1"><Droplets className="w-4 h-4 text-blue-500" /> Humidité ambiante</Label>
+                <input type="hidden" name="humidity" value={humidityLevel} />
+                <div className="flex bg-stone-100/50 border border-stone-200/60 rounded-2xl p-1.5">
+                  {[
+                    { value: 'Sèche', icon: Wind, label: 'Sèche' },
+                    { value: 'Normale', icon: Droplets, label: 'Normale' },
+                    { value: 'Humide', icon: Cloud, label: 'Humide' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setHumidityLevel(opt.value)}
+                      className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                        humidityLevel === opt.value 
+                          ? 'bg-white text-blue-600 shadow-sm border border-stone-200/50' 
+                          : 'text-stone-400 hover:text-stone-600'
+                      }`}
+                    >
+                      <opt.icon className="w-4 h-4" />
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 5. TEMPÉRATURES */}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2.5">
+                  <Label className="flex items-center gap-1.5 text-stone-600 font-bold ml-1"><Thermometer className="w-4 h-4 text-rose-500" /> Temp. Été</Label>
+                  <div className="relative">
+                    <Input name="temp_summer" defaultValue={editingRoom?.temp_summer || ""} type="number" placeholder="Ex: 25" className="h-12 rounded-2xl bg-white border-stone-200 pr-8 font-medium" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm font-bold">°C</span>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  <Label className="flex items-center gap-1.5 text-stone-600 font-bold ml-1"><Thermometer className="w-4 h-4 text-sky-500" /> Temp. Hiver</Label>
+                  <div className="relative">
+                    <Input name="temp_winter" defaultValue={editingRoom?.temp_winter || ""} type="number" placeholder="Ex: 19" className="h-12 rounded-2xl bg-white border-stone-200 pr-8 font-medium" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm font-bold">°C</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* BOUTON SAUVEGARDER */}
+              <Button type="submit" disabled={isPending} className="w-full h-14 mt-4 rounded-2xl bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20 active:scale-95 border border-emerald-700">
+                {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingRoom ? "Enregistrer les modifications" : "Créer l'emplacement")}
+              </Button>
+            </form>
+          </div>
+        ) : (
+          /* 🟢 LISTE DES PIÈCES RÉVISÉE : UI Compacte et Grille */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {rooms.length === 0 && (
+              <div className="col-span-1 md:col-span-2 text-center p-8 bg-[#FDFCF8] border border-stone-200 border-dashed rounded-[1.5rem]">
+                <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <DoorOpen className="w-6 h-6 text-stone-400" />
+                </div>
+                <p className="text-sm text-stone-500 font-medium">Vous n'avez pas encore défini de pièces.<br/>Ajoutez un emplacement pour aider l'expert.</p>
+              </div>
+            )}
+            
+            {rooms.map(room => (
+              <div key={room.id} className="relative bg-[#FDFCF8] rounded-[1.5rem] p-4 sm:p-5 shadow-sm border border-stone-200/60 transition-all hover:shadow-md hover:border-emerald-200 group overflow-hidden flex flex-col justify-between">
+                
                 {/* En-tête : Titre + Actions */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-stone-100/80 rounded-xl text-stone-600 border border-stone-200/60 shadow-sm shrink-0">
-                      <MapPin className="w-5 h-5" />
+                      <DoorOpen className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-stone-800 text-lg leading-tight">{room.name}</h3>
-                      {/* Placeholder pour le nombre de plantes (si vous l'avez dans les props plus tard) */}
-                      {/* <p className="text-xs text-stone-500 font-medium mt-0.5">3 plantes</p> */}
-                    </div>
+                    <h3 className="font-extrabold text-stone-800 text-lg leading-tight line-clamp-1">{room.name}</h3>
                   </div>
 
-                  {/* Boutons d'action discrets en haut à droite */}
+                  {/* Boutons d'action discrets */}
                   <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      onClick={() => setIsEditing(room.id)}
-                      className="p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      onClick={() => openForm(room)}
+                      disabled={isPending}
+                      className="p-2 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
                       title="Modifier"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => handleDelete(room.id)}
+                      onClick={() => setRoomToDelete(room.id)}
                       disabled={isPending}
                       className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
                       title="Supprimer"
                     >
-                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Grille d'informations (2 colonnes) */}
-                <div className="grid grid-cols-2 gap-3 p-3 bg-stone-50/50 rounded-xl border border-stone-100/80">
+                {/* Grille d'informations (2x2) */}
+                <div className="grid grid-cols-2 gap-3 p-3 bg-white rounded-xl border border-stone-100 shadow-inner">
                   
                   {room.orientation && (
                     <div className="flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-stone-400 shrink-0" />
+                      <Compass className="w-4 h-4 text-emerald-500 shrink-0" />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-stone-500 tracking-wide">Orientation</span>
-                        <span className="text-sm font-medium text-stone-700 truncate">{room.orientation}</span>
+                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Orientation</span>
+                        <span className="text-sm font-bold text-stone-700 truncate">{room.orientation}</span>
                       </div>
                     </div>
                   )}
@@ -130,8 +309,8 @@ export default function RoomsManager({ initialRooms, userId }: { initialRooms: a
                     <div className="flex items-center gap-2">
                       <Sun className="w-4 h-4 text-amber-500 shrink-0" />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-amber-700/70 tracking-wide">Lumière</span>
-                        <span className="text-sm font-medium text-stone-700 truncate">{room.light_level}</span>
+                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Lumière</span>
+                        <span className="text-sm font-bold text-stone-700 truncate">{room.light_level}</span>
                       </div>
                     </div>
                   )}
@@ -140,45 +319,31 @@ export default function RoomsManager({ initialRooms, userId }: { initialRooms: a
                     <div className="flex items-center gap-2">
                       <Droplets className="w-4 h-4 text-blue-500 shrink-0" />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase text-blue-700/70 tracking-wide">Humidité</span>
-                        <span className="text-sm font-medium text-stone-700 truncate">{room.humidity}</span>
+                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Humidité</span>
+                        <span className="text-sm font-bold text-stone-700 truncate">{room.humidity}</span>
                       </div>
                     </div>
                   )}
 
-                  {/* Regroupement des températures sur une seule case si possible */}
                   {(room.temp_summer || room.temp_winter) && (
-                    <div className="flex flex-col min-w-0 justify-center">
-                       <span className="text-[10px] font-semibold uppercase text-stone-500 tracking-wide mb-0.5">Températures</span>
-                       <div className="flex items-center gap-2">
-                         {room.temp_summer && (
-                           <span className="flex items-center text-xs font-medium text-stone-700 bg-white border border-stone-200 px-1.5 py-0.5 rounded shadow-sm">
-                             <ThermometerSun className="w-3 h-3 text-rose-500 mr-1" /> {room.temp_summer}°
-                           </span>
-                         )}
-                         {room.temp_winter && (
-                           <span className="flex items-center text-xs font-medium text-stone-700 bg-white border border-stone-200 px-1.5 py-0.5 rounded shadow-sm">
-                             <Snowflake className="w-3 h-3 text-cyan-500 mr-1" /> {room.temp_winter}°
-                           </span>
-                         )}
-                       </div>
+                    <div className="flex items-center gap-2">
+                      <Thermometer className="w-4 h-4 text-rose-500 shrink-0" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-semibold uppercase text-stone-400 tracking-wide">Températures</span>
+                        <span className="text-sm font-bold text-stone-700 truncate">
+                          {room.temp_summer ? `${room.temp_summer}°` : '-'} / {room.temp_winter ? `${room.temp_winter}°` : '-'}
+                        </span>
+                      </div>
                     </div>
                   )}
                   
                 </div>
-              </>
-            )}
+
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      
-      {rooms.length === 0 && !isAdding && (
-        <div className="text-center py-10 bg-white rounded-2xl border border-stone-200 shadow-sm">
-          <MapPin className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-          <h3 className="text-stone-700 font-bold mb-1">Aucune pièce</h3>
-          <p className="text-stone-500 text-sm">Ajoute tes pièces pour y associer tes plantes.</p>
-        </div>
-      )}
-    </div>
+        )}
+      </section>
+    </>
   );
 }
