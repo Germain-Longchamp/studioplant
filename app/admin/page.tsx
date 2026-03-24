@@ -2,13 +2,12 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import AdminTable from "./AdminTable";
-// 🟢 CHANGEMENT : Import de l'icône Scan
+import AdminCharts from "./AdminCharts"; // 🟢 Import de nos graphiques
 import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan } from "lucide-react"; 
 import Link from "next/link";
 
 export default async function AdminDashboard() {
-  // 1. VÉRIFICATION DE SÉCURITÉ
-  const ADMIN_EMAILS = ["studiohub@test.com"]; // 🟢 METS TON EMAIL ICI
+  const ADMIN_EMAILS = ["studiohub@test.com"]; 
   
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,21 +16,18 @@ export default async function AdminDashboard() {
     redirect("/dashboard");
   }
 
-  // 2. CLIENT ADMIN (Pour lire toutes les données)
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 3. RÉCUPÉRATION DES DONNÉES GLOBALES
+  // 3. RÉCUPÉRATION DES DONNÉES (On ajoute created_at partout pour les graphiques)
   const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
   const allUsers = authData?.users || [];
 
-  const { data: allPlants } = await supabaseAdmin.from("plants").select("id, user_id");
-  const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id");
-  
-  // 🟢 NOUVEAU : Récupération des Scans Rapides
-  const { data: allScans } = await supabaseAdmin.from("quick_scans").select("id");
+  const { data: allPlants } = await supabaseAdmin.from("plants").select("id, user_id, created_at");
+  const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id, created_at");
+  const { data: allScans } = await supabaseAdmin.from("quick_scans").select("id, created_at");
 
   if (roomsError) {
     console.warn("Erreur sur la table des pièces :", roomsError.message);
@@ -55,7 +51,7 @@ export default async function AdminDashboard() {
   const totalUsers = allUsers.length;
   const totalPlants = allPlants?.length || 0;
   const totalRooms = allRooms?.length || 0;
-  const totalScans = allScans?.length || 0; // 🟢 NOUVEAU : Total des scans
+  const totalScans = allScans?.length || 0;
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-20">
@@ -82,9 +78,8 @@ export default async function AdminDashboard() {
 
       <main className="max-w-6xl mx-auto px-6 sm:px-10 -mt-8 relative z-10 space-y-8">
         
-        {/* WIDGETS DE STATS (Desktop: 4 colonnes maintenant) */}
+        {/* WIDGETS DE STATS (Totaux fixes) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/50">
               <Users className="w-6 h-6" />
@@ -115,7 +110,6 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          {/* 🟢 NOUVELLE CARTE : SCANS RAPIDES */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
             <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/50">
               <Scan className="w-6 h-6" />
@@ -125,11 +119,23 @@ export default async function AdminDashboard() {
               <p className="text-3xl font-extrabold text-stone-900">{totalScans}</p>
             </div>
           </div>
+        </div>
 
+        {/* 🟢 GRILLE DES GRAPHIQUES D'ÉVOLUTION */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
+            Croissance
+          </h2>
+          <AdminCharts 
+            users={allUsers || []} 
+            plants={allPlants || []} 
+            rooms={allRooms || []} 
+            scans={allScans || []} 
+          />
         </div>
 
         {/* TABLEAU DES UTILISATEURS */}
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4">
           <h2 className="text-xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
             Base utilisateurs
           </h2>
