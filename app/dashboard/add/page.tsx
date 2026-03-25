@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, Sprout, CalendarClock, Leaf, SunDim, CloudSun, Cloud, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { addPlantWithAI, analyzePlantForForm, getUserRooms } from "@/server/actions";
+import { saveOptimisticPlant, analyzePlantForForm, getUserRooms } from "@/server/actions";
 
 // Typage mis à jour pour inclure le tableau de recommandations
 type PreliminaryData = {
@@ -112,7 +112,7 @@ export default function AddPlantPage() {
     }
 
     try {
-      const result = await addPlantWithAI(formData);
+      const result = await saveOptimisticPlant(formData);
       if (result?.error) {
         toast.error(result.error);
         setLoadingState("idle");
@@ -159,17 +159,17 @@ export default function AddPlantPage() {
                 <Sprout className="w-8 h-8" />
               </div>
               <h2 className="text-2xl font-extrabold text-stone-900 tracking-tight">
-                {loadingState === "analyzing" ? "Identification..." : "Création du carnet..."}
+                {loadingState === "analyzing" ? "Identification..." : "Ajout à votre jungle..."}
               </h2>
               <p className="text-sm text-stone-500 font-medium px-4">
-                {loadingState === "analyzing" 
-                  ? "Notre expert analyse la photo afin de la reconnaître." 
-                  : "Analyse de son nouvel environnement en cours."}
+                {loadingState === "analyzing"
+                  ? "Notre expert analyse la photo afin de la reconnaître."
+                  : "Enregistrement de votre plante en cours."}
               </p>
             </div>
             <div className="flex items-center text-emerald-700 text-sm font-semibold bg-emerald-50 px-4 py-2 rounded-full relative z-10">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> 
-              {loadingState === "analyzing" ? "Connexion à la base de données" : "Rédaction des conseils"}
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {loadingState === "analyzing" ? "Connexion à la base de données" : "Enregistrement en cours"}
             </div>
           </div>
         </div>
