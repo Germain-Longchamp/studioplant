@@ -126,9 +126,11 @@ export async function addPlantWithAI(formData: FormData) {
   if (!imageFile || imageFile.size === 0) return { error: "Aucune image fournie." };
 
   let newPlantId: string | null = null;
+  let fileName: string | undefined;
+  let supabase: Awaited<ReturnType<typeof createClient>> | undefined;
 
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
@@ -137,7 +139,7 @@ export async function addPlantWithAI(formData: FormData) {
 
     // 🚀 OPTIMISATION 1 : On prépare l'upload de l'image (Tâche A)
     const fileExtension = imageFile.name.split('.').pop() || 'jpg';
-    const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
+    fileName = `${user.id}-${Date.now()}.${fileExtension}`;
     const uploadPromise = supabase.storage.from("plant-images").upload(fileName, imageFile);
 
     // 🚀 OPTIMISATION 2 : On prépare l'appel à Gemini (Tâche B)
@@ -206,7 +208,10 @@ export async function addPlantWithAI(formData: FormData) {
       return { error: "Le laboratoire a eu du mal à rédiger la fiche. Veuillez réessayer." };
     }
 
-    if (plantData.name === "Erreur") return { error: "Nous n'avons pas réussi à identifier de plante sur cette photo." };
+    if (plantData.name === "Erreur") {
+      await supabase.storage.from("plant-images").remove([fileName]);
+      return { error: "Nous n'avons pas réussi à identifier de plante sur cette photo." };
+    }
 
     // Récupération de l'URL de l'image fraîchement uploadée
     const { data: publicUrlData } = supabase.storage.from("plant-images").getPublicUrl(fileName);
@@ -242,6 +247,9 @@ export async function addPlantWithAI(formData: FormData) {
 
   } catch (error) {
     console.error("Unexpected Error:", error);
+    if (fileName && supabase) {
+      try { await supabase.storage.from("plant-images").remove([fileName]); } catch { /* ignore */ }
+    }
     return { error: "Une erreur inattendue est survenue." };
   }
 }
@@ -351,7 +359,12 @@ export async function generateDeferredCareGuide(plantId: string) {
 
     const result = await model.generateContent(prompt);
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    const plantData = JSON.parse(cleanedText);
+    let plantData;
+    try {
+      plantData = JSON.parse(cleanedText);
+    } catch {
+      return { error: "Erreur de format lors de la génération du carnet." };
+    }
 
     // On met à jour la base de données avec les nouvelles infos
     const { error: updateError } = await supabase.from("plants").update({
@@ -508,7 +521,11 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
     ]);
 
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    return { success: true, data: JSON.parse(cleanedText) };
+    try {
+      return { success: true, data: JSON.parse(cleanedText) };
+    } catch {
+      return { error: "Impossible d'analyser le diagnostic." };
+    }
 
   } catch (error) {
     console.error("Diagnosis error:", error);
@@ -561,7 +578,12 @@ export async function quickAnalyzePlant(formData: FormData) {
     ]);
 
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    const parsedData = JSON.parse(cleanedText);
+    let parsedData;
+    try {
+      parsedData = JSON.parse(cleanedText);
+    } catch {
+      return { error: "Analyse impossible. Veuillez réessayer." };
+    }
 
     if (parsedData.name && parsedData.name !== "Erreur") {
       const { error: dbError } = await supabase.from("quick_scans").insert({
@@ -615,22 +637,24 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
 
     const { error } = await supabase
       .from("plants")
-      .update({ 
+      .update({
         last_watered_at: now,
         watering_history: newHistory,
-        snooze_days: 0 
+        snooze_days: 0
       })
       .eq("id", plantId);
 
     if (error) {
       console.error("Erreur d'arrosage:", error);
-      return; 
+      return { error: "Impossible d'arroser la plante." };
     }
 
     revalidatePath("/dashboard");
     revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
   } catch (error) {
     console.error("Erreur inattendue:", error);
+    return { error: "Impossible d'arroser la plante." };
   }
 }
 
@@ -646,13 +670,15 @@ export async function snoozeWatering(plantId: string, currentSnooze: number = 0)
 
     if (error) {
       console.error("Erreur de décalage:", error);
-      return; 
+      return { error: "Impossible de repousser l'arrosage." };
     }
 
     revalidatePath("/dashboard");
     revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
   } catch (error) {
     console.error("Erreur inattendue:", error);
+    return { error: "Impossible de repousser l'arrosage." };
   }
 }
 
@@ -728,7 +754,12 @@ export async function updatePlantEnvironmentWithAI(plantId: string, room: string
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
-    const adviceData = JSON.parse(cleanedText);
+    let adviceData;
+    try {
+      adviceData = JSON.parse(cleanedText);
+    } catch {
+      return { error: "Erreur lors de l'analyse du nouvel emplacement." };
+    }
 
     const { error: updateError } = await supabase
       .from("plants")
@@ -876,7 +907,12 @@ export async function generateEquipmentRecommendations() {
     const result = await model.generateContent(prompt);
     
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    const recommendations = JSON.parse(cleanedText);
+    let recommendations;
+    try {
+      recommendations = JSON.parse(cleanedText);
+    } catch {
+      return { error: "Impossible de générer les recommandations. Réessayez." };
+    }
 
     const { error: dbError } = await supabase
       .from("equipment_recommendations")

@@ -37,11 +37,13 @@ export default function DoctorPlant() {
       const result = await quickDiagnosePlant(formData);
       if (result.error) {
         toast.error(result.error);
+        URL.revokeObjectURL(tempUrl);
         setPreviewUrl(null);
       } else if (result.success && result.data) {
         setDiagnosisResult(result.data);
       } else {
         toast.error("Oups, je n'ai pas pu analyser cette plante.");
+        URL.revokeObjectURL(tempUrl);
         setPreviewUrl(null);
       }
       if (fileInputRef.current) fileInputRef.current.value = "";

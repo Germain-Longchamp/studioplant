@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, Leaf, Droplets, Plus, MapPin, Sprout } from "lucide-react"; // 🟢 1. J'ai ajouté Sprout ici
+import { Leaf, Droplets, Plus, MapPin, Sprout } from "lucide-react";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";

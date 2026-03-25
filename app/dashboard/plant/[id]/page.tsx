@@ -12,6 +12,7 @@ import SosFeature from "./SosFeature";
 import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
 import PlantIdentityModal from "./PlantIdentityModal";
+import DeferredCareLoading from "./DeferredCareLoading";
 
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
@@ -226,9 +227,13 @@ export default async function PlantDetailPage({
               </div>
             </summary>
             <div className="px-5 pb-6 pt-1 animate-in fade-in duration-300">
-              <div className="p-5 bg-[#FAFAFA] rounded-2xl border border-stone-100 shadow-inner">
-                <FormatCareNotes text={plant.care_notes} />
-              </div>
+              {!plant.care_notes ? (
+                <DeferredCareLoading plantId={plant.id} />
+              ) : (
+                <div className="p-5 bg-[#FAFAFA] rounded-2xl border border-stone-100 shadow-inner">
+                  <FormatCareNotes text={plant.care_notes} />
+                </div>
+              )}
             </div>
           </details>
 

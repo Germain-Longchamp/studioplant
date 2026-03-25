@@ -52,10 +52,13 @@ export default function DetailWaterButton({
       zIndex: 100
     });
 
-    // Appel à l'action serveur en fond
     startTransition(async () => {
-      await waterPlant(plantId, history);
-      toast.success("Plante arrosée ! 💧");
+      const result = await waterPlant(plantId, history);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Plante arrosée ! 💧");
+      }
     });
   };
 

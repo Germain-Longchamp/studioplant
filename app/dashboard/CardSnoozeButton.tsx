@@ -20,8 +20,12 @@ export default function CardSnoozeButton({
     e.stopPropagation();
     
     startTransition(async () => {
-      await snoozeWatering(plantId, snoozeDays);
-      toast.success("Arrosage repoussé de 3 jours ! ⏳");
+      const result = await snoozeWatering(plantId, snoozeDays);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Arrosage repoussé de 3 jours ! ⏳");
+      }
     });
   };
 
