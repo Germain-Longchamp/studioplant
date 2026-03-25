@@ -17,10 +17,10 @@ export default function PlantCard({ plant }: { plant: any }) {
 
   const statusBadge =
     status.color === "red"
-      ? "bg-rose-500 text-white"
+      ? "bg-rose-50 text-rose-400 border border-rose-200"
       : status.color === "orange"
-      ? "bg-amber-400 text-white"
-      : "bg-emerald-500/90 text-white";
+      ? "bg-amber-50 text-amber-500 border border-amber-200"
+      : "bg-emerald-50 text-emerald-600 border border-emerald-200";
 
   return (
     <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm shadow-stone-200/60 border border-stone-100/80 flex items-stretch transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]">
@@ -78,7 +78,6 @@ export default function PlantCard({ plant }: { plant: any }) {
               plantId={plant.id}
               history={history}
               urgent={status.urgent}
-              timeText={timeText}
             />
           </div>
           {status.urgent && (

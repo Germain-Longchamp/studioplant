@@ -30,19 +30,19 @@ export default function CardSnoozeButton({
   };
 
   return (
-    <button 
-      type="button" 
+    <button
+      type="button"
       onClick={handleSnooze}
       disabled={isPending}
-      className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-stone-50 hover:bg-amber-50 text-stone-400 hover:text-amber-600 transition-all border border-stone-200/60 shadow-sm active:scale-95 group"
+      className="h-9 flex items-center gap-1.5 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all border border-amber-200/70 active:scale-95"
       title="Repousser l'arrosage de 3 jours"
     >
       {isPending ? (
-        <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+        <Loader2 className="w-3 h-3 animate-spin" />
       ) : (
-        <Clock className="w-3 h-3 group-hover:-rotate-12 transition-transform" />
+        <Clock className="w-3 h-3" />
       )}
-      <span className="text-[10px] font-bold leading-none mt-[1px]">+3j</span>
+      <span className="text-[11px] font-bold leading-none">+3j</span>
     </button>
   );
 }

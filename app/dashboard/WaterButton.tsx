@@ -11,12 +11,10 @@ export default function WaterButton({
   plantId,
   history,
   urgent,
-  timeText
 }: {
   plantId: string;
   history: string[];
   urgent: boolean;
-  timeText?: string; 
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -72,31 +70,18 @@ export default function WaterButton({
       type="button"
       onClick={handleWater}
       disabled={isPending}
-      className={`w-full h-11 flex items-center justify-between p-1 rounded-[1.25rem] transition-all active:scale-95 ${
+      className={`w-full h-9 flex items-center justify-center gap-1.5 rounded-xl font-bold text-[12px] tracking-tight transition-all active:scale-95 ${
         urgent
-          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20'
-          : 'bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-sm'
+          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm shadow-rose-200/50'
+          : 'bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100'
       }`}
     >
-      
-      {/* 🟢 MODIFICATION ICI : Plus de <Calendar />, et ajustement du padding (pl-3) */}
-      <div className="flex items-center pl-3 pr-2 font-semibold text-[11px] sm:text-xs tracking-tight">
-        <span className="truncate">{timeText}</span>
-      </div>
-
-      <div className={`flex items-center gap-1.5 px-3 h-full rounded-xl font-bold text-[11px] sm:text-xs transition-colors ${
-        urgent
-          ? 'bg-white/20 text-white' 
-          : 'bg-white text-emerald-700 shadow-sm border border-emerald-100' 
-      }`}>
-        {isPending ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Droplets className="w-3.5 h-3.5" />
-        )}
-        Arroser
-      </div>
-
+      {isPending ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Droplets className="w-3.5 h-3.5" />
+      )}
+      Arroser
     </Button>
   );
 }
