@@ -27,7 +27,7 @@ export default function PlantCard({ plant }: { plant: any }) {
       <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
 
       {/* IMAGE — left square */}
-      <div className="relative w-24 shrink-0 bg-stone-100">
+      <div className="relative w-28 shrink-0 bg-stone-100">
         {plant.image_path ? (
           <Image
             src={plant.image_path}
@@ -44,7 +44,7 @@ export default function PlantCard({ plant }: { plant: any }) {
       </div>
 
       {/* CONTENT */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between px-3.5 py-3">
+      <div className="flex-1 min-w-0 flex flex-col justify-between px-4 py-3.5">
         {/* Top row: name + status badge */}
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
@@ -72,7 +72,7 @@ export default function PlantCard({ plant }: { plant: any }) {
         </div>
 
         {/* Bottom row: water + snooze */}
-        <div className="flex items-center gap-1.5 mt-2.5 relative z-20">
+        <div className="flex items-center gap-1.5 mt-3 relative z-20">
           <div className="flex-1 min-w-0">
             <WaterButton
               plantId={plant.id}

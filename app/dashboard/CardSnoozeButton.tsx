@@ -34,7 +34,7 @@ export default function CardSnoozeButton({
       type="button"
       onClick={handleSnooze}
       disabled={isPending}
-      className="h-9 flex items-center gap-1.5 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all border border-amber-200/70 active:scale-95"
+      className="h-9 flex items-center gap-1.5 px-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-400 transition-all border border-stone-200/80 active:scale-95"
       title="Repousser l'arrosage de 3 jours"
     >
       {isPending ? (

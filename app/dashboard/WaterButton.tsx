@@ -72,7 +72,7 @@ export default function WaterButton({
       disabled={isPending}
       className={`w-full h-9 flex items-center justify-center gap-1.5 rounded-xl font-bold text-[12px] tracking-tight transition-all active:scale-95 ${
         urgent
-          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm shadow-rose-200/50'
+          ? 'bg-rose-50 border border-rose-200 text-rose-500 hover:bg-rose-100'
           : 'bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100'
       }`}
     >
