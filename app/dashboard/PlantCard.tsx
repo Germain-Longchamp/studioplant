@@ -23,70 +23,70 @@ export default function PlantCard({ plant }: { plant: any }) {
       : "bg-emerald-500/90 text-white";
 
   return (
-    <div className="group relative bg-white rounded-[2rem] overflow-hidden shadow-md shadow-stone-200/50 border border-stone-100/80 transition-all duration-300 hover:shadow-xl hover:shadow-stone-300/40 hover:-translate-y-0.5 active:scale-[0.99]">
+    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm shadow-stone-200/60 border border-stone-100/80 flex items-stretch transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]">
       <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
 
-      {/* IMAGE */}
-      <div className="relative w-full h-44 bg-stone-100 overflow-hidden">
+      {/* IMAGE — left square */}
+      <div className="relative w-24 shrink-0 bg-stone-100">
         {plant.image_path ? (
           <Image
             src={plant.image_path}
             alt={plant.name}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-105"
-            sizes="(max-width: 448px) calc(100vw - 40px), 408px"
+            sizes="96px"
           />
         ) : (
           <div className="flex items-center justify-center w-full h-full bg-emerald-50">
-            <Leaf className="w-12 h-12 text-emerald-200" />
+            <Leaf className="w-8 h-8 text-emerald-200" />
           </div>
         )}
-
-        {/* Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-
-        {/* Badges overlaid on photo */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">
-          {plant.room ? (
-            <span className="inline-flex items-center gap-1 bg-black/30 backdrop-blur-sm border border-white/15 text-white px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">
-              <MapPin className="w-2.5 h-2.5" />
-              {plant.room}
-            </span>
-          ) : (
-            <span />
-          )}
-          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide backdrop-blur-sm ${statusBadge}`}>
-            <Droplets className={`w-2.5 h-2.5 ${status.urgent ? "animate-pulse" : ""}`} />
-            {status.text}
-          </span>
-        </div>
       </div>
 
       {/* CONTENT */}
-      <div className="px-4 pt-3.5 pb-1">
-        <h3 className="font-black text-stone-900 text-[17px] leading-tight line-clamp-1 tracking-tight">
-          {plant.name}
-        </h3>
-        <p className="text-xs text-stone-400 italic mt-0.5 line-clamp-1 font-medium">
-          {plant.species}
-        </p>
-      </div>
-
-      {/* ACTIONS */}
-      <div className="px-4 pb-4 pt-3 flex items-center gap-2 relative z-20">
-        <div className="flex-1 min-w-0">
-          <WaterButton
-            plantId={plant.id}
-            history={history}
-            urgent={status.urgent}
-            timeText={timeText}
-          />
-        </div>
-        {status.urgent && (
-          <div className="shrink-0">
-            <CardSnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+      <div className="flex-1 min-w-0 flex flex-col justify-between px-3.5 py-3">
+        {/* Top row: name + status badge */}
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-black text-stone-900 text-[15px] leading-tight line-clamp-1 tracking-tight">
+              {plant.name}
+            </h3>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {plant.room && (
+                <span className="inline-flex items-center gap-0.5 text-stone-400 text-[10px] font-medium">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {plant.room}
+                </span>
+              )}
+              {plant.species && (
+                <p className="text-[11px] text-stone-400 italic line-clamp-1 font-medium">
+                  {plant.room ? `· ${plant.species}` : plant.species}
+                </p>
+              )}
+            </div>
           </div>
-        )}
+          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${statusBadge}`}>
+            <Droplets className={`w-2.5 h-2.5 ${status.urgent ? "animate-pulse" : ""}`} />
+            {timeText}
+          </span>
+        </div>
+
+        {/* Bottom row: water + snooze */}
+        <div className="flex items-center gap-1.5 mt-2.5 relative z-20">
+          <div className="flex-1 min-w-0">
+            <WaterButton
+              plantId={plant.id}
+              history={history}
+              urgent={status.urgent}
+              timeText={timeText}
+            />
+          </div>
+          {status.urgent && (
+            <div className="shrink-0">
+              <CardSnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
