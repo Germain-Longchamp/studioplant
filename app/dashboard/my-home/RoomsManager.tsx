@@ -248,87 +248,89 @@ export default function RoomsManager({ rooms }: { rooms: any[] }) {
             </form>
           </div>
         ) : (
-          /* 🟢 LISTE DES PIÈCES : DESIGN COMPACT & MODERNE */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+          /* LISTE DES PIÈCES */
+          <div className="flex flex-col gap-3 mt-2">
             {rooms.length === 0 && (
-              <div className="col-span-1 md:col-span-2 text-center p-8 bg-[#FDFCF8] border border-stone-200 border-dashed rounded-[1.5rem]">
+              <div className="text-center p-8 bg-[#FDFCF8] border border-stone-200 border-dashed rounded-[1.5rem]">
                 <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <DoorOpen className="w-6 h-6 text-stone-400" />
                 </div>
                 <p className="text-sm text-stone-500 font-medium">Vous n'avez pas encore défini de pièces.<br/>Ajoutez un emplacement pour aider l'expert.</p>
               </div>
             )}
-            
-            {rooms.map(room => (
-              <div key={room.id} className="relative bg-white rounded-[1.5rem] p-5 shadow-sm border border-stone-200/60 transition-all hover:shadow-md hover:border-emerald-200 group flex flex-col justify-between">
-                
-                {/* En-tête : Titre + Actions */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-stone-50 rounded-xl text-stone-600 border border-stone-100 shadow-sm shrink-0">
-                      <DoorOpen className="w-5 h-5" />
+
+            {rooms.map(room => {
+              const lightConfig = {
+                Forte:   { bar: 'bg-amber-300', badge: 'bg-amber-50 text-amber-700 border-amber-200', Icon: Sun },
+                Moyenne: { bar: 'bg-stone-300',  badge: 'bg-stone-50 text-stone-600 border-stone-200', Icon: SunDim },
+                Faible:  { bar: 'bg-slate-400',  badge: 'bg-slate-50 text-slate-600 border-slate-200', Icon: Cloud },
+              }[room.light_level as string] ?? { bar: 'bg-stone-200', badge: 'bg-stone-50 text-stone-500 border-stone-200', Icon: SunDim };
+
+              const humidityBadge = {
+                Humide:  'bg-blue-50 text-blue-700 border-blue-200',
+                Normale: 'bg-sky-50 text-sky-600 border-sky-200',
+                Sèche:   'bg-orange-50 text-orange-600 border-orange-200',
+              }[room.humidity as string] ?? 'bg-stone-50 text-stone-500 border-stone-200';
+
+              return (
+                <div key={room.id} className="bg-white rounded-2xl border border-stone-200/60 shadow-sm overflow-hidden active:scale-[0.99] transition-transform">
+                  {/* Barre de luminosité colorée */}
+                  <div className={`h-1 w-full ${lightConfig.bar}`} />
+
+                  <div className="px-4 py-3.5 flex items-center gap-3">
+                    {/* Nom */}
+                    <p className="font-extrabold text-stone-800 text-base flex-1 line-clamp-1">{room.name}</p>
+
+                    {/* Actions toujours visibles */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => openForm(room)}
+                        disabled={isPending}
+                        className="p-2 text-stone-400 active:text-emerald-600 active:bg-emerald-50 rounded-xl transition-colors disabled:opacity-40"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setRoomToDelete(room.id)}
+                        disabled={isPending}
+                        className="p-2 text-stone-400 active:text-rose-500 active:bg-rose-50 rounded-xl transition-colors disabled:opacity-40"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <h3 className="font-bold text-stone-800 text-lg leading-tight line-clamp-1">{room.name}</h3>
                   </div>
 
-                  {/* Boutons d'action discrets (fantômes) */}
-                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button 
-                      onClick={() => openForm(room)}
-                      disabled={isPending}
-                      className="p-2 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
-                      title="Modifier"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setRoomToDelete(room.id)}
-                      disabled={isPending}
-                      className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {/* Pills d'attributs */}
+                  {(room.orientation || room.light_level || room.humidity || room.temp_summer || room.temp_winter) && (
+                    <div className="px-4 pb-3.5 flex flex-wrap gap-1.5">
+                      {room.orientation && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Compass className="w-3 h-3" />{room.orientation}
+                        </span>
+                      )}
+                      {room.light_level && (
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${lightConfig.badge}`}>
+                          <lightConfig.Icon className="w-3 h-3" />{room.light_level}
+                        </span>
+                      )}
+                      {room.humidity && (
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${humidityBadge}`}>
+                          <Droplets className="w-3 h-3" />{room.humidity}
+                        </span>
+                      )}
+                      {(room.temp_summer || room.temp_winter) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200">
+                          <Thermometer className="w-3 h-3 text-rose-500" />
+                          <span className="text-rose-600">{room.temp_summer ? `${room.temp_summer}°` : '—'}</span>
+                          <span className="text-stone-300">/</span>
+                          <span className="text-sky-600">{room.temp_winter ? `${room.temp_winter}°` : '—'}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-
-                {/* Détails épurés : Flex-wrap avec icônes subtiles */}
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-4 border-t border-stone-100/60">
-                  
-                  {room.orientation && (
-                    <div className="flex items-center gap-1.5 text-stone-600">
-                      <Compass className="w-4 h-4 text-emerald-500/70" />
-                      <span className="text-sm font-medium">{room.orientation}</span>
-                    </div>
-                  )}
-
-                  {room.light_level && (
-                    <div className="flex items-center gap-1.5 text-stone-600">
-                      <Sun className="w-4 h-4 text-amber-500/70" />
-                      <span className="text-sm font-medium">{room.light_level}</span>
-                    </div>
-                  )}
-
-                  {room.humidity && (
-                    <div className="flex items-center gap-1.5 text-stone-600">
-                      <Droplets className="w-4 h-4 text-blue-500/70" />
-                      <span className="text-sm font-medium">{room.humidity}</span>
-                    </div>
-                  )}
-
-                  {(room.temp_summer || room.temp_winter) && (
-                    <div className="flex items-center gap-1.5 text-stone-600">
-                      <Thermometer className="w-4 h-4 text-rose-400/70" />
-                      <span className="text-sm font-medium">
-                        {room.temp_summer ? `${room.temp_summer}°` : '-'} / {room.temp_winter ? `${room.temp_winter}°` : '-'}
-                      </span>
-                    </div>
-                  )}
-                  
-                </div>
-
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
