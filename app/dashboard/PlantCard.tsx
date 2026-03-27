@@ -17,17 +17,17 @@ export default function PlantCard({ plant }: { plant: any }) {
 
   const statusBadge =
     status.color === "red"
-      ? "bg-rose-50 text-rose-400 border border-rose-200"
+      ? "text-rose-400"
       : status.color === "orange"
-      ? "bg-amber-50 text-amber-500 border border-amber-200"
-      : "bg-emerald-50 text-emerald-600 border border-emerald-200";
+      ? "text-amber-500"
+      : "text-emerald-600";
 
   return (
     <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm shadow-stone-200/60 border border-stone-100/80 flex items-stretch transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]">
       <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
 
       {/* IMAGE — left square */}
-      <div className="relative w-28 shrink-0 bg-stone-100">
+      <div className="relative w-24 shrink-0 bg-stone-100">
         {plant.image_path ? (
           <Image
             src={plant.image_path}
@@ -44,35 +44,33 @@ export default function PlantCard({ plant }: { plant: any }) {
       </div>
 
       {/* CONTENT */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between px-4 py-3.5">
-        {/* Top row: name + status badge */}
-        <div className="flex items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-black text-stone-900 text-[15px] leading-tight line-clamp-1 tracking-tight">
-              {plant.name}
-            </h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {plant.room && (
-                <span className="inline-flex items-center gap-0.5 text-stone-400 text-[10px] font-medium">
-                  <MapPin className="w-2.5 h-2.5" />
-                  {plant.room}
-                </span>
-              )}
-              {plant.species && (
-                <p className="text-[11px] text-stone-400 italic line-clamp-1 font-medium">
-                  {plant.room ? `· ${plant.species}` : plant.species}
-                </p>
-              )}
-            </div>
+      <div className="flex-1 min-w-0 flex flex-col justify-between px-4 py-4">
+        {/* Top: name full width */}
+        <div>
+          <h3 className="font-bold text-stone-900 text-[15px] leading-tight line-clamp-1 tracking-tight">
+            {plant.name}
+          </h3>
+          <div className="flex items-center gap-1.5 mt-1">
+            {plant.room && (
+              <span className="inline-flex items-center gap-0.5 text-stone-400 text-[10px] font-medium">
+                <MapPin className="w-2.5 h-2.5" />
+                {plant.room}
+              </span>
+            )}
+            {plant.species && (
+              <p className="text-[11px] text-stone-400 italic line-clamp-1 font-medium">
+                {plant.room ? `· ${plant.species}` : plant.species}
+              </p>
+            )}
           </div>
-          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${statusBadge}`}>
+          <span className={`inline-flex items-center gap-0.5 mt-0.5 text-[10px] font-medium uppercase tracking-wide ${statusBadge}`}>
             <Droplets className={`w-2.5 h-2.5 ${status.urgent ? "animate-pulse" : ""}`} />
             {timeText}
           </span>
         </div>
 
         {/* Bottom row: water + snooze */}
-        <div className="flex items-center gap-1.5 mt-3 relative z-20">
+        <div className="flex items-center gap-1.5 mt-3.5 relative z-20">
           <div className="flex-1 min-w-0">
             <WaterButton
               plantId={plant.id}
