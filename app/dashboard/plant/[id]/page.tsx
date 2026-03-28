@@ -125,7 +125,9 @@ export default async function PlantDetailPage({
               <div className="flex-1">
                 <DetailWaterButton plantId={plant.id} history={history} />
               </div>
-              <SnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+              <div className="flex-1">
+                <SnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+              </div>
             </div>
             {lastWateredFormatted && (
               <div className="flex items-center gap-2 bg-emerald-50 rounded-xl px-3 py-2 mt-3 text-xs text-emerald-800">

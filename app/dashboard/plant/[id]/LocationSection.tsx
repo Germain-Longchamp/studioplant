@@ -15,14 +15,10 @@ export default function LocationSection({ plant }: { plant: any }) {
           <MapPin className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-bold text-stone-800 truncate">
-            {[plant.room, plant.exposure].filter(Boolean).join(' · ') || 'Emplacement non défini'}
+          <div className="text-sm font-extrabold text-stone-800">Emplacement</div>
+          <div className="text-[10px] text-stone-400 truncate mt-0.5">
+            {[plant.room, plant.exposure].filter(Boolean).join(' · ') || 'Non défini'}
           </div>
-          {plant.room_advice && (
-            <div className="text-[10px] text-emerald-700 leading-snug mt-0.5 line-clamp-2">
-              {plant.room_advice}
-            </div>
-          )}
         </div>
         <button
           onClick={() => setEditing(!editing)}
