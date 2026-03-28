@@ -7,11 +7,10 @@ import Image from "next/image";
 import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
-import SosFeature from "./SosFeature";
 import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
-import PlantHealthHistory from "./PlantHealthHistory";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
+import DoctorPlantBlock from "./DoctorPlantBlock";
 import CareGuideSection from "./CareGuideSection";
 import LocationSection from "./LocationSection";
 
@@ -179,11 +178,8 @@ export default async function PlantDetailPage({
           {/* ===== 6. EMPLACEMENT ===== */}
           <LocationSection plant={plant} />
 
-          {/* ===== 7. HISTORIQUE SANTÉ ===== */}
-          <PlantHealthHistory plantId={plant.id} />
-
-          {/* ===== 8. SOS DOCTEUR PLANTE ===== */}
-          <SosFeature plantId={plant.id} plantName={plant.name} />
+          {/* ===== 7. DOCTEUR PLANTE ===== */}
+          <DoctorPlantBlock plantId={plant.id} plantName={plant.name} />
 
         </div>
       </main>
