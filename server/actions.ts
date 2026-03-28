@@ -164,7 +164,9 @@ export async function addPlantWithAI(formData: FormData) {
           "watering_frequency": 7,
           "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
           "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+          "robustness_score": "Uniquement la note chiffrée, ex: 9/10",
           "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+          "max_size_short": "Uniquement la valeur courte avec unité, ex: 2–3 m",
           "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
           "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
           "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
@@ -187,7 +189,7 @@ export async function addPlantWithAI(formData: FormData) {
 
         ${contextPrompt}
 
-        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_frequency": 7, "origin": "...", "robustness": "...", "max_size": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "care_notes": "..."}
+        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_frequency": 7, "origin": "...", "robustness": "...", "robustness_score": "...", "max_size": "...", "max_size_short": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "care_notes": "..."}
         Si ce n'est pas une plante, retourne : {"name": "Erreur", "species": "Non reconnu"}
       `;
       geminiPromise = model.generateContent([multimodalPrompt, imagePart]);
@@ -227,7 +229,9 @@ export async function addPlantWithAI(formData: FormData) {
       description: "", 
       origin: plantData.origin,
       robustness: plantData.robustness,
+      robustness_score: plantData.robustness_score,
       max_size: plantData.max_size,
+      max_size_short: plantData.max_size_short,
       ideal_substrate: plantData.ideal_substrate,
       ideal_exposure: plantData.ideal_exposure,
       care_notes: plantData.care_notes,
@@ -298,7 +302,9 @@ export async function saveOptimisticPlant(formData: FormData) {
       // 🟢 Les champs ci-dessous seront remplis par l'IA en arrière-plan :
       origin: "",
       robustness: "",
+      robustness_score: "",
       max_size: "",
+      max_size_short: "",
       ideal_substrate: "",
       ideal_exposure: "",
       care_notes: "",
@@ -348,7 +354,9 @@ export async function generateDeferredCareGuide(plantId: string) {
         "watering_frequency": 7,
         "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
         "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+        "robustness_score": "Uniquement la note chiffrée, ex: 9/10",
         "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+        "max_size_short": "Uniquement la valeur courte avec unité, ex: 2–3 m",
         "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
         "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
         "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
@@ -371,7 +379,9 @@ export async function generateDeferredCareGuide(plantId: string) {
       watering_frequency: plantData.watering_frequency,
       origin: plantData.origin,
       robustness: plantData.robustness,
+      robustness_score: plantData.robustness_score,
       max_size: plantData.max_size,
+      max_size_short: plantData.max_size_short,
       ideal_substrate: plantData.ideal_substrate,
       ideal_exposure: plantData.ideal_exposure,
       room_advice: plantData.room_advice,
@@ -424,7 +434,9 @@ export async function updatePlantAdvice(plantId: string) {
         "watering_frequency": 7,
         "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
         "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
+        "robustness_score": "Uniquement la note chiffrée, ex: 9/10",
         "max_size": "Taille maximale en intérieur (ex: Jusqu'à 3m)",
+        "max_size_short": "Uniquement la valeur courte avec unité, ex: 2–3 m",
         "ideal_substrate": "Substrat idéal (ex: Terreau léger et drainant)",
         "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
         "room_advice": "Avis expert court sur la pièce choisie (température, humidité...)",
@@ -455,7 +467,9 @@ export async function updatePlantAdvice(plantId: string) {
       watering_frequency: plantData.watering_frequency,
       origin: plantData.origin,
       robustness: plantData.robustness,
+      robustness_score: plantData.robustness_score,
       max_size: plantData.max_size,
+      max_size_short: plantData.max_size_short,
       ideal_substrate: plantData.ideal_substrate,
       ideal_exposure: plantData.ideal_exposure,
       room_advice: plantData.room_advice,
@@ -464,7 +478,7 @@ export async function updatePlantAdvice(plantId: string) {
     }).eq("id", plantId);
 
     if (error) throw error;
-    
+
     revalidatePath(`/dashboard/plant/${plantId}`);
     return { success: true };
   } catch (error) {

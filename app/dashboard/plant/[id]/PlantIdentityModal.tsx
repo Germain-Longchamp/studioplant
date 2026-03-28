@@ -5,11 +5,22 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Globe2, ShieldCheck, Ruler, Layers, Sun, X, Info } from "lucide-react";
 
-export default function PlantIdentityModal({ plant, hasQuickInfos }: { plant: any, hasQuickInfos: boolean }) {
-  const [isOpen, setIsOpen] = useState(false);
+interface PlantIdentityModalProps {
+  plant: any;
+  hasQuickInfos: boolean;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+}
+
+export default function PlantIdentityModal({ plant, hasQuickInfos, open, onOpenChange }: PlantIdentityModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
   const modalContent = isOpen ? (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 sm:p-5 animate-in fade-in duration-200" onClick={() => setIsOpen(false)}>
@@ -114,19 +125,21 @@ export default function PlantIdentityModal({ plant, hasQuickInfos }: { plant: an
 
   return (
     <>
-      <Button 
-        onClick={() => setIsOpen(true)}
-        variant="outline" 
-        className="w-full bg-white/60 backdrop-blur-md border border-stone-200/50 text-stone-700 hover:bg-white rounded-2xl h-12 font-bold shadow-sm mb-6 transition-all active:scale-95 flex items-center justify-between px-5"
-      >
-        <div className="flex items-center gap-2.5">
-          <BookOpen className="w-5 h-5 text-emerald-600" />
-          <span>Voir la fiche détaillée</span>
-        </div>
-        <div className="text-[10px] uppercase tracking-wide font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-          Infos
-        </div>
-      </Button>
+      {!isControlled && (
+        <Button
+          onClick={() => setIsOpen(true)}
+          variant="outline"
+          className="w-full bg-white/60 backdrop-blur-md border border-stone-200/50 text-stone-700 hover:bg-white rounded-2xl h-12 font-bold shadow-sm mb-6 transition-all active:scale-95 flex items-center justify-between px-5"
+        >
+          <div className="flex items-center gap-2.5">
+            <BookOpen className="w-5 h-5 text-emerald-600" />
+            <span>Voir la fiche détaillée</span>
+          </div>
+          <div className="text-[10px] uppercase tracking-wide font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+            Infos
+          </div>
+        </Button>
+      )}
 
       {mounted && createPortal(modalContent, document.body)}
     </>

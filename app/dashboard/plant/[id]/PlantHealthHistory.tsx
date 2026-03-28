@@ -28,9 +28,9 @@ export default function PlantHealthHistory({ plantId }: { plantId: string }) {
       .select("id, diagnosis, urgency, created_at")
       .eq("plant_id", plantId)
       .order("created_at", { ascending: false })
-      .limit(5)
-      .then(({ data }) => {
-        setDiagnoses(data ?? []);
+      .limit(3)
+      .then(({ data, error }) => {
+        if (!error) setDiagnoses(data ?? []);
         setLoaded(true);
       });
   }, [plantId]);
@@ -45,14 +45,16 @@ export default function PlantHealthHistory({ plantId }: { plantId: string }) {
   return (
     <div className="bg-white rounded-[1.5rem] border border-stone-100 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4">
-        <div className="w-8 h-8 rounded-[0.6rem] flex items-center justify-center bg-blue-50 shrink-0">
-          <Stethoscope className="w-4 h-4 text-blue-600" />
-        </div>
-        <div>
-          <div className="text-sm font-extrabold text-stone-800">Historique santé</div>
-          <div className="text-[10px] text-stone-400">
-            {diagnoses.length} diagnostic{diagnoses.length > 1 ? "s" : ""} · dernier {latestDate}
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-[0.6rem] flex items-center justify-center bg-blue-50 shrink-0">
+            <Stethoscope className="w-4 h-4 text-blue-500" />
+          </div>
+          <div>
+            <div className="text-sm font-extrabold text-stone-800">Historique santé</div>
+            <div className="text-[10px] text-stone-400">
+              {diagnoses.length} diagnostic{diagnoses.length > 1 ? "s" : ""} · dernier {latestDate}
+            </div>
           </div>
         </div>
       </div>
@@ -62,18 +64,13 @@ export default function PlantHealthHistory({ plantId }: { plantId: string }) {
       {/* Liste */}
       <div className="px-3 py-2 flex flex-col gap-2">
         {diagnoses.map((d) => (
-          <div
-            key={d.id}
-            className="flex items-start gap-2 p-2.5 bg-stone-50 rounded-xl border border-stone-100"
-          >
-            <span
-              className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0 mt-0.5 ${urgencyStyles(d.urgency)}`}
-            >
+          <div key={d.id} className="flex items-start gap-2 p-2.5 bg-stone-50 rounded-xl border border-stone-100">
+            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5 ${urgencyStyles(d.urgency)}`}>
               {d.urgency}
             </span>
             <div>
-              <p className="text-xs font-semibold text-stone-700 leading-snug">{d.diagnosis}</p>
-              <p className="text-[10px] text-stone-400 mt-0.5">
+              <p className="text-[10px] font-semibold text-stone-700 leading-snug">{d.diagnosis}</p>
+              <p className="text-[9px] text-stone-400 mt-0.5">
                 {new Date(d.created_at).toLocaleDateString("fr-FR", {
                   day: "numeric",
                   month: "short",
