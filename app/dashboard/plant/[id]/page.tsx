@@ -13,6 +13,7 @@ import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
 import PlantIdentityModal from "./PlantIdentityModal";
 import DeferredCareLoading from "./DeferredCareLoading";
+import HealthHistory from "./HealthHistory";
 
 const getSeasonAdvice = () => {
   const month = new Date().getMonth();
@@ -94,6 +95,13 @@ export default async function PlantDetailPage({
     .single();
 
   if (error || !plant) redirect("/dashboard");
+
+  const { data: diagnoses } = await supabase
+    .from("plant_diagnoses")
+    .select("id, diagnosis, urgency, action, created_at")
+    .eq("plant_id", id)
+    .order("created_at", { ascending: false })
+    .limit(10);
 
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
@@ -271,8 +279,12 @@ export default async function PlantDetailPage({
           )}
 
           <div className="pt-2">
-            <SosFeature plantId={plant.id} />
+            <SosFeature plantId={plant.id} plantName={plant.name} />
           </div>
+
+          {diagnoses && diagnoses.length > 0 && (
+            <HealthHistory diagnoses={diagnoses} />
+          )}
 
         </div>
       </main>

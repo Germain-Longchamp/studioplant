@@ -492,20 +492,42 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
     const base64Image = buffer.toString("base64");
     const mimeType = file.type;
 
+    // Calcul de la saison courante
+    const month = new Date().getMonth();
+    const currentSeason =
+      month >= 2 && month <= 4 ? "printemps" :
+      month >= 5 && month <= 7 ? "été" :
+      month >= 8 && month <= 10 ? "automne" : "hiver";
+
+    // Calcul du délai depuis le dernier arrosage
+    let daysSinceWatering = "inconnu";
+    if (plant.last_watered_at) {
+      const diff = Math.floor((Date.now() - new Date(plant.last_watered_at).getTime()) / 86400000);
+      daysSinceWatering = `${diff} jour(s)`;
+    }
+
     // 🟢 Super Contexte
     const contextPrompt = await getUserContextPrompt(user);
 
     const prompt = `
       Tu es un botaniste expert en maladies des plantes d'intérieur.
       L'utilisateur a utilisé un bouton "SOS" pour cette plante : ${plant.name} (${plant.species}).
-      Son dernier arrosage date du : ${plant.last_watered_at}.
-      La plante est placée dans la pièce suivante : "${plant.room || "Inconnue"}".
-      
+
+      DONNÉES D'ENTRETIEN DE CETTE PLANTE :
+      - Fréquence d'arrosage recommandée : tous les ${plant.watering_frequency || "?"} jours.
+      - Dernier arrosage : il y a ${daysSinceWatering} (date : ${plant.last_watered_at || "inconnue"}).
+      - Exposition actuelle : "${plant.exposure || "inconnue"}" / Exposition idéale : "${plant.ideal_exposure || "inconnue"}".
+      - Substrat idéal : ${plant.ideal_substrate || "non précisé"}.
+      - Notes d'entretien personnalisées : ${plant.care_notes ? plant.care_notes.substring(0, 400) : "aucune"}.
+      - Saison actuelle : ${currentSeason}.
+      - Pièce : "${plant.room || "Inconnue"}".
+
       ${contextPrompt}
 
-      Vérifie si les caractéristiques de sa pièce (température, humidité) pourraient être la cause de sa maladie (ex: air trop sec, coup de froid).
+      Prends en compte TOUTES ces données pour affiner le diagnostic : un arrosage trop fréquent, une exposition inadaptée ou un substrat inadéquat peuvent directement causer les symptômes visibles.
+      Vérifie aussi si les caractéristiques de la pièce (température, humidité) pourraient aggraver la situation.
       Analyse attentivement cette photo de la plante malade.
-      
+
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
         "diagnosis": "Un diagnostic précis mais formulé de manière simple et rassurante (2 phrases max).",
@@ -521,11 +543,24 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
     ]);
 
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
+    let diagnosisData;
     try {
-      return { success: true, data: JSON.parse(cleanedText) };
+      diagnosisData = JSON.parse(cleanedText);
     } catch {
       return { error: "Impossible d'analyser le diagnostic." };
     }
+
+    // Persistance dans plant_diagnoses
+    await supabase.from("plant_diagnoses").insert({
+      plant_id: plantId,
+      user_id: user.id,
+      plant_name: plant.name,
+      diagnosis: diagnosisData.diagnosis,
+      urgency: diagnosisData.urgency,
+      action: diagnosisData.action,
+    });
+
+    return { success: true, data: diagnosisData };
 
   } catch (error) {
     console.error("Diagnosis error:", error);
@@ -1018,11 +1053,15 @@ export async function quickDiagnosePlant(formData: FormData) {
     const base64Image = buffer.toString("base64");
     const mimeType = file.type;
 
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
     const prompt = `
       Tu es le "Docteur Plante", un botaniste expert en maladies des végétaux.
       L'utilisateur te montre la photo d'une plante malade qu'il a trouvée, sans contexte particulier.
       Analyse attentivement cette photo pour identifier la plante (si possible) et surtout son problème (maladie, parasites, carence, excès d'eau...).
-      
+
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
         "name": "Nom de la plante (si identifiable, sinon 'Plante inconnue')",
@@ -1039,7 +1078,7 @@ export async function quickDiagnosePlant(formData: FormData) {
     ]);
 
     const cleanedText = result.response.text().replace(/```json/gi, "").replace(/```/g, "").trim();
-    
+
     let diagnosisData;
     try {
       diagnosisData = JSON.parse(cleanedText);
@@ -1048,10 +1087,49 @@ export async function quickDiagnosePlant(formData: FormData) {
       return { error: "Le docteur n'a pas pu rédiger l'ordonnance. Réessayez." };
     }
 
+    // Persistance dans plant_diagnoses (plant_id null = diagnostic générique)
+    await supabase.from("plant_diagnoses").insert({
+      plant_id: null,
+      user_id: user.id,
+      plant_name: diagnosisData.name,
+      diagnosis: diagnosisData.diagnosis,
+      urgency: diagnosisData.urgency,
+      action: diagnosisData.action,
+    });
+
     return { success: true, data: diagnosisData };
 
   } catch (error) {
     console.error("Quick Diagnosis error:", error);
     return { error: "Impossible de consulter le docteur. Veuillez réessayer." };
   }
+}
+
+
+// SAUVEGARDER UN DIAGNOSTIC DANS LES NOTES D'ENTRETIEN
+export async function appendDiagnosisToNotes(plantId: string, diagnosisText: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autorisé" };
+
+  const { data: plant } = await supabase
+    .from("plants")
+    .select("care_notes")
+    .eq("id", plantId)
+    .eq("user_id", user.id)
+    .single();
+  if (!plant) return { error: "Plante introuvable" };
+
+  const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const note = `\n\n📋 Diagnostic du ${date} :\n${diagnosisText}`;
+  const updatedNotes = (plant.care_notes || "") + note;
+
+  const { error } = await supabase
+    .from("plants")
+    .update({ care_notes: updatedNotes })
+    .eq("id", plantId);
+  if (error) return { error: "Impossible de sauvegarder." };
+
+  revalidatePath(`/dashboard/plant/${plantId}`);
+  return { success: true };
 }
