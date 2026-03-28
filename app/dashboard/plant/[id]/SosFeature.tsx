@@ -94,12 +94,17 @@ export default function SosFeature({ plantId, plantName }: SosFeatureProps) {
           </Button>
         </div>
 
-        {/* HEADER */}
-        <div className="bg-rose-50 p-6 text-center border-b border-rose-100 shrink-0">
-          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-rose-500">
-            <Stethoscope className="w-7 h-7" />
+        {/* HEADER BLEU ROI */}
+        <div className="bg-blue-900 bg-gradient-to-b from-blue-800 to-blue-950 p-6 relative shrink-0">
+          <div className="flex gap-4 items-center">
+            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm shrink-0">
+              <Stethoscope className="w-7 h-7 text-blue-300" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-white text-xl tracking-tight leading-tight">{plantName}</h3>
+              <p className="text-blue-300 text-sm font-medium mt-0.5">Diagnostic terminé</p>
+            </div>
           </div>
-          <h3 className="font-bold text-rose-900 text-xl tracking-tight">Diagnostic terminé</h3>
         </div>
 
         {/* CONTENU */}
@@ -165,16 +170,16 @@ export default function SosFeature({ plantId, plantName }: SosFeatureProps) {
       <button
         onClick={handleTriggerClick}
         disabled={isPending}
-        className="w-full bg-rose-50/80 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm border border-rose-200/60 transition-all hover:bg-rose-100/50 hover:shadow-md active:scale-95 group mt-4"
+        className="w-full bg-blue-50/80 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm border border-blue-200/60 transition-all hover:bg-blue-100/50 hover:shadow-md active:scale-95 group mt-4"
       >
-        <div className="p-3 bg-rose-500 text-white rounded-2xl shrink-0 transition-transform group-hover:scale-105 shadow-sm shadow-rose-500/20">
+        <div className="p-3 bg-blue-600 text-white rounded-2xl shrink-0 transition-transform group-hover:scale-105 shadow-sm shadow-blue-600/20">
           {isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Stethoscope className="w-6 h-6" />}
         </div>
         <div className="text-left flex-1">
-          <h3 className="font-bold text-rose-950 text-lg leading-tight">
+          <h3 className="font-bold text-blue-950 text-lg leading-tight">
             {isPending ? "Analyse en cours..." : `SOS – ${plantName}`}
           </h3>
-          <p className="text-rose-700/80 text-sm font-medium mt-0.5">
+          <p className="text-blue-700/80 text-sm font-medium mt-0.5">
             {isPending ? "On examine vos feuilles" : "Analyse basée sur son historique et son environnement"}
           </p>
         </div>
