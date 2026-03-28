@@ -226,10 +226,10 @@ export default function DoctorPlant() {
         </div>
         <div className="text-left flex-1">
           <h3 className="font-bold text-blue-950 text-lg leading-tight">
-            {isPending ? "Analyse en cours..." : "Diagnostiquer une plante inconnue"}
+            {isPending ? "Analyse en cours..." : "Docteur Plante"}
           </h3>
           <p className="text-blue-700/80 text-sm font-medium mt-0.5">
-            {isPending ? "Recherche des symptômes..." : "Photographiez n'importe quelle plante pour l'identifier et la soigner"}
+            {isPending ? "Recherche des symptômes..." : "Diagnostic rapide par photo"}
           </p>
         </div>
         {!isPending && (
