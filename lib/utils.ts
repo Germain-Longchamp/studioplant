@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function getActiveWateringFrequency(plant: any): number {
+  const month = new Date().getMonth();
+
+  if (month >= 2 && month <= 4 && plant.watering_freq_spring) return plant.watering_freq_spring;
+  if (month >= 5 && month <= 7 && plant.watering_freq_summer) return plant.watering_freq_summer;
+  if (month >= 8 && month <= 10 && plant.watering_freq_autumn) return plant.watering_freq_autumn;
+  if ((month >= 11 || month <= 1) && plant.watering_freq_winter) return plant.watering_freq_winter;
+
+  return plant.watering_frequency || 7;
+}
+
 export function getWateringStatus(lastWateredAt: string, frequency: number, snoozeDays: number = 0) {
   const lastDate = new Date(lastWateredAt);
   const nextDate = new Date(lastDate);

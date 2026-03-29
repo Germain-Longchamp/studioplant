@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
-import { getWateringStatus } from "@/lib/utils";
+import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import QuickAnalysis from "./QuickAnalysis";
 import DoctorPlant from "./DoctorPlant";
@@ -39,17 +39,17 @@ export default async function DashboardPage() {
 
   const sortedPlants = plants?.sort((a, b) => {
     const nextDateA = new Date(a.last_watered_at);
-    nextDateA.setDate(nextDateA.getDate() + a.watering_frequency + (a.snooze_days || 0));
-    
+    nextDateA.setDate(nextDateA.getDate() + getActiveWateringFrequency(a) + (a.snooze_days || 0));
+
     const nextDateB = new Date(b.last_watered_at);
-    nextDateB.setDate(nextDateB.getDate() + b.watering_frequency + (b.snooze_days || 0));
+    nextDateB.setDate(nextDateB.getDate() + getActiveWateringFrequency(b) + (b.snooze_days || 0));
 
     return nextDateA.getTime() - nextDateB.getTime();
   });
 
   const urgentPlants = sortedPlants?.filter((plant) => {
     const snoozeDays = plant.snooze_days || 0;
-    const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+    const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
     return status.urgent;
   });
 

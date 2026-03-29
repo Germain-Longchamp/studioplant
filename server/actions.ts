@@ -157,11 +157,16 @@ export async function addPlantWithAI(formData: FormData) {
 
         ${contextPrompt}
 
+        IMPORTANT pour les fréquences d'arrosage : donne 4 valeurs différentes selon les saisons. En été les plantes ont généralement besoin de plus d'eau (fréquence plus courte). En hiver elles sont en dormance (fréquence plus longue). Adapte ces valeurs aux caractéristiques de la pièce (température été/hiver, humidité) et à l'espèce.
+
         Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
         {
           "name": "${prefilledName}",
           "species": "${prefilledSpecies}",
-          "watering_frequency": 7,
+          "watering_freq_spring": nombre_entier_en_jours,
+          "watering_freq_summer": nombre_entier_en_jours,
+          "watering_freq_autumn": nombre_entier_en_jours,
+          "watering_freq_winter": nombre_entier_en_jours,
           "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
           "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
           "robustness_score": "Uniquement la note chiffrée, ex: 9/10",
@@ -189,7 +194,9 @@ export async function addPlantWithAI(formData: FormData) {
 
         ${contextPrompt}
 
-        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_frequency": 7, "origin": "...", "robustness": "...", "robustness_score": "...", "max_size": "...", "max_size_short": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "care_notes": "..."}
+        IMPORTANT pour les fréquences d'arrosage : donne 4 valeurs différentes selon les saisons. En été les plantes ont généralement besoin de plus d'eau (fréquence plus courte). En hiver elles sont en dormance (fréquence plus longue). Adapte ces valeurs aux caractéristiques de la pièce (température été/hiver, humidité) et à l'espèce.
+
+        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_freq_spring": 7, "watering_freq_summer": 7, "watering_freq_autumn": 7, "watering_freq_winter": 7, "origin": "...", "robustness": "...", "robustness_score": "...", "max_size": "...", "max_size_short": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "care_notes": "..."}
         Si ce n'est pas une plante, retourne : {"name": "Erreur", "species": "Non reconnu"}
       `;
       geminiPromise = model.generateContent([multimodalPrompt, imagePart]);
@@ -223,7 +230,10 @@ export async function addPlantWithAI(formData: FormData) {
       user_id: user.id,
       name: plantData.name,
       species: plantData.species,
-      watering_frequency: plantData.watering_frequency,
+      watering_freq_spring: plantData.watering_freq_spring,
+      watering_freq_summer: plantData.watering_freq_summer,
+      watering_freq_autumn: plantData.watering_freq_autumn,
+      watering_freq_winter: plantData.watering_freq_winter,
       exposure: light,
       room: room,
       description: "", 
@@ -349,9 +359,14 @@ export async function generateDeferredCareGuide(plantId: string) {
       ${contextPrompt}
 
       Génère son carnet de santé complet.
+      IMPORTANT pour les fréquences d'arrosage : donne 4 valeurs différentes selon les saisons. En été les plantes ont généralement besoin de plus d'eau (fréquence plus courte). En hiver elles sont en dormance (fréquence plus longue). Adapte ces valeurs aux caractéristiques de la pièce (température été/hiver, humidité) et à l'espèce.
+
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
-        "watering_frequency": 7,
+        "watering_freq_spring": nombre_entier_en_jours,
+        "watering_freq_summer": nombre_entier_en_jours,
+        "watering_freq_autumn": nombre_entier_en_jours,
+        "watering_freq_winter": nombre_entier_en_jours,
         "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
         "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
         "robustness_score": "Uniquement la note chiffrée, ex: 9/10",
@@ -376,7 +391,10 @@ export async function generateDeferredCareGuide(plantId: string) {
 
     // On met à jour la base de données avec les nouvelles infos
     const { error: updateError } = await supabase.from("plants").update({
-      watering_frequency: plantData.watering_frequency,
+      watering_freq_spring: plantData.watering_freq_spring,
+      watering_freq_summer: plantData.watering_freq_summer,
+      watering_freq_autumn: plantData.watering_freq_autumn,
+      watering_freq_winter: plantData.watering_freq_winter,
       origin: plantData.origin,
       robustness: plantData.robustness,
       robustness_score: plantData.robustness_score,
@@ -391,7 +409,6 @@ export async function generateDeferredCareGuide(plantId: string) {
 
     if (updateError) throw updateError;
 
-    // 🟢 La magie de Next.js : On dit à la page de se rafraîchir en direct !
     revalidatePath(`/dashboard/plant/${plantId}`);
     return { success: true };
   } catch (error) {
@@ -429,9 +446,14 @@ export async function updatePlantAdvice(plantId: string) {
       N'utilise JAMAIS de guillemets doubles (") à l'intérieur de tes textes (remplace-les par des guillemets simples (') si besoin).
       N'ajoute AUCUNE balise markdown (pas de \`\`\`json) ni texte avant ou après.
 
+      IMPORTANT pour les fréquences d'arrosage : donne 4 valeurs différentes selon les saisons. En été les plantes ont généralement besoin de plus d'eau (fréquence plus courte). En hiver elles sont en dormance (fréquence plus longue). Adapte ces valeurs aux caractéristiques de la pièce (température été/hiver, humidité) et à l'espèce.
+
       Structure exacte attendue :
       {
-        "watering_frequency": 7,
+        "watering_freq_spring": nombre_entier_en_jours,
+        "watering_freq_summer": nombre_entier_en_jours,
+        "watering_freq_autumn": nombre_entier_en_jours,
+        "watering_freq_winter": nombre_entier_en_jours,
         "origin": "Origine géographique (ex: Forêts tropicales d'Am. du Sud)",
         "robustness": "Note et petit comm. (ex: 8/10 - Pardonne les oublis)",
         "robustness_score": "Uniquement la note chiffrée, ex: 9/10",
@@ -464,7 +486,10 @@ export async function updatePlantAdvice(plantId: string) {
     }
 
     const { error } = await supabase.from("plants").update({
-      watering_frequency: plantData.watering_frequency,
+      watering_freq_spring: plantData.watering_freq_spring,
+      watering_freq_summer: plantData.watering_freq_summer,
+      watering_freq_autumn: plantData.watering_freq_autumn,
+      watering_freq_winter: plantData.watering_freq_winter,
       origin: plantData.origin,
       robustness: plantData.robustness,
       robustness_score: plantData.robustness_score,

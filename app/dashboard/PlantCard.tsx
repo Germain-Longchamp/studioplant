@@ -1,14 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Leaf, Droplets } from "lucide-react";
-import { getWateringStatus } from "@/lib/utils";
+import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import WaterButton from "./WaterButton";
 import CardSnoozeButton from "./CardSnoozeButton";
 
 export default function PlantCard({ plant }: { plant: any }) {
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
-  const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+  const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
 
   let timeText = status.text;
   if (timeText.toLowerCase() === "aujourd'hui") {

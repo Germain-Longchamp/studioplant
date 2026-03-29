@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Leaf, Droplets, Plus, MapPin, Sprout } from "lucide-react";
-import { getWateringStatus } from "@/lib/utils";
+import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
 import Link from "next/link";
@@ -31,7 +31,7 @@ export default function PlantsClient({ plants, userRooms }: { plants: any[], use
   const totalCount = plants.length;
   const urgentCount = plants.filter((plant) => {
     const snoozeDays = plant.snooze_days || 0;
-    const status = getWateringStatus(plant.last_watered_at, plant.watering_frequency, snoozeDays);
+    const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
     return status.urgent;
   }).length;
 
