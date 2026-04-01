@@ -176,7 +176,10 @@ export async function addPlantWithAI(formData: FormData) {
           "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
           "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
           "light_advice": "Ton avis d'expert court sur la luminosité locale choisie.",
-          "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
+          "light_care": { "summary": "Résumé en 5-8 mots max de l'exposition lumineuse idéale (ex: 'Lumière vive indirecte')", "detail": "Conseil détaillé en 2-3 phrases. Où placer la plante, quelle orientation, quoi éviter, et les signes de manque ou excès de lumière. Adapte à la pièce et luminosité de l'utilisateur." },
+          "watering_care": { "summary": "Résumé en 5-8 mots max de la stratégie d'arrosage (ex: 'Laisser sécher entre les arrosages')", "detail": "Conseil détaillé en 2-3 phrases. Fréquence selon la saison, méthode, température de l'eau, gestion de la soucoupe, test du doigt. Adapte à la pièce." },
+          "substrate_care": { "summary": "Résumé en 5-8 mots max du substrat recommandé (ex: 'Terreau léger et drainant')", "detail": "Conseil détaillé en 2-3 phrases. Composition idéale avec proportions, fréquence de rempotage, meilleure période, taille du pot." },
+          "seasonal_care": { "summary": "Résumé en 5-8 mots max de l'entretien récurrent (ex: 'Engrais de mars à septembre')", "detail": "Conseil détaillé en 2-3 phrases. Programme d'engrais, taille et nettoyage des feuilles, brumisation, gestes saisonniers spécifiques." }
         }
       `;
       geminiPromise = model.generateContent(textPrompt);
@@ -196,7 +199,8 @@ export async function addPlantWithAI(formData: FormData) {
 
         IMPORTANT pour les fréquences d'arrosage : donne 4 valeurs différentes selon les saisons. En été les plantes ont généralement besoin de plus d'eau (fréquence plus courte). En hiver elles sont en dormance (fréquence plus longue). Adapte ces valeurs aux caractéristiques de la pièce (température été/hiver, humidité) et à l'espèce.
 
-        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_freq_spring": 7, "watering_freq_summer": 7, "watering_freq_autumn": 7, "watering_freq_winter": 7, "origin": "...", "robustness": "...", "robustness_score": "...", "max_size": "...", "max_size_short": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "care_notes": "..."}
+        RÈGLE ABSOLUE : N'utilise JAMAIS de guillemets doubles (") à l'intérieur de tes textes (remplace par des guillemets simples).
+        Retourne UNIQUEMENT un JSON avec la structure : {"name": "...", "species": "...", "watering_freq_spring": 7, "watering_freq_summer": 7, "watering_freq_autumn": 7, "watering_freq_winter": 7, "origin": "...", "robustness": "...", "robustness_score": "...", "max_size": "...", "max_size_short": "...", "ideal_substrate": "...", "ideal_exposure": "...", "room_advice": "...", "light_advice": "...", "light_care": {"summary": "...", "detail": "..."}, "watering_care": {"summary": "...", "detail": "..."}, "substrate_care": {"summary": "...", "detail": "..."}, "seasonal_care": {"summary": "...", "detail": "..."}}
         Si ce n'est pas une plante, retourne : {"name": "Erreur", "species": "Non reconnu"}
       `;
       geminiPromise = model.generateContent([multimodalPrompt, imagePart]);
@@ -244,7 +248,10 @@ export async function addPlantWithAI(formData: FormData) {
       max_size_short: plantData.max_size_short,
       ideal_substrate: plantData.ideal_substrate,
       ideal_exposure: plantData.ideal_exposure,
-      care_notes: plantData.care_notes,
+      light_care: plantData.light_care,
+      watering_care: plantData.watering_care,
+      substrate_care: plantData.substrate_care,
+      seasonal_care: plantData.seasonal_care,
       room_advice: plantData.room_advice,
       light_advice: plantData.light_advice,
       image_path: publicUrlData.publicUrl,
@@ -317,7 +324,10 @@ export async function saveOptimisticPlant(formData: FormData) {
       max_size_short: "",
       ideal_substrate: "",
       ideal_exposure: "",
-      care_notes: "",
+      light_care: null,
+      watering_care: null,
+      substrate_care: null,
+      seasonal_care: null,
       room_advice: "",
       light_advice: ""
     }).select().single();
@@ -376,7 +386,10 @@ export async function generateDeferredCareGuide(plantId: string) {
         "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
         "room_advice": "Ton avis d'expert court sur le choix de cette pièce en tenant compte de ses températures, son orientation et son humidité.",
         "light_advice": "Ton avis d'expert court sur la luminosité locale choisie.",
-        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis."
+        "light_care": { "summary": "Résumé en 5-8 mots max de l'exposition lumineuse idéale (ex: 'Lumière vive indirecte')", "detail": "Conseil détaillé en 2-3 phrases. Où placer la plante, quelle orientation, quoi éviter, et les signes de manque ou excès de lumière. Adapte à la pièce et luminosité de l'utilisateur." },
+        "watering_care": { "summary": "Résumé en 5-8 mots max de la stratégie d'arrosage (ex: 'Laisser sécher entre les arrosages')", "detail": "Conseil détaillé en 2-3 phrases. Fréquence selon la saison, méthode, température de l'eau, gestion de la soucoupe, test du doigt. Adapte à la pièce." },
+        "substrate_care": { "summary": "Résumé en 5-8 mots max du substrat recommandé (ex: 'Terreau léger et drainant')", "detail": "Conseil détaillé en 2-3 phrases. Composition idéale avec proportions, fréquence de rempotage, meilleure période, taille du pot." },
+        "seasonal_care": { "summary": "Résumé en 5-8 mots max de l'entretien récurrent (ex: 'Engrais de mars à septembre')", "detail": "Conseil détaillé en 2-3 phrases. Programme d'engrais, taille et nettoyage des feuilles, brumisation, gestes saisonniers spécifiques." }
       }
     `;
 
@@ -402,9 +415,12 @@ export async function generateDeferredCareGuide(plantId: string) {
       max_size_short: plantData.max_size_short,
       ideal_substrate: plantData.ideal_substrate,
       ideal_exposure: plantData.ideal_exposure,
+      light_care: plantData.light_care,
+      watering_care: plantData.watering_care,
+      substrate_care: plantData.substrate_care,
+      seasonal_care: plantData.seasonal_care,
       room_advice: plantData.room_advice,
       light_advice: plantData.light_advice,
-      care_notes: plantData.care_notes,
     }).eq("id", plantId);
 
     if (updateError) throw updateError;
@@ -463,7 +479,10 @@ export async function updatePlantAdvice(plantId: string) {
         "ideal_exposure": "Exposition idéale (ex: Lumière vive sans soleil direct)",
         "room_advice": "Avis expert court sur la pièce choisie (température, humidité...)",
         "light_advice": "Avis expert court sur la lumière...",
-        "care_notes": "Un guide d'entretien TRÈS détaillé et structuré. Utilise obligatoirement des doubles sauts de ligne (\\n\\n) pour séparer tes sections. Utilise des listes à puces (-) et des emojis pour aérer visuellement le texte."
+        "light_care": { "summary": "Résumé en 5-8 mots max de l'exposition lumineuse idéale (ex: 'Lumière vive indirecte')", "detail": "Conseil détaillé en 2-3 phrases. Où placer la plante, quelle orientation, quoi éviter, et les signes de manque ou excès de lumière. Adapte à la pièce et luminosité de l'utilisateur." },
+        "watering_care": { "summary": "Résumé en 5-8 mots max de la stratégie d'arrosage (ex: 'Laisser sécher entre les arrosages')", "detail": "Conseil détaillé en 2-3 phrases. Fréquence selon la saison, méthode, température de l'eau, gestion de la soucoupe, test du doigt. Adapte à la pièce." },
+        "substrate_care": { "summary": "Résumé en 5-8 mots max du substrat recommandé (ex: 'Terreau léger et drainant')", "detail": "Conseil détaillé en 2-3 phrases. Composition idéale avec proportions, fréquence de rempotage, meilleure période, taille du pot." },
+        "seasonal_care": { "summary": "Résumé en 5-8 mots max de l'entretien récurrent (ex: 'Engrais de mars à septembre')", "detail": "Conseil détaillé en 2-3 phrases. Programme d'engrais, taille et nettoyage des feuilles, brumisation, gestes saisonniers spécifiques." }
       }
     `;
 
@@ -497,9 +516,12 @@ export async function updatePlantAdvice(plantId: string) {
       max_size_short: plantData.max_size_short,
       ideal_substrate: plantData.ideal_substrate,
       ideal_exposure: plantData.ideal_exposure,
+      light_care: plantData.light_care,
+      watering_care: plantData.watering_care,
+      substrate_care: plantData.substrate_care,
+      seasonal_care: plantData.seasonal_care,
       room_advice: plantData.room_advice,
       light_advice: plantData.light_advice,
-      care_notes: plantData.care_notes,
     }).eq("id", plantId);
 
     if (error) throw error;
@@ -557,7 +579,7 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
       - Dernier arrosage : il y a ${daysSinceWatering} (date : ${plant.last_watered_at || "inconnue"}).
       - Exposition actuelle : "${plant.exposure || "inconnue"}" / Exposition idéale : "${plant.ideal_exposure || "inconnue"}".
       - Substrat idéal : ${plant.ideal_substrate || "non précisé"}.
-      - Notes d'entretien personnalisées : ${plant.care_notes ? plant.care_notes.substring(0, 400) : "aucune"}.
+      - Conseil arrosage : ${plant.watering_care?.detail ? plant.watering_care.detail.substring(0, 200) : "aucun"}.
       - Saison actuelle : ${currentSeason}.
       - Pièce : "${plant.room || "Inconnue"}".
 
@@ -1153,7 +1175,7 @@ export async function appendDiagnosisToNotes(plantId: string, diagnosisText: str
 
   const { data: plant } = await supabase
     .from("plants")
-    .select("care_notes")
+    .select("diagnosis_notes")
     .eq("id", plantId)
     .eq("user_id", user.id)
     .single();
@@ -1161,11 +1183,11 @@ export async function appendDiagnosisToNotes(plantId: string, diagnosisText: str
 
   const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   const note = `\n\n📋 Diagnostic du ${date} :\n${diagnosisText}`;
-  const updatedNotes = (plant.care_notes || "") + note;
+  const updatedNotes = (plant.diagnosis_notes || "") + note;
 
   const { error } = await supabase
     .from("plants")
-    .update({ care_notes: updatedNotes })
+    .update({ diagnosis_notes: updatedNotes })
     .eq("id", plantId);
   if (error) return { error: "Impossible de sauvegarder." };
 

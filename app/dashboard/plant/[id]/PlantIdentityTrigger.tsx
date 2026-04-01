@@ -19,7 +19,7 @@ export default function PlantIdentityTrigger({ plant, hasQuickInfos }: Props) {
         className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-stone-400 border border-dashed border-stone-200 rounded-2xl bg-transparent hover:bg-stone-50 transition-colors cursor-pointer"
       >
         <BookOpen className="w-3.5 h-3.5" />
-        Voir la fiche détaillée complète ›
+        En savoir plus sur {plant.name} ›
       </button>
       <PlantIdentityModal
         plant={plant}

@@ -11,7 +11,7 @@ import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
 import DoctorPlantBlock from "./DoctorPlantBlock";
-import CareGuideSection from "./CareGuideSection";
+import CareGuideAccordion from "./CareGuideAccordion";
 import LocationSection from "./LocationSection";
 
 export default async function PlantDetailPage({
@@ -185,12 +185,7 @@ export default async function PlantDetailPage({
           <PlantIdentityTrigger plant={plant} hasQuickInfos={hasQuickInfos} />
 
           {/* ===== 5. GUIDE D'ENTRETIEN ===== */}
-          <CareGuideSection
-            plantId={plant.id}
-            careNotes={plant.care_notes || null}
-            idealExposure={plant.ideal_exposure || null}
-            idealSubstrate={plant.ideal_substrate || null}
-          />
+          <CareGuideAccordion plant={plant} />
 
           {/* ===== 6. EMPLACEMENT ===== */}
           <LocationSection plant={plant} />
