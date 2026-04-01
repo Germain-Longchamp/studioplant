@@ -3,9 +3,10 @@ import withPWAInit from "@ducanh2912/next-pwa";
 
 // 1. Configuration du plugin PWA
 const withPWA = withPWAInit({
-  dest: "public", // Dossier de destination du service worker
-  disable: process.env.NODE_ENV === "development", // Désactive le cache en mode dev pour éviter les bugs
-  register: true, // Enregistre automatiquement le service worker
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  customWorkerSrc: "sw-push-handler.js",
   workboxOptions: {
     disableDevLogs: true,
   },

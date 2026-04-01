@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Bell } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileForms from "./ProfileForms";
 import { Button } from "@/components/ui/button";
 import { logOut } from "@/server/actions";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -36,6 +37,20 @@ export default async function ProfilePage() {
         
         {/* Le formulaire allégé (Email / MDP) */}
         <ProfileForms user={user} />
+
+        {/* Notifications */}
+        <div className="bg-white rounded-[1.5rem] border border-stone-100 shadow-sm p-5 space-y-3">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-8 h-8 rounded-[0.6rem] bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <Bell className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-sm font-extrabold text-stone-800">Rappels d'arrosage</div>
+              <div className="text-[10px] text-stone-400 mt-0.5">Notification chaque matin à 8h</div>
+            </div>
+          </div>
+          <PushNotificationToggle />
+        </div>
 
         {/* Le gros bouton de déconnexion rouge et clair */}
         <form action={logOut}>
