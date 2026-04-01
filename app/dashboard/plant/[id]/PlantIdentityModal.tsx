@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Globe2, ShieldCheck, Ruler, Layers, Sun, X, Info } from "lucide-react";
+import { cleanAIText } from "@/lib/utils";
 
 interface PlantIdentityModalProps {
   plant: any;
@@ -52,7 +53,7 @@ export default function PlantIdentityModal({ plant, hasQuickInfos, open, onOpenC
                   </div>
                   <div>
                     <h4 className="text-[11px] uppercase font-bold tracking-wider text-emerald-600 mb-1">Robustesse globale</h4>
-                    <p className="text-sm font-semibold text-emerald-950 leading-snug">{plant.robustness}</p>
+                    <p className="text-sm font-semibold text-emerald-950 leading-snug">{cleanAIText(plant.robustness)}</p>
                   </div>
                 </div>
               )}
@@ -64,7 +65,7 @@ export default function PlantIdentityModal({ plant, hasQuickInfos, open, onOpenC
                     <Globe2 className="w-5 h-5 text-stone-400" />
                     <div>
                       <h4 className="text-[10px] uppercase font-bold tracking-wider text-stone-400 mb-0.5">Origine</h4>
-                      <p className="text-sm font-bold text-stone-800 leading-tight">{plant.origin}</p>
+                      <p className="text-sm font-bold text-stone-800 leading-tight">{cleanAIText(plant.origin)}</p>
                     </div>
                   </div>
                 )}
@@ -73,7 +74,7 @@ export default function PlantIdentityModal({ plant, hasQuickInfos, open, onOpenC
                     <Ruler className="w-5 h-5 text-stone-400" />
                     <div>
                       <h4 className="text-[10px] uppercase font-bold tracking-wider text-stone-400 mb-0.5">Taille Max.</h4>
-                      <p className="text-sm font-bold text-stone-800 leading-tight">{plant.max_size}</p>
+                      <p className="text-sm font-bold text-stone-800 leading-tight">{cleanAIText(plant.max_size)}</p>
                     </div>
                   </div>
                 )}
@@ -87,7 +88,7 @@ export default function PlantIdentityModal({ plant, hasQuickInfos, open, onOpenC
                   </div>
                   <div>
                     <h4 className="text-[11px] uppercase font-bold tracking-wider text-amber-700/70 mb-0.5">Exposition idéale</h4>
-                    <p className="text-sm font-semibold text-amber-950 leading-snug">{plant.ideal_exposure}</p>
+                    <p className="text-sm font-semibold text-amber-950 leading-snug">{cleanAIText(plant.ideal_exposure)}</p>
                   </div>
                 </div>
               )}
@@ -100,7 +101,7 @@ export default function PlantIdentityModal({ plant, hasQuickInfos, open, onOpenC
                   </div>
                   <div>
                     <h4 className="text-[11px] uppercase font-bold tracking-wider text-stone-500 mb-0.5">Substrat recommandé</h4>
-                    <p className="text-sm font-semibold text-stone-800 leading-snug">{plant.ideal_substrate}</p>
+                    <p className="text-sm font-semibold text-stone-800 leading-snug">{cleanAIText(plant.ideal_substrate)}</p>
                   </div>
                 </div>
               )}

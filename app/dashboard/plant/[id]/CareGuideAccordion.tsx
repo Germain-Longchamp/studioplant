@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Sun, Droplets, Layers, Flower2, LeafyGreen } from "lucide-react";
 import DeferredCareLoading from "./DeferredCareLoading";
+import { cleanAIText } from "@/lib/utils";
 
 type CareBlock = { summary: string; detail: string } | null;
 
@@ -93,7 +94,7 @@ export default function CareGuideAccordion({ plant }: { plant: any }) {
                       {section.label}
                     </p>
                     <p className="text-xs text-stone-500 font-medium mt-0.5">
-                      {data.summary}
+                      {cleanAIText(data.summary)}
                     </p>
                   </div>
                 </div>
@@ -108,7 +109,7 @@ export default function CareGuideAccordion({ plant }: { plant: any }) {
                 <div className="px-5 pb-4 animate-in fade-in duration-200">
                   <div className="p-4 bg-[#FAFAFA] rounded-2xl border border-stone-100">
                     <p className="text-sm text-stone-700 leading-relaxed">
-                      {data.detail}
+                      {cleanAIText(data.detail)}
                     </p>
                   </div>
                 </div>

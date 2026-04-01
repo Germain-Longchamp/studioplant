@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function cleanAIText(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")   // **bold**
+    .replace(/\*(.*?)\*/g, "$1")        // *italic*
+    .replace(/^#{1,6}\s+/gm, "")       // ## headers
+    .replace(/^[-*•]\s+/gm, "")        // - bullet points
+    .replace(/`([^`]*)`/g, "$1")        // `code`
+    .replace(/\n{3,}/g, "\n\n")         // triple+ newlines → double
+    .trim();
+}
+
 export function getActiveWateringFrequency(plant: any): number {
   const month = new Date().getMonth();
 
