@@ -154,7 +154,16 @@ export default async function PlantDetailPage({
             )}
           </div>
 
-          {/* ===== 3. CHIPS RAPIDES ===== */}
+          {/* ===== 3. GUIDE D'ENTRETIEN ===== */}
+          <CareGuideAccordion plant={plant} />
+
+          {/* ===== 4. DOCTEUR PLANTE ===== */}
+          <DoctorPlantBlock plantId={plant.id} plantName={plant.name} />
+
+          {/* ===== 5. EMPLACEMENT ===== */}
+          <LocationSection plant={plant} />
+
+          {/* ===== 6. CHIPS RAPIDES ===== */}
           {hasChips && (
             <div className="grid grid-cols-3 gap-2">
               {plant.origin && (
@@ -181,17 +190,8 @@ export default async function PlantDetailPage({
             </div>
           )}
 
-          {/* ===== 4. LIEN FICHE DÉTAILLÉE ===== */}
+          {/* ===== 7. LIEN FICHE DÉTAILLÉE ===== */}
           <PlantIdentityTrigger plant={plant} hasQuickInfos={hasQuickInfos} />
-
-          {/* ===== 5. GUIDE D'ENTRETIEN ===== */}
-          <CareGuideAccordion plant={plant} />
-
-          {/* ===== 6. EMPLACEMENT ===== */}
-          <LocationSection plant={plant} />
-
-          {/* ===== 7. DOCTEUR PLANTE ===== */}
-          <DoctorPlantBlock plantId={plant.id} plantName={plant.name} />
 
         </div>
       </main>
