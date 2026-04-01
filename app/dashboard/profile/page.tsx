@@ -35,9 +35,6 @@ export default async function ProfilePage() {
 
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
         
-        {/* Le formulaire allégé (Email / MDP) */}
-        <ProfileForms user={user} />
-
         {/* Notifications */}
         <div className="bg-white rounded-[1.5rem] border border-stone-100 shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-3 mb-1">
@@ -51,6 +48,9 @@ export default async function ProfilePage() {
           </div>
           <PushNotificationToggle />
         </div>
+
+        {/* Le formulaire allégé (Email / MDP) */}
+        <ProfileForms user={user} />
 
         {/* Le gros bouton de déconnexion rouge et clair */}
         <form action={logOut}>
