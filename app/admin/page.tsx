@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import AdminTable from "./AdminTable";
 import AdminCharts from "./AdminCharts";
 import AdminLogs from "./AdminLogs";
+import type { EnrichedUser } from "./types";
 import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
@@ -49,7 +50,7 @@ export default async function AdminDashboard() {
       last_sign_in_at: u.last_sign_in_at,
       roomsCount: userRooms.length,
     };
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as EnrichedUser[];
 
   // 5. STATS GLOBALES
   const totalUsers = allUsers.length;
