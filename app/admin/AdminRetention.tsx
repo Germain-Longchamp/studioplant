@@ -5,21 +5,9 @@ import {
   ResponsiveContainer, Cell,
 } from "recharts";
 import { Ghost, Sprout, Droplets, Zap, BarChart2 } from "lucide-react";
+import type { RetentionMetrics } from "./types";
 
-interface AdminRetentionProps {
-  DAU: number;
-  WAU: number;
-  MAU: number;
-  stickinessRatio: number;
-  totalUsers: number;
-  activationRate: number;
-  newActivationRate: number;
-  ghostUsers: number;
-  powerUsers: number;
-  wateringEngagementRate: number;
-  plantsPerActiveUser: number;
-  cohortData: { name: string; retention: number; total: number }[];
-}
+type AdminRetentionProps = RetentionMetrics;
 
 const MONTHS_FR = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 

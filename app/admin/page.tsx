@@ -1,12 +1,9 @@
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-import AdminTable from "./AdminTable";
-import AdminCharts from "./AdminCharts";
-import AdminLogs from "./AdminLogs";
-import AdminRetention from "./AdminRetention";
-import type { EnrichedUser } from "./types";
-import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan, ClipboardList } from "lucide-react";
+import AdminLayout from "./AdminLayout";
+import type { EnrichedUser, RetentionMetrics } from "./types";
+import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
@@ -22,58 +19,54 @@ export default async function AdminDashboard() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // RÉCUPÉRATION DES DONNÉES
+  // FETCH
   const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
   const allUsers = authData?.users || [];
 
   const { data: allPlants } = await supabaseAdmin
     .from("plants")
     .select("id, user_id, created_at, last_watered_at");
-  const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id, created_at");
-  const { data: allScans } = await supabaseAdmin.from("quick_scans").select("id, created_at");
+  const { data: allRooms } = await supabaseAdmin
+    .from("rooms")
+    .select("id, user_id, created_at");
+  const { data: allScans } = await supabaseAdmin
+    .from("quick_scans")
+    .select("id, created_at");
   const { data: adminLogs } = await supabaseAdmin
     .from("admin_logs")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (roomsError) {
-    console.warn("Erreur sur la table des pièces :", roomsError.message);
-  }
+  // ENRICHED USERS
+  const enrichedUsers = allUsers.map((u) => ({
+    id: u.id,
+    email: u.email,
+    created_at: u.created_at,
+    plantsCount: allPlants?.filter((p) => p.user_id === u.id).length ?? 0,
+    last_sign_in_at: u.last_sign_in_at,
+    roomsCount: allRooms?.filter((r) => r.user_id === u.id).length ?? 0,
+  })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as EnrichedUser[];
 
-  // AGRÉGATION DES DONNÉES PAR UTILISATEUR
-  const enrichedUsers = allUsers.map((u) => {
-    const userPlants = allPlants?.filter((p) => p.user_id === u.id) || [];
-    const userRooms = allRooms?.filter((r) => r.user_id === u.id) || [];
-    return {
-      id: u.id,
-      email: u.email,
-      created_at: u.created_at,
-      plantsCount: userPlants.length,
-      last_sign_in_at: u.last_sign_in_at,
-      roomsCount: userRooms.length,
-    };
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as EnrichedUser[];
+  // GLOBAL KPIs
+  const totalUsers  = allUsers.length;
+  const totalPlants = allPlants?.length  ?? 0;
+  const totalRooms  = allRooms?.length   ?? 0;
+  const totalScans  = allScans?.length   ?? 0;
 
-  // STATS GLOBALES
-  const totalUsers = allUsers.length;
-  const totalPlants = allPlants?.length || 0;
-  const totalRooms = allRooms?.length || 0;
-  const totalScans = allScans?.length || 0;
-
-  // ── MÉTRIQUES DE RÉTENTION (Sprint 3) ──────────────────────────────
+  // RETENTION METRICS
   const now = Date.now();
-  const ms = (days: number) => days * 24 * 3600 * 1000;
+  const ms  = (days: number) => days * 24 * 3600 * 1000;
 
   const DAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(1)).length;
   const WAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(7)).length;
   const MAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(30)).length;
   const stickinessRatio = MAU > 0 ? Math.round((DAU / MAU) * 100) : 0;
 
-  const usersWithPlant = new Set(allPlants?.map(p => p.user_id) ?? []);
-  const activationRate = totalUsers > 0 ? Math.round((usersWithPlant.size / totalUsers) * 100) : 0;
+  const usersWithPlant   = new Set(allPlants?.map(p => p.user_id) ?? []);
+  const activationRate   = totalUsers > 0 ? Math.round((usersWithPlant.size / totalUsers) * 100) : 0;
 
-  const newUsers7d = allUsers.filter(u => now - new Date(u.created_at).getTime() < ms(7));
+  const newUsers7d       = allUsers.filter(u => now - new Date(u.created_at).getTime() < ms(7));
   const newActivationRate = newUsers7d.length > 0
     ? Math.round((newUsers7d.filter(u => usersWithPlant.has(u.id)).length / newUsers7d.length) * 100)
     : 0;
@@ -97,11 +90,11 @@ export default async function AdminDashboard() {
   const wateringEngagementRate = MAU > 0 ? Math.round((usersWhoWatered.size / MAU) * 100) : 0;
 
   const plantsPerActiveUser = (() => {
-    const activePlantCount = allPlants?.filter(p => {
+    const count = allPlants?.filter(p => {
       const u = allUsers.find(u => u.id === p.user_id);
       return u?.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(30);
     }).length ?? 0;
-    return MAU > 0 ? Math.round((activePlantCount / MAU) * 10) / 10 : 0;
+    return MAU > 0 ? Math.round((count / MAU) * 10) / 10 : 0;
   })();
 
   const cohortData = (() => {
@@ -123,12 +116,18 @@ export default async function AdminDashboard() {
         total,
       }));
   })();
-  // ───────────────────────────────────────────────────────────────────
+
+  const retention: RetentionMetrics = {
+    DAU, WAU, MAU, stickinessRatio, totalUsers,
+    activationRate, newActivationRate, ghostUsers,
+    powerUsers, wateringEngagementRate, plantsPerActiveUser,
+    cohortData,
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-20">
 
-      {/* HEADER ADMIN */}
+      {/* HEADER */}
       <div className="bg-stone-900 text-white pb-16 pt-8 px-6 sm:px-10 border-b border-stone-800">
         <div className="max-w-6xl mx-auto">
           <header className="flex items-center justify-between mb-8">
@@ -142,107 +141,68 @@ export default async function AdminDashboard() {
             </div>
             <p className="text-stone-400 text-sm font-medium">{user.email}</p>
           </header>
-
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">Back-Office Studio Plantes</h1>
           <p className="text-stone-400 font-medium">Gérez vos utilisateurs et observez la croissance de la plateforme.</p>
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-6 sm:px-10 -mt-8 relative z-10 space-y-8">
+      <main className="max-w-6xl mx-auto px-6 sm:px-10 -mt-8 relative z-10 space-y-6">
 
-        {/* WIDGETS DE STATS (Totaux fixes) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/50">
-              <Users className="w-6 h-6" />
+        {/* KPI WIDGETS — toujours visibles */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/50 shrink-0">
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Utilisateurs</p>
-              <p className="text-3xl font-extrabold text-stone-900">{totalUsers}</p>
+              <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Utilisateurs</p>
+              <p className="text-2xl font-extrabold text-stone-900">{totalUsers}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/50">
-              <Sprout className="w-6 h-6" />
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/50 shrink-0">
+              <Sprout className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Plantes hébergées</p>
-              <p className="text-3xl font-extrabold text-stone-900">{totalPlants}</p>
+              <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Plantes</p>
+              <p className="text-2xl font-extrabold text-stone-900">{totalPlants}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/50">
-              <MapPin className="w-6 h-6" />
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/50 shrink-0">
+              <MapPin className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Pièces créées</p>
-              <p className="text-3xl font-extrabold text-stone-900">{totalRooms}</p>
+              <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Pièces</p>
+              <p className="text-2xl font-extrabold text-stone-900">{totalRooms}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/50">
-              <Scan className="w-6 h-6" />
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/50 shrink-0">
+              <Scan className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Scans Rapides</p>
-              <p className="text-3xl font-extrabold text-stone-900">{totalScans}</p>
+              <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Scans</p>
+              <p className="text-2xl font-extrabold text-stone-900">{totalScans}</p>
             </div>
           </div>
         </div>
 
-        {/* GRAPHIQUES D'ÉVOLUTION */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-stone-800 tracking-tight">
-            Croissance
-          </h2>
-          <AdminCharts
-            users={allUsers || []}
-            plants={allPlants || []}
-            rooms={allRooms || []}
-            scans={allScans || []}
-          />
-        </div>
-
-        {/* MÉTRIQUES DE RÉTENTION */}
-        <div className="space-y-4 pt-4">
-          <h2 className="text-xl font-bold text-stone-800 tracking-tight">
-            Rétention & Engagement
-          </h2>
-          <AdminRetention
-            DAU={DAU}
-            WAU={WAU}
-            MAU={MAU}
-            stickinessRatio={stickinessRatio}
-            totalUsers={totalUsers}
-            activationRate={activationRate}
-            newActivationRate={newActivationRate}
-            ghostUsers={ghostUsers}
-            powerUsers={powerUsers}
-            wateringEngagementRate={wateringEngagementRate}
-            plantsPerActiveUser={plantsPerActiveUser}
-            cohortData={cohortData}
-          />
-        </div>
-
-        {/* TABLEAU DES UTILISATEURS */}
-        <div className="space-y-4 pt-4">
-          <h2 className="text-xl font-bold text-stone-800 tracking-tight">
-            Base utilisateurs
-          </h2>
-          <AdminTable users={enrichedUsers} />
-        </div>
-
-        {/* JOURNAL D'ACTIVITÉ */}
-        <div className="space-y-4 pt-4">
-          <h2 className="text-xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-stone-400" />
-            Journal d'activité
-          </h2>
-          <AdminLogs logs={adminLogs ?? []} />
-        </div>
+        {/* TABBED LAYOUT */}
+        <AdminLayout
+          chartData={{
+            users:  allUsers.map(u => ({ created_at: u.created_at })),
+            plants: allPlants?.map(p => ({ created_at: p.created_at })) ?? [],
+            rooms:  allRooms?.map(r => ({ created_at: r.created_at })) ?? [],
+            scans:  allScans?.map(s => ({ created_at: s.created_at })) ?? [],
+          }}
+          retention={retention}
+          enrichedUsers={enrichedUsers}
+          adminLogs={adminLogs ?? []}
+        />
 
       </main>
     </div>

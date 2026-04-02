@@ -1,14 +1,5 @@
 import { ClipboardList } from "lucide-react";
-
-interface AdminLog {
-  id: string;
-  created_at: string;
-  admin_id: string;
-  action: string;
-  target_type: string;
-  target_id: string | null;
-  metadata: Record<string, unknown>;
-}
+import type { AdminLog } from "./types";
 
 const ACTION_LABELS: Record<string, { label: string; bg: string; text: string }> = {
   delete_user: { label: "Suppression utilisateur", bg: "bg-rose-50",   text: "text-rose-700"  },
