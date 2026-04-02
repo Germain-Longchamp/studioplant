@@ -54,9 +54,9 @@ export default function AdminLogs({ logs }: { logs: AdminLog[] }) {
                   <span className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md ${actionInfo.bg} ${actionInfo.text}`}>
                     {actionInfo.label}
                   </span>
-                  {log.metadata?.email && (
+                  {typeof log.metadata?.email === "string" && (
                     <span className="text-xs text-stone-500 truncate">
-                      {String(log.metadata.email)}
+                      {log.metadata.email}
                     </span>
                   )}
                 </div>
