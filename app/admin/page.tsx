@@ -2,17 +2,16 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import AdminTable from "./AdminTable";
-import AdminCharts from "./AdminCharts"; // 🟢 Import de nos graphiques
-import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan } from "lucide-react"; 
+import AdminCharts from "./AdminCharts";
+import AdminLogs from "./AdminLogs";
+import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
-  const ADMIN_EMAILS = ["studiohub@test.com"]; 
-  
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user || !ADMIN_EMAILS.includes(user.email!)) {
+  if (!user || user.app_metadata?.role !== "admin") {
     redirect("/dashboard");
   }
 
@@ -28,6 +27,11 @@ export default async function AdminDashboard() {
   const { data: allPlants } = await supabaseAdmin.from("plants").select("id, user_id, created_at");
   const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id, created_at");
   const { data: allScans } = await supabaseAdmin.from("quick_scans").select("id, created_at");
+  const { data: adminLogs } = await supabaseAdmin
+    .from("admin_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   if (roomsError) {
     console.warn("Erreur sur la table des pièces :", roomsError.message);
@@ -140,6 +144,15 @@ export default async function AdminDashboard() {
             Base utilisateurs
           </h2>
           <AdminTable users={enrichedUsers} />
+        </div>
+
+        {/* JOURNAL D'ACTIVITÉ */}
+        <div className="space-y-4 pt-4">
+          <h2 className="text-xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-stone-400" />
+            Journal d'activité
+          </h2>
+          <AdminLogs logs={adminLogs ?? []} />
         </div>
 
       </main>

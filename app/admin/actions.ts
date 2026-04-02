@@ -1,30 +1,69 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-// 🔴 INITIALISATION DU CLIENT ADMIN (Bypass RLS)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+async function assertAdmin() {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  if (user.app_metadata?.role !== "admin") throw new Error("Accès refusé");
+  return user;
+}
+
+async function logAdminAction({
+  adminId,
+  action,
+  targetType,
+  targetId,
+  metadata = {},
+}: {
+  adminId: string;
+  action: string;
+  targetType: string;
+  targetId?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  await supabaseAdmin.from("admin_logs").insert({
+    admin_id: adminId,
+    action,
+    target_type: targetType,
+    target_id: targetId,
+    metadata,
+  });
+}
+
 export async function deleteUserAccount(userId: string) {
   try {
-    // 1. Supprimer les plantes et pièces de l'utilisateur (optionnel si tu as ON DELETE CASCADE sur ta BDD)
-    await supabaseAdmin.from("plants").delete().eq("user_id", userId);
-    // Remplace "user_rooms" par le nom exact de ta table de pièces si besoin
-    await supabaseAdmin.from("user_rooms").delete().eq("user_id", userId);
+    const adminUser = await assertAdmin();
 
-    // 2. Supprimer l'utilisateur de l'authentification Supabase
+    const { data: targetUserData } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const targetEmail = targetUserData?.user?.email;
+
+    await supabaseAdmin.from("plants").delete().eq("user_id", userId);
+    await supabaseAdmin.from("rooms").delete().eq("user_id", userId);
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    
     if (error) throw error;
+
+    await logAdminAction({
+      adminId: adminUser.id,
+      action: "delete_user",
+      targetType: "user",
+      targetId: userId,
+      metadata: { email: targetEmail },
+    });
 
     revalidatePath("/admin");
     return { success: true };
   } catch (error: any) {
     console.error("Erreur de suppression :", error);
-    return { error: "Impossible de supprimer l'utilisateur." };
+    return { error: error.message === "Accès refusé" ? "Accès refusé" : "Impossible de supprimer l'utilisateur." };
   }
 }
