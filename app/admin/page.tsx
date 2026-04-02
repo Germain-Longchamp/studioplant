@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import AdminTable from "./AdminTable";
 import AdminCharts from "./AdminCharts";
 import AdminLogs from "./AdminLogs";
+import AdminRetention from "./AdminRetention";
 import type { EnrichedUser } from "./types";
 import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan, ClipboardList } from "lucide-react";
 import Link from "next/link";
@@ -21,11 +22,13 @@ export default async function AdminDashboard() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 3. RÉCUPÉRATION DES DONNÉES (On ajoute created_at partout pour les graphiques)
+  // RÉCUPÉRATION DES DONNÉES
   const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
   const allUsers = authData?.users || [];
 
-  const { data: allPlants } = await supabaseAdmin.from("plants").select("id, user_id, created_at");
+  const { data: allPlants } = await supabaseAdmin
+    .from("plants")
+    .select("id, user_id, created_at, last_watered_at");
   const { data: allRooms, error: roomsError } = await supabaseAdmin.from("rooms").select("id, user_id, created_at");
   const { data: allScans } = await supabaseAdmin.from("quick_scans").select("id, created_at");
   const { data: adminLogs } = await supabaseAdmin
@@ -38,7 +41,7 @@ export default async function AdminDashboard() {
     console.warn("Erreur sur la table des pièces :", roomsError.message);
   }
 
-  // 4. AGRÉGATION DES DONNÉES PAR UTILISATEUR
+  // AGRÉGATION DES DONNÉES PAR UTILISATEUR
   const enrichedUsers = allUsers.map((u) => {
     const userPlants = allPlants?.filter((p) => p.user_id === u.id) || [];
     const userRooms = allRooms?.filter((r) => r.user_id === u.id) || [];
@@ -52,15 +55,79 @@ export default async function AdminDashboard() {
     };
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as EnrichedUser[];
 
-  // 5. STATS GLOBALES
+  // STATS GLOBALES
   const totalUsers = allUsers.length;
   const totalPlants = allPlants?.length || 0;
   const totalRooms = allRooms?.length || 0;
   const totalScans = allScans?.length || 0;
 
+  // ── MÉTRIQUES DE RÉTENTION (Sprint 3) ──────────────────────────────
+  const now = Date.now();
+  const ms = (days: number) => days * 24 * 3600 * 1000;
+
+  const DAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(1)).length;
+  const WAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(7)).length;
+  const MAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(30)).length;
+  const stickinessRatio = MAU > 0 ? Math.round((DAU / MAU) * 100) : 0;
+
+  const usersWithPlant = new Set(allPlants?.map(p => p.user_id) ?? []);
+  const activationRate = totalUsers > 0 ? Math.round((usersWithPlant.size / totalUsers) * 100) : 0;
+
+  const newUsers7d = allUsers.filter(u => now - new Date(u.created_at).getTime() < ms(7));
+  const newActivationRate = newUsers7d.length > 0
+    ? Math.round((newUsers7d.filter(u => usersWithPlant.has(u.id)).length / newUsers7d.length) * 100)
+    : 0;
+
+  const ghostUsers = allUsers.filter(u => {
+    if (now - new Date(u.created_at).getTime() < ms(3)) return false;
+    if (!u.last_sign_in_at) return true;
+    return Math.abs(new Date(u.last_sign_in_at).getTime() - new Date(u.created_at).getTime()) < 60_000;
+  }).length;
+
+  const powerUsers = allUsers.filter(u => {
+    const plants = allPlants?.filter(p => p.user_id === u.id).length ?? 0;
+    const rooms  = allRooms?.filter(r => r.user_id === u.id).length ?? 0;
+    return plants >= 3 && rooms >= 1;
+  }).length;
+
+  const thirtyDaysAgo = new Date(now - ms(30));
+  const usersWhoWatered = new Set(
+    allPlants?.filter(p => p.last_watered_at && new Date(p.last_watered_at) >= thirtyDaysAgo).map(p => p.user_id) ?? []
+  );
+  const wateringEngagementRate = MAU > 0 ? Math.round((usersWhoWatered.size / MAU) * 100) : 0;
+
+  const plantsPerActiveUser = (() => {
+    const activePlantCount = allPlants?.filter(p => {
+      const u = allUsers.find(u => u.id === p.user_id);
+      return u?.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(30);
+    }).length ?? 0;
+    return MAU > 0 ? Math.round((activePlantCount / MAU) * 10) / 10 : 0;
+  })();
+
+  const cohortData = (() => {
+    const cohorts: Record<string, { total: number; retained: number }> = {};
+    allUsers.forEach(u => {
+      const month = u.created_at.slice(0, 7);
+      if (!cohorts[month]) cohorts[month] = { total: 0, retained: 0 };
+      cohorts[month].total += 1;
+      if (u.last_sign_in_at && new Date(u.last_sign_in_at) >= thirtyDaysAgo) {
+        cohorts[month].retained += 1;
+      }
+    });
+    return Object.entries(cohorts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-8)
+      .map(([month, { total, retained }]) => ({
+        name: month,
+        retention: total > 0 ? Math.round((retained / total) * 100) : 0,
+        total,
+      }));
+  })();
+  // ───────────────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-20">
-      
+
       {/* HEADER ADMIN */}
       <div className="bg-stone-900 text-white pb-16 pt-8 px-6 sm:px-10 border-b border-stone-800">
         <div className="max-w-6xl mx-auto">
@@ -82,7 +149,7 @@ export default async function AdminDashboard() {
       </div>
 
       <main className="max-w-6xl mx-auto px-6 sm:px-10 -mt-8 relative z-10 space-y-8">
-        
+
         {/* WIDGETS DE STATS (Totaux fixes) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex items-center gap-5">
@@ -126,22 +193,43 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* 🟢 GRILLE DES GRAPHIQUES D'ÉVOLUTION */}
+        {/* GRAPHIQUES D'ÉVOLUTION */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
+          <h2 className="text-xl font-bold text-stone-800 tracking-tight">
             Croissance
           </h2>
-          <AdminCharts 
-            users={allUsers || []} 
-            plants={allPlants || []} 
-            rooms={allRooms || []} 
-            scans={allScans || []} 
+          <AdminCharts
+            users={allUsers || []}
+            plants={allPlants || []}
+            rooms={allRooms || []}
+            scans={allScans || []}
+          />
+        </div>
+
+        {/* MÉTRIQUES DE RÉTENTION */}
+        <div className="space-y-4 pt-4">
+          <h2 className="text-xl font-bold text-stone-800 tracking-tight">
+            Rétention & Engagement
+          </h2>
+          <AdminRetention
+            DAU={DAU}
+            WAU={WAU}
+            MAU={MAU}
+            stickinessRatio={stickinessRatio}
+            totalUsers={totalUsers}
+            activationRate={activationRate}
+            newActivationRate={newActivationRate}
+            ghostUsers={ghostUsers}
+            powerUsers={powerUsers}
+            wateringEngagementRate={wateringEngagementRate}
+            plantsPerActiveUser={plantsPerActiveUser}
+            cohortData={cohortData}
           />
         </div>
 
         {/* TABLEAU DES UTILISATEURS */}
         <div className="space-y-4 pt-4">
-          <h2 className="text-xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
+          <h2 className="text-xl font-bold text-stone-800 tracking-tight">
             Base utilisateurs
           </h2>
           <AdminTable users={enrichedUsers} />
