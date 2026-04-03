@@ -30,4 +30,11 @@ export interface RetentionMetrics {
   wateringEngagementRate: number;
   plantsPerActiveUser: number;
   cohortData: { name: string; retention: number; total: number }[];
+  // Sprint 4 — watering usage
+  activeWatererRate: number;
+  abandonedRate: number;
+  abandonedCount: number;
+  avgAdherenceRatio: number | null;
+  plantsWithHistoryCount: number;
+  usersWithPlantsCount: number;
 }

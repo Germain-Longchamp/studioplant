@@ -25,7 +25,7 @@ export default async function AdminDashboard() {
 
   const { data: allPlants } = await supabaseAdmin
     .from("plants")
-    .select("id, user_id, created_at, last_watered_at");
+    .select("id, user_id, created_at, last_watered_at, watering_history, watering_frequency");
   const { data: allRooms } = await supabaseAdmin
     .from("rooms")
     .select("id, user_id, created_at");
@@ -117,11 +117,57 @@ export default async function AdminDashboard() {
       }));
   })();
 
+  // ── MÉTRIQUES ARROSAGE (Sprint 4) ──────────────────────────────────
+  const usersWithAtLeastOnePlant = new Set(allPlants?.map(p => p.user_id) ?? []);
+
+  const usersWhoWateredRecently = new Set(
+    allPlants
+      ?.filter(p => p.last_watered_at && new Date(p.last_watered_at) >= thirtyDaysAgo)
+      .map(p => p.user_id) ?? []
+  );
+  const activeWatererRate = usersWithAtLeastOnePlant.size > 0
+    ? Math.round((usersWhoWateredRecently.size / usersWithAtLeastOnePlant.size) * 100)
+    : 0;
+
+  const abandonedPlants = allPlants?.filter(p => {
+    if (!p.last_watered_at || !p.watering_frequency) return false;
+    const daysSinceWatered = (Date.now() - new Date(p.last_watered_at).getTime()) / (24 * 3600 * 1000);
+    return daysSinceWatered > p.watering_frequency * 2;
+  }) ?? [];
+  const totalPlantsCount = allPlants?.length ?? 0;
+  const abandonedRate = totalPlantsCount > 0
+    ? Math.round((abandonedPlants.length / totalPlantsCount) * 100)
+    : 0;
+
+  const adherenceScores = (allPlants ?? [])
+    .filter(p => {
+      const history = p.watering_history as string[] | null;
+      return Array.isArray(history) && history.length >= 2 && p.watering_frequency;
+    })
+    .map(p => {
+      const history = (p.watering_history as string[])
+        .slice(0, 3)
+        .map(d => new Date(d).getTime())
+        .sort((a, b) => b - a);
+      const avgGapMs = (history[0] - history[history.length - 1]) / (history.length - 1);
+      return (avgGapMs / (24 * 3600 * 1000)) / p.watering_frequency;
+    });
+  const avgAdherenceRatio = adherenceScores.length > 0
+    ? Math.round((adherenceScores.reduce((a, b) => a + b, 0) / adherenceScores.length) * 100) / 100
+    : null;
+  // ───────────────────────────────────────────────────────────────────
+
   const retention: RetentionMetrics = {
     DAU, WAU, MAU, stickinessRatio, totalUsers,
     activationRate, newActivationRate, ghostUsers,
     powerUsers, wateringEngagementRate, plantsPerActiveUser,
     cohortData,
+    activeWatererRate,
+    abandonedRate,
+    abandonedCount: abandonedPlants.length,
+    avgAdherenceRatio,
+    plantsWithHistoryCount: adherenceScores.length,
+    usersWithPlantsCount: usersWithAtLeastOnePlant.size,
   };
 
   return (

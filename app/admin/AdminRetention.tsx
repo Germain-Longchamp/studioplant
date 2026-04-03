@@ -91,6 +91,8 @@ export default function AdminRetention({
   activationRate, newActivationRate, ghostUsers,
   powerUsers, wateringEngagementRate, plantsPerActiveUser,
   cohortData,
+  activeWatererRate, abandonedRate, abandonedCount,
+  avgAdherenceRatio, plantsWithHistoryCount, usersWithPlantsCount,
 }: AdminRetentionProps) {
   return (
     <div className="space-y-4">
@@ -186,7 +188,72 @@ export default function AdminRetention({
         </div>
       </div>
 
-      {/* SECTION 4 — RÉTENTION PAR COHORTE */}
+      {/* SECTION 4 — ARROSAGE */}
+      <div className="space-y-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
+          <Droplets className="w-3.5 h-3.5 text-blue-400" /> Usage de la fonction Arrosage
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+
+          {/* Card 1 — Arroseurs actifs */}
+          <MetricCard
+            label="Arroseurs actifs (30j)"
+            value={activeWatererRate}
+            unit="%"
+            sublabel={`Parmi ${usersWithPlantsCount} users avec des plantes`}
+            color={getHealthColor(activeWatererRate, 60, 30)}
+            tooltip="% d'utilisateurs ayant au moins une plante et ayant arrosé dans les 30 derniers jours"
+          />
+
+          {/* Card 2 — Plantes négligées */}
+          <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col gap-1">
+            <p className="text-stone-500 text-xs font-bold uppercase tracking-wider">Plantes négligées</p>
+            <p className={`text-3xl font-extrabold ${
+              abandonedRate <= 10 ? "text-emerald-600" :
+              abandonedRate <= 25 ? "text-amber-600" :
+              "text-rose-600"
+            }`}>
+              {abandonedRate}<span className="text-lg font-bold ml-1">%</span>
+            </p>
+            <p className="text-xs text-stone-400 font-medium">
+              {abandonedCount} plante{abandonedCount > 1 ? "s" : ""} — dernier arrosage &gt; 2× la fréquence
+            </p>
+          </div>
+
+          {/* Card 3 — Régularité */}
+          <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col gap-1">
+            <p className="text-stone-500 text-xs font-bold uppercase tracking-wider">Régularité arrosage</p>
+            {avgAdherenceRatio === null ? (
+              <p className="text-lg font-bold text-stone-300 italic mt-1">Pas assez de données</p>
+            ) : (
+              <>
+                <p className={`text-3xl font-extrabold ${
+                  avgAdherenceRatio >= 0.8 && avgAdherenceRatio <= 1.3 ? "text-emerald-600" :
+                  avgAdherenceRatio > 1.3 && avgAdherenceRatio <= 1.8 ? "text-amber-600" :
+                  "text-rose-600"
+                }`}>
+                  {avgAdherenceRatio.toFixed(2)}<span className="text-lg font-bold ml-1">×</span>
+                </p>
+                <p className="text-xs text-stone-400 font-medium">
+                  {avgAdherenceRatio < 0.8
+                    ? "Les utilisateurs arrosent trop souvent"
+                    : avgAdherenceRatio <= 1.3
+                    ? "Cadence conforme aux recommandations ✓"
+                    : avgAdherenceRatio <= 1.8
+                    ? "Légèrement en retard sur les arrosages"
+                    : "Arrosages très irréguliers ou oubliés"}
+                </p>
+                <p className="text-[10px] text-stone-300 mt-1">
+                  Basé sur {plantsWithHistoryCount} plante{plantsWithHistoryCount > 1 ? "s" : ""} avec historique
+                </p>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      {/* SECTION 5 — RÉTENTION PAR COHORTE */}
       <div className="space-y-3">
         <p className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
           <BarChart2 className="w-3.5 h-3.5" /> Rétention par cohorte d'inscription
