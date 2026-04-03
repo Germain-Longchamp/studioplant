@@ -13,9 +13,9 @@ import { deleteUserAccount } from "../../actions";
 interface Plant {
   id: string;
   name: string | null;
-  image_url: string | null;
+  image_path: string | null;
   created_at: string;
-  room_id: string | null;
+  room: string | null;
 }
 
 interface Room {
@@ -156,9 +156,9 @@ export default function UserDetailClient({ user, plants, rooms }: UserDetailClie
               {plants.map((plant) => (
                 <li key={plant.id} className="flex items-center gap-4 px-6 py-3">
                   <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 shrink-0">
-                    {plant.image_url ? (
+                    {plant.image_path ? (
                       <Image
-                        src={plant.image_url}
+                        src={plant.image_path}
                         alt={plant.name ?? "plante"}
                         width={40}
                         height={40}
@@ -197,7 +197,7 @@ export default function UserDetailClient({ user, plants, rooms }: UserDetailClie
           ) : (
             <ul className="divide-y divide-stone-100">
               {rooms.map((room) => {
-                const plantCount = plants.filter((p) => p.room_id === room.id).length;
+                const plantCount = plants.filter((p) => p.room === room.name).length;
                 return (
                   <li key={room.id} className="flex items-center gap-4 px-6 py-4">
                     <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100/50">

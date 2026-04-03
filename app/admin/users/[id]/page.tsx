@@ -26,7 +26,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   const targetUser = targetUserData.user;
 
   const [{ data: plants }, { data: rooms }] = await Promise.all([
-    supabaseAdmin.from("plants").select("id, name, image_url, created_at, room_id").eq("user_id", id).order("created_at", { ascending: false }),
+    supabaseAdmin.from("plants").select("id, name, image_path, created_at, room").eq("user_id", id).order("created_at", { ascending: false }),
     supabaseAdmin.from("rooms").select("id, name, created_at").eq("user_id", id).order("created_at", { ascending: false }),
   ]);
 
