@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import type { GrowthPhoto } from "@/lib/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -1243,4 +1244,112 @@ export async function appendDiagnosisToNotes(plantId: string, diagnosisText: str
 
   revalidatePath(`/dashboard/plant/${plantId}`);
   return { success: true };
+}
+
+
+// ================================================================
+// JOURNAL DE CROISSANCE — Sprint 1
+// ================================================================
+
+export async function addGrowthPhoto(plantId: string, formData: FormData) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Non autorisé' };
+
+    const { count } = await supabase
+      .from('plant_growth_photos')
+      .select('*', { count: 'exact', head: true })
+      .eq('plant_id', plantId);
+    if ((count ?? 0) >= 30)
+      return { error: 'Limite de 30 photos atteinte pour cette plante.' };
+
+    const file = formData.get('image') as File;
+    const note = formData.get('note') as string | null;
+    const takenAt = formData.get('taken_at') as string;
+    if (!file || file.size === 0) return { error: 'Aucune image fournie.' };
+
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `growth-${user.id}-${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('plant-images')
+      .upload(fileName, file);
+    if (uploadError) return { error: 'Erreur lors de la sauvegarde de la photo.' };
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('plant-images')
+      .getPublicUrl(fileName);
+
+    const { error: dbError } = await supabase
+      .from('plant_growth_photos')
+      .insert({
+        plant_id: plantId,
+        user_id: user.id,
+        image_path: publicUrl,
+        note: note || null,
+        taken_at: takenAt ? new Date(takenAt).toISOString() : new Date().toISOString(),
+      });
+    if (dbError) {
+      await supabase.storage.from('plant-images').remove([fileName]);
+      return { error: 'Erreur lors de la sauvegarde en base.' };
+    }
+
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('addGrowthPhoto error:', error);
+    return { error: 'Une erreur inattendue est survenue.' };
+  }
+}
+
+export async function getGrowthPhotos(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Non autorisé' };
+
+    const { data, error } = await supabase
+      .from('plant_growth_photos')
+      .select('*')
+      .eq('plant_id', plantId)
+      .eq('user_id', user.id)
+      .order('taken_at', { ascending: true });
+
+    if (error) throw error;
+    return { success: true, data: data as GrowthPhoto[] };
+  } catch (error) {
+    console.error('getGrowthPhotos error:', error);
+    return { error: 'Impossible de charger le journal.' };
+  }
+}
+
+export async function deleteGrowthPhoto(
+  photoId: string,
+  plantId: string,
+  imageUrl: string,
+) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Non autorisé' };
+
+    const fileName = imageUrl.split('/').pop();
+    if (fileName) {
+      await supabase.storage.from('plant-images').remove([fileName]);
+    }
+
+    const { error } = await supabase
+      .from('plant_growth_photos')
+      .delete()
+      .eq('id', photoId)
+      .eq('user_id', user.id);
+
+    if (error) return { error: 'Erreur lors de la suppression.' };
+
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('deleteGrowthPhoto error:', error);
+    return { error: 'Une erreur inattendue est survenue.' };
+  }
 }

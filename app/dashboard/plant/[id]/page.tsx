@@ -12,7 +12,8 @@ import SnoozeButton from "./SnoozeButton";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
 import DoctorPlantBlock from "./DoctorPlantBlock";
 import CareGuideAccordion from "./CareGuideAccordion";
-import { getPlantDiagnostics } from "@/server/actions";
+import { getPlantDiagnostics, getGrowthPhotos } from "@/server/actions";
+import GrowthJournal from "./components/GrowthJournal";
 import LocationSection from "./LocationSection";
 
 export default async function PlantDetailPage({
@@ -43,7 +44,11 @@ export default async function PlantDetailPage({
     status.color === 'orange' ? 'text-amber-600 bg-amber-50 border-amber-100' :
                                 'text-emerald-700 bg-emerald-50 border-emerald-100';
 
-  const initialDiagnoses = await getPlantDiagnostics(plant.id);
+  const [initialDiagnoses, growthResult] = await Promise.all([
+    getPlantDiagnostics(plant.id),
+    getGrowthPhotos(plant.id),
+  ]);
+  const initialPhotos = growthResult.success ? (growthResult.data ?? []) : [];
 
   const hasQuickInfos = !!(plant.origin || plant.robustness || plant.max_size || plant.ideal_substrate || plant.ideal_exposure);
 
@@ -160,13 +165,16 @@ export default async function PlantDetailPage({
           {/* ===== 3. GUIDE D'ENTRETIEN ===== */}
           <CareGuideAccordion plant={plant} />
 
-          {/* ===== 4. DOCTEUR PLANTE ===== */}
+          {/* ===== 4. JOURNAL DE CROISSANCE ===== */}
+          <GrowthJournal plantId={plant.id} initialPhotos={initialPhotos} />
+
+          {/* ===== 5. DOCTEUR PLANTE ===== */}
           <DoctorPlantBlock plantId={plant.id} plantName={plant.name} initialDiagnoses={initialDiagnoses} />
 
-          {/* ===== 5. EMPLACEMENT ===== */}
+          {/* ===== 6. EMPLACEMENT ===== */}
           <LocationSection plant={plant} />
 
-          {/* ===== 6. CHIPS RAPIDES ===== */}
+          {/* ===== 7. CHIPS RAPIDES ===== */}
           {hasChips && (
             <div className="grid grid-cols-3 gap-2">
               {plant.origin && (
@@ -193,7 +201,7 @@ export default async function PlantDetailPage({
             </div>
           )}
 
-          {/* ===== 7. LIEN FICHE DÉTAILLÉE ===== */}
+          {/* ===== 8. LIEN FICHE DÉTAILLÉE ===== */}
           <PlantIdentityTrigger plant={plant} hasQuickInfos={hasQuickInfos} />
 
         </div>
