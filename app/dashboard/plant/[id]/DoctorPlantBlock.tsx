@@ -3,17 +3,12 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Camera, Loader2, AlertTriangle, CheckCircle, X, Copy, BookOpen } from "lucide-react";
+import { Stethoscope, Camera, Loader2, AlertTriangle, CheckCircle, X, Copy, BookOpen, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { diagnoseSickPlant, appendDiagnosisToNotes } from "@/server/actions";
-
-interface DiagnosisEntry {
-  id: string;
-  diagnosis: string;
-  urgency: string;
-  created_at: string;
-}
+import type { PlantDiagnostic } from "@/server/actions";
+import DiagnosticDetailDrawer from "./DiagnosticDetailDrawer";
+import DiagnosticHistoryDrawer from "./DiagnosticHistoryDrawer";
 
 function urgencyBadgeStyles(urgency: string) {
   if (urgency === "Haute")   return "bg-rose-50 text-rose-700 border border-rose-100";
@@ -33,33 +28,25 @@ function urgencyBanner(urgency: string) {
 export default function DoctorPlantBlock({
   plantId,
   plantName,
+  initialDiagnoses,
 }: {
   plantId: string;
   plantName: string;
+  initialDiagnoses: PlantDiagnostic[];
 }) {
   // ── SOS state ──
   const [isPending, startTransition]           = useTransition();
   const [isSaving, startSavingTransition]      = useTransition();
   const fileInputRef                           = useRef<HTMLInputElement>(null);
-  const [diagnosisResult, setDiagnosisResult] = useState<any>(null);
+  const [diagnosisResult, setDiagnosisResult] = useState<{ diagnosis: string; urgency: string; action: string } | null>(null);
   const [mounted, setMounted]                  = useState(false);
 
   // ── History state ──
-  const [diagnoses, setDiagnoses] = useState<DiagnosisEntry[]>([]);
+  const [diagnoses, setDiagnoses]                   = useState<PlantDiagnostic[]>(initialDiagnoses);
+  const [selectedDiagnostic, setSelectedDiagnostic] = useState<PlantDiagnostic | null>(null);
+  const [showHistory, setShowHistory]               = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    const supabase = createClient();
-    supabase
-      .from("plant_diagnoses")
-      .select("id, diagnosis, urgency, created_at")
-      .eq("plant_id", plantId)
-      .order("created_at", { ascending: false })
-      .limit(3)
-      .then(({ data, error }) => {
-        if (!error) setDiagnoses(data ?? []);
-      });
-  }, [plantId]);
+  useEffect(() => { setMounted(true); }, []);
 
   // ── SOS handlers ──
   const handleTriggerClick = () => fileInputRef.current?.click();
@@ -75,15 +62,15 @@ export default function DoctorPlantBlock({
         toast.error(result.error);
       } else if (result.success && result.data) {
         setDiagnosisResult(result.data);
-        // Refresh history after new diagnosis
-        const supabase = createClient();
-        const { data } = await supabase
-          .from("plant_diagnoses")
-          .select("id, diagnosis, urgency, created_at")
-          .eq("plant_id", plantId)
-          .order("created_at", { ascending: false })
-          .limit(3);
-        if (data) setDiagnoses(data);
+        // Prepend new diagnosis to local state (revalidatePath handles SSR refresh)
+        const newEntry: PlantDiagnostic = {
+          id: crypto.randomUUID(),
+          diagnosis: result.data.diagnosis,
+          urgency: result.data.urgency,
+          action: result.data.action,
+          created_at: new Date().toISOString(),
+        };
+        setDiagnoses(prev => [newEntry, ...prev].slice(0, 10));
       }
       if (fileInputRef.current) fileInputRef.current.value = "";
     });
@@ -109,7 +96,15 @@ export default function DoctorPlantBlock({
     });
   };
 
-  // ── Modal (preserved as-is from SosFeature) ──
+  const handleDiagnosticDeleted = (id: string) => {
+    setDiagnoses(prev => prev.filter(d => d.id !== id));
+  };
+
+  // ── Visible items ──
+  const visibleDiagnoses = diagnoses.slice(0, 3);
+  const hasMore = diagnoses.length > 3;
+
+  // ── Result modal ──
   const popupContent = diagnosisResult ? (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-5 animate-in fade-in duration-200"
@@ -134,7 +129,7 @@ export default function DoctorPlantBlock({
           </Button>
         </div>
 
-        {/* HEADER BLEU ROI */}
+        {/* HEADER */}
         <div className="bg-blue-900 bg-gradient-to-b from-blue-800 to-blue-950 p-6 relative shrink-0">
           <div className="flex gap-4 items-center">
             <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm shrink-0">
@@ -232,8 +227,8 @@ export default function DoctorPlantBlock({
           </button>
         </div>
 
-        {/* ── Historique ── */}
-        {diagnoses.length > 0 && (
+        {/* ── Historique (3 derniers) ── */}
+        {visibleDiagnoses.length > 0 && (
           <>
             <div className="flex items-center gap-2 px-4 pt-3 pb-2">
               <span className="text-[9px] font-bold uppercase tracking-widest text-stone-300 whitespace-nowrap">Historique</span>
@@ -241,25 +236,62 @@ export default function DoctorPlantBlock({
             </div>
 
             <div className="px-3 pb-3 flex flex-col gap-2">
-              {diagnoses.map(d => (
-                <div key={d.id} className="flex items-start gap-2 p-2.5 bg-stone-50 rounded-xl border border-stone-100">
+              {visibleDiagnoses.map(d => (
+                <button
+                  key={d.id}
+                  onClick={() => setSelectedDiagnostic(d)}
+                  className="w-full text-left flex items-start gap-2 p-2.5 bg-stone-50 rounded-xl border border-stone-100 hover:border-blue-200 hover:bg-blue-50/30 transition-colors active:scale-[0.99]"
+                >
                   <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5 whitespace-nowrap ${urgencyBadgeStyles(d.urgency)}`}>
                     {d.urgency}
                   </span>
-                  <div>
-                    <p className="text-[10px] font-semibold text-stone-700 leading-snug">{d.diagnosis}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-stone-700 leading-snug line-clamp-2">{d.diagnosis}</p>
                     <p className="text-[9px] text-stone-400 mt-0.5">
                       {new Date(d.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
-                </div>
+                  <span className="text-stone-300 text-xs shrink-0 mt-0.5">›</span>
+                </button>
               ))}
+
+              {/* Bouton "Voir l'historique complet" */}
+              {hasMore && (
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold text-blue-500 hover:text-blue-700 transition-colors"
+                >
+                  <Clock className="w-3 h-3" />
+                  Voir l'historique complet ({diagnoses.length})
+                </button>
+              )}
             </div>
           </>
         )}
       </div>
 
+      {/* ── Portals ── */}
       {mounted && createPortal(popupContent, document.body)}
+
+      {mounted && selectedDiagnostic && (
+        <DiagnosticDetailDrawer
+          diagnostic={selectedDiagnostic}
+          plantId={plantId}
+          onClose={() => setSelectedDiagnostic(null)}
+          onDeleted={handleDiagnosticDeleted}
+        />
+      )}
+
+      {mounted && showHistory && (
+        <DiagnosticHistoryDrawer
+          diagnoses={diagnoses}
+          onClose={() => setShowHistory(false)}
+          onSelect={(d) => {
+            setShowHistory(false);
+            setSelectedDiagnostic(d);
+          }}
+        />
+      )}
     </>
   );
 }

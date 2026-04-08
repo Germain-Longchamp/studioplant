@@ -12,6 +12,7 @@ import SnoozeButton from "./SnoozeButton";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
 import DoctorPlantBlock from "./DoctorPlantBlock";
 import CareGuideAccordion from "./CareGuideAccordion";
+import { getPlantDiagnostics } from "@/server/actions";
 import LocationSection from "./LocationSection";
 
 export default async function PlantDetailPage({
@@ -41,6 +42,8 @@ export default async function PlantDetailPage({
     status.color === 'red'    ? 'text-rose-600 bg-rose-50 border-rose-100' :
     status.color === 'orange' ? 'text-amber-600 bg-amber-50 border-amber-100' :
                                 'text-emerald-700 bg-emerald-50 border-emerald-100';
+
+  const initialDiagnoses = await getPlantDiagnostics(plant.id);
 
   const hasQuickInfos = !!(plant.origin || plant.robustness || plant.max_size || plant.ideal_substrate || plant.ideal_exposure);
 
@@ -158,7 +161,7 @@ export default async function PlantDetailPage({
           <CareGuideAccordion plant={plant} />
 
           {/* ===== 4. DOCTEUR PLANTE ===== */}
-          <DoctorPlantBlock plantId={plant.id} plantName={plant.name} />
+          <DoctorPlantBlock plantId={plant.id} plantName={plant.name} initialDiagnoses={initialDiagnoses} />
 
           {/* ===== 5. EMPLACEMENT ===== */}
           <LocationSection plant={plant} />

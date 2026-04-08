@@ -535,6 +535,44 @@ export async function updatePlantAdvice(plantId: string) {
 }
 
 
+// ── TYPE PARTAGÉ ────────────────────────────────────────────────────
+export interface PlantDiagnostic {
+  id: string;
+  diagnosis: string;
+  urgency: string;
+  action: string;
+  created_at: string;
+}
+
+// ── LIRE L'HISTORIQUE ───────────────────────────────────────────────
+export async function getPlantDiagnostics(plantId: string): Promise<PlantDiagnostic[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("plant_diagnoses")
+    .select("id, diagnosis, urgency, action, created_at")
+    .eq("plant_id", plantId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  return data ?? [];
+}
+
+// ── SUPPRIMER UN DIAGNOSTIC ─────────────────────────────────────────
+export async function deleteDiagnosis(diagnosticId: string, plantId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autorisé" };
+  const { error } = await supabase
+    .from("plant_diagnoses")
+    .delete()
+    .eq("id", diagnosticId)
+    .eq("user_id", user.id);
+  if (error) return { error: "Impossible de supprimer ce diagnostic." };
+  revalidatePath(`/dashboard/plant/${plantId}`);
+  return { success: true };
+}
+
 // DIAGNOSTIC D'UNE PLANTE MALADE (SOS)
 export async function diagnoseSickPlant(plantId: string, formData: FormData) {
   try {
@@ -621,6 +659,18 @@ export async function diagnoseSickPlant(plantId: string, formData: FormData) {
       action: diagnosisData.action,
     });
 
+    // Cap à 10 diagnostics par plante — supprimer les plus anciens si dépassé
+    const { data: allDiags } = await supabase
+      .from("plant_diagnoses")
+      .select("id")
+      .eq("plant_id", plantId)
+      .order("created_at", { ascending: true });
+    if (allDiags && allDiags.length > 10) {
+      const toDelete = allDiags.slice(0, allDiags.length - 10).map((d: { id: string }) => d.id);
+      await supabase.from("plant_diagnoses").delete().in("id", toDelete);
+    }
+
+    revalidatePath(`/dashboard/plant/${plantId}`);
     return { success: true, data: diagnosisData };
 
   } catch (error) {
