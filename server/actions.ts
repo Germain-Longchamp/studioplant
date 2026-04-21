@@ -403,12 +403,16 @@ export async function generateDeferredCareGuide(plantId: string) {
       return { error: "Erreur de format lors de la génération du carnet." };
     }
 
-    // On met à jour la base de données avec les nouvelles infos
-    const { error: updateError } = await supabase.from("plants").update({
+    const deferredFreqFields = plant.watering_frequency_custom ? {} : {
       watering_freq_spring: plantData.watering_freq_spring,
       watering_freq_summer: plantData.watering_freq_summer,
       watering_freq_autumn: plantData.watering_freq_autumn,
       watering_freq_winter: plantData.watering_freq_winter,
+    };
+
+    // On met à jour la base de données avec les nouvelles infos
+    const { error: updateError } = await supabase.from("plants").update({
+      ...deferredFreqFields,
       origin: plantData.origin,
       robustness: plantData.robustness,
       robustness_score: plantData.robustness_score,
@@ -434,6 +438,33 @@ export async function generateDeferredCareGuide(plantId: string) {
   }
 }
 
+
+// AJUSTER LA FRÉQUENCE D'ARROSAGE MANUELLEMENT
+export async function updateWateringFrequency(plantId: string, newFrequency: number) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase.from("plants").update({
+      watering_frequency: newFrequency,
+      watering_freq_spring: newFrequency,
+      watering_freq_summer: newFrequency,
+      watering_freq_autumn: newFrequency,
+      watering_freq_winter: newFrequency,
+      watering_frequency_custom: true,
+    }).eq("id", plantId).eq("user_id", user.id);
+
+    if (error) throw error;
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("updateWateringFrequency error:", error);
+    return { error: "Impossible de mettre à jour la fréquence." };
+  }
+}
 
 export async function updatePlantAdvice(plantId: string) {
   try {
@@ -505,11 +536,15 @@ export async function updatePlantAdvice(plantId: string) {
       return { error: "Notre expert a formulé une réponse illisible. Veuillez réessayer." };
     }
 
-    const { error } = await supabase.from("plants").update({
+    const frequencyFields = plant.watering_frequency_custom ? {} : {
       watering_freq_spring: plantData.watering_freq_spring,
       watering_freq_summer: plantData.watering_freq_summer,
       watering_freq_autumn: plantData.watering_freq_autumn,
       watering_freq_winter: plantData.watering_freq_winter,
+    };
+
+    const { error } = await supabase.from("plants").update({
+      ...frequencyFields,
       origin: plantData.origin,
       robustness: plantData.robustness,
       robustness_score: plantData.robustness_score,

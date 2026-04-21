@@ -15,6 +15,7 @@ import CareGuideAccordion from "./CareGuideAccordion";
 import { getPlantDiagnostics, getGrowthPhotos } from "@/server/actions";
 import GrowthJournal from "./components/GrowthJournal";
 import LocationSection from "./LocationSection";
+import WateringFrequencyDialog from "@/components/WateringFrequencyDialog";
 
 export default async function PlantDetailPage({
   params,
@@ -127,7 +128,18 @@ export default async function PlantDetailPage({
                 <Calendar className={`w-3 h-3 shrink-0 ${status.urgent ? 'animate-pulse' : ''}`} />
                 <span>{status.text}</span>
               </div>
-              <span className="text-xs text-stone-400">Tous les {activeFreq} jours</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-stone-400">
+                  Tous les {activeFreq} j{plant.watering_frequency_custom && (
+                    <span className="ml-1 text-amber-500 font-medium">· Modifié</span>
+                  )}
+                </span>
+                <WateringFrequencyDialog
+                  plantId={plant.id}
+                  currentFrequency={activeFreq}
+                  isCustom={!!plant.watering_frequency_custom}
+                />
+              </div>
             </div>
             <div className="flex gap-2 mt-3">
               <div className="flex-1">
