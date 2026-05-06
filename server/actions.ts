@@ -840,6 +840,36 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
   }
 }
 
+// ==========================================
+// FERTILISER LA PLANTE
+// ==========================================
+export async function fertilizePlant(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Non autorisé' };
+
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('plants')
+      .update({ last_fertilized_at: now })
+      .eq('id', plantId);
+
+    if (error) {
+      console.error('Erreur fertilisation:', error);
+      return { error: "Impossible d'enregistrer la fertilisation." };
+    }
+
+    revalidatePath('/dashboard');
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur inattendue:', error);
+    return { error: "Impossible d'enregistrer la fertilisation." };
+  }
+}
+
 // REPOUSSER L'ARROSAGE (SNOOZE)
 export async function snoozeWatering(plantId: string, currentSnooze: number = 0) {
   try {

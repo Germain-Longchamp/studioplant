@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf } from "lucide-react";
+import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
+import { getWateringStatus, getActiveWateringFrequency, formatRelativeDays, getFertilizingStatus } from "@/lib/utils";
+import FertilizeButton from "./FertilizeButton";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
 import DetailWaterButton from "./DetailWaterButton";
@@ -57,6 +58,10 @@ export default async function PlantDetailPage({
   const robustnessChip = plant.robustness_score || plant.robustness?.split(/\s*[-–]\s*/)[0] || null;
   const maxSizeChip    = plant.max_size_short    || plant.max_size?.slice(0, 12)              || null;
   const hasChips = !!(plant.origin || robustnessChip || maxSizeChip);
+
+  const lastFertilizedFormatted = plant.last_fertilized_at
+    ? formatRelativeDays(plant.last_fertilized_at)
+    : null;
 
   const lastWateredFormatted = plant.last_watered_at
     ? new Date(plant.last_watered_at).toLocaleDateString('fr-FR', {
@@ -172,6 +177,17 @@ export default async function PlantDetailPage({
                 ) : null)}
               </div>
             )}
+            {/* ── FERTILISATION ── */}
+            <div className="h-px bg-stone-100 mt-3 mb-3" />
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sprout className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span className="text-xs font-semibold text-stone-600">
+                {lastFertilizedFormatted
+                  ? `Dernier engrais : ${lastFertilizedFormatted}`
+                  : 'Jamais fertilisée'}
+              </span>
+            </div>
+            <FertilizeButton plantId={plant.id} />
           </div>
 
           {/* ===== 3. GUIDE D'ENTRETIEN ===== */}

@@ -28,6 +28,41 @@ export function getActiveWateringFrequency(plant: any): number {
   return plant.watering_frequency || 7;
 }
 
+export function formatRelativeDays(isoDate: string): string {
+  const date = new Date(isoDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round(
+    (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays === 0) return "aujourd'hui";
+  if (diffDays === 1) return 'hier';
+  return `il y a ${diffDays}j`;
+}
+
+export function getFertilizingStatus(lastFertilizedAt: string | null) {
+  if (!lastFertilizedAt) {
+    return { text: 'Jamais fertilisée', color: 'neutral' };
+  }
+
+  const date = new Date(lastFertilizedAt);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round(
+    (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays === 0)  return { text: "Engrais : aujourd'hui", color: 'green' };
+  if (diffDays < 14)  return { text: `Engrais : il y a ${diffDays}j`, color: 'green' };
+  if (diffDays < 30)  return { text: `Engrais : il y a ${diffDays}j`, color: 'orange' };
+  return               { text: `Engrais : il y a ${diffDays}j`, color: 'red' };
+}
+
 export function getWateringStatus(lastWateredAt: string, frequency: number, snoozeDays: number = 0) {
   const lastDate = new Date(lastWateredAt);
   const nextDate = new Date(lastDate);
