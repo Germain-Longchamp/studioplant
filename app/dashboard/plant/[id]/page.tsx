@@ -74,7 +74,7 @@ export default async function PlantDetailPage({
       <main className="max-w-md mx-auto">
 
         {/* ===== 1. HERO COMPACT ===== */}
-        <div className="relative w-full h-[42vw] max-h-[280px] bg-stone-900 overflow-hidden">
+        <div className="relative w-full h-[72vw] max-h-[280px] bg-stone-900 overflow-hidden">
           {plant.image_path ? (
             <Image
               src={plant.image_path}
