@@ -1,8 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { Button } from '@/components/ui/button';
-import { Loader2, Sprout } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fertilizePlant } from '@/server/actions';
 
@@ -21,19 +20,16 @@ export default function FertilizeButton({ plantId }: { plantId: string }) {
   };
 
   return (
-    <Button
+    <button
       type="button"
       onClick={handleFertilize}
       disabled={isPending}
-      variant="outline"
-      className="w-full border border-amber-200 text-amber-700 hover:bg-amber-50 bg-white rounded-[1.25rem] h-10 font-semibold shadow-sm transition-all active:scale-95 text-sm gap-2"
+      className="flex items-center gap-1 text-[10px] font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-full px-2.5 py-1 transition-colors active:scale-95 shrink-0"
     >
-      {isPending ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-      ) : (
-        <Sprout className="w-3.5 h-3.5" />
-      )}
-      Engrais ajouté aujourd'hui
-    </Button>
+      {isPending
+        ? <Loader2 className="w-3 h-3 animate-spin" />
+        : <span>+ Engrais</span>
+      }
+    </button>
   );
 }

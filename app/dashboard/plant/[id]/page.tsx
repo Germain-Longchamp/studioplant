@@ -178,16 +178,17 @@ export default async function PlantDetailPage({
               </div>
             )}
             {/* ── FERTILISATION ── */}
-            <div className="h-px bg-stone-100 mt-3 mb-3" />
-            <div className="flex items-center gap-1.5 mb-2">
-              <Sprout className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="text-xs font-semibold text-stone-600">
-                {lastFertilizedFormatted
-                  ? `Dernier engrais : ${lastFertilizedFormatted}`
-                  : 'Jamais fertilisée'}
-              </span>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
+              <div className="flex items-center gap-1.5">
+                <Sprout className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="text-xs text-stone-500">
+                  {lastFertilizedFormatted
+                    ? `Dernier engrais : ${lastFertilizedFormatted}`
+                    : 'Jamais fertilisée'}
+                </span>
+              </div>
+              <FertilizeButton plantId={plant.id} />
             </div>
-            <FertilizeButton plantId={plant.id} />
           </div>
 
           {/* ===== 3. GUIDE D'ENTRETIEN ===== */}
