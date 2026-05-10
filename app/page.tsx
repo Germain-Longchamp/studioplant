@@ -13,6 +13,7 @@ import {
   Star,
   Users,
   Timer,
+  Smartphone,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -113,8 +114,10 @@ const appSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "StudioPlantes",
-  operatingSystem: "Web, iOS, Android",
+  operatingSystem: "iOS, Android, Web",
   applicationCategory: "LifestyleApplication",
+  installUrl: "https://studioplantes.app",
+  browserRequirements: "Requires Safari on iOS or Chrome on Android for installation",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -213,7 +216,7 @@ export default function Home() {
               <h1 className="text-4xl lg:text-[3.5rem] font-extrabold text-stone-900 tracking-tight leading-[1.1] mb-4 drop-shadow-sm">
                 L'application qui prend soin de vos plantes d'intérieur —{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
-                  même si vous avez la main noire.
+                  pour transformer votre maison en jungle.
                 </span>
               </h1>
 
@@ -369,6 +372,157 @@ export default function Home() {
               appartement. Arrosage, fertilisation, rempotage, diagnostic des
               maladies : StudioPlantes devient le carnet de santé de chaque
               plante de votre collection.
+            </p>
+          </section>
+
+          {/* INSTALLER L'APP */}
+          <section
+            id="installer"
+            aria-label="Installer StudioPlantes sur votre téléphone"
+            className="mt-24 relative z-20"
+          >
+            <h2 className="text-2xl md:text-3xl font-extrabold text-stone-900 text-center mb-4 tracking-tight">
+              Installez StudioPlantes sur votre téléphone en 30 secondes
+            </h2>
+            <p className="text-stone-600 text-center max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+              Pas besoin de l'App Store ni du Google Play. StudioPlantes
+              s'installe directement depuis votre navigateur, gratuitement, en
+              quelques gestes. Vous l'aurez sur votre écran d'accueil comme une
+              vraie application — avec des notifications d'arrosage, un accès
+              immédiat et zéro mise à jour manuelle.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* CARD iOS */}
+              <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-stone-100 rounded-full p-2">
+                    <Smartphone className="w-5 h-5 text-stone-700" />
+                  </div>
+                  <h3 className="font-semibold text-stone-800 text-lg">Sur iPhone</h3>
+                </div>
+
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5 text-sm text-amber-800">
+                  <span className="flex-shrink-0">⚠️</span>
+                  <p>
+                    Cette procédure fonctionne{" "}
+                    <strong>uniquement depuis Safari</strong>. Si vous utilisez
+                    Chrome ou Firefox sur iPhone, ouvrez d'abord{" "}
+                    <strong>studioplantes.app dans Safari</strong>.
+                  </p>
+                </div>
+
+                <ol className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      1
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Ouvrez <strong>studioplantes.app</strong> dans Safari
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      2
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Appuyez sur l'icône <strong>Partager</strong> — le carré
+                      avec une flèche vers le haut, en bas de votre écran
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      3
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Faites défiler le menu et appuyez sur{" "}
+                      <strong>"Sur l'écran d'accueil"</strong>
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      4
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Appuyez sur <strong>"Ajouter"</strong> en haut à droite
+                      pour confirmer
+                    </p>
+                  </li>
+                </ol>
+
+                <p className="mt-5 text-sm text-emerald-700 font-medium">
+                  ✅ StudioPlantes apparaît maintenant sur votre écran d'accueil !
+                </p>
+              </div>
+
+              {/* CARD Android */}
+              <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-stone-100 rounded-full p-2">
+                    <Smartphone className="w-5 h-5 text-stone-700" />
+                  </div>
+                  <h3 className="font-semibold text-stone-800 text-lg">Sur Android</h3>
+                </div>
+
+                <div className="flex items-start gap-2 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2 mb-5 text-sm text-sky-800">
+                  <span className="flex-shrink-0">💡</span>
+                  <p>
+                    De préférence depuis <strong>Chrome</strong> pour une
+                    expérience optimale.
+                  </p>
+                </div>
+
+                <ol className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      1
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Ouvrez <strong>studioplantes.app</strong> dans Chrome
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      2
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Appuyez sur les <strong>trois points</strong> en haut à
+                      droite de Chrome
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      3
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Appuyez sur{" "}
+                      <strong>"Ajouter à l'écran d'accueil"</strong> ou{" "}
+                      <strong>"Installer l'application"</strong> selon votre
+                      version d'Android
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex items-center justify-center">
+                      4
+                    </span>
+                    <p className="text-sm text-stone-700">
+                      Appuyez sur <strong>"Installer"</strong> pour confirmer
+                    </p>
+                  </li>
+                </ol>
+
+                <p className="mt-5 text-sm text-emerald-700 font-medium">
+                  ✅ StudioPlantes apparaît maintenant sur votre écran d'accueil !
+                </p>
+              </div>
+
+            </div>
+
+            <p className="mt-6 text-center text-sm text-stone-500">
+              🔒 Aucun téléchargement, aucune donnée suspecte. Juste un raccourci
+              intelligent vers l'application — qui se met à jour tout seul, sans
+              intervention de votre part.
             </p>
           </section>
 
