@@ -1,24 +1,37 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner"; // 👈 NOUVEL IMPORT
+import { Toaster } from "@/components/ui/sonner";
 
-// Configuration des polices par défaut de Next.js
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Configuration du SEO et de la PWA
 export const metadata: Metadata = {
-  title: "Studio Plantes",
-  description: "Mon jardin connecté intelligent",
-  manifest: "/manifest.json", 
+  title: {
+    default: "StudioPlantes",
+    template: "%s · StudioPlantes",
+  },
+  description: "Prenez soin de vos plantes avec des conseils personnalisés selon votre environnement.",
+  applicationName: "StudioPlantes",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "StudioPlantes",
+  },
+  openGraph: {
+    title: "StudioPlantes",
+    description: "Suivi intelligent et personnalisé de vos plantes d'intérieur.",
+    type: "website",
+    locale: "fr_FR",
+  },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${dmSans.variable} antialiased`}
       >
         {children}
         

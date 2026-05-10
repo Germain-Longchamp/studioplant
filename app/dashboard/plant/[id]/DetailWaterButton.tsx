@@ -67,7 +67,7 @@ export default function DetailWaterButton({
       type="button" 
       onClick={handleWater}
       disabled={isPending}
-      className="w-full bg-emerald-800 hover:bg-emerald-900 text-white rounded-[1.25rem] shadow-lg shadow-emerald-900/20 h-12 font-bold transition-all active:scale-95"
+      className="w-full bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white rounded-[1.25rem] shadow-lg shadow-emerald-900/20 h-12 font-bold transition-all active:scale-95"
     >
       {isPending ? (
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
