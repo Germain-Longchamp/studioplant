@@ -1,90 +1,258 @@
-"use client";
-
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { Leaf, Sparkles, Droplets, Camera, Stethoscope, ArrowRight, ShieldCheck, Star, Users, Timer } from "lucide-react";
+import {
+  Leaf,
+  Sparkles,
+  Droplets,
+  Camera,
+  Stethoscope,
+  ArrowRight,
+  ShieldCheck,
+  Star,
+  Users,
+  Timer,
+} from "lucide-react";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "StudioPlantes — Application soin des plantes d'intérieur",
+  },
+  description:
+    "Identifiez vos plantes en 2 secondes avec l'IA, suivez leur arrosage et soignez-les grâce au Docteur Plante. L'application gratuite pour débutants qui veulent une vraie jungle chez eux.",
+  keywords: [
+    "application plantes",
+    "soin des plantes",
+    "arrosage plantes",
+    "jungle urbaine",
+    "plantes d'intérieur",
+    "identifier plante IA",
+  ],
+  openGraph: {
+    title: "StudioPlantes — Transformez votre appart en jungle 🌿",
+    description:
+      "L'app qui identifie vos plantes en 2 sec, crée leur calendrier d'arrosage et joue au docteur quand elles vont mal. Gratuit, facile, fait pour les débutants.",
+    url: "https://studioplantes.app",
+    siteName: "StudioPlantes",
+    images: [
+      {
+        url: "https://studioplantes.app/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "StudioPlantes — Application de soin des plantes d'intérieur",
+      },
+    ],
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "StudioPlantes — L'app qui sauve vos plantes 🌿",
+    description:
+      "IA d'identification, calendrier d'arrosage, diagnostic maladies. Gratuit pour les débutants.",
+    images: ["https://studioplantes.app/og-image.jpg"],
+  },
+  alternates: {
+    canonical: "https://studioplantes.app",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "StudioPlantes, c'est fait pour les débutants ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Absolument. On a conçu StudioPlantes pour ceux qui aiment les plantes mais ne savent pas trop comment s'en occuper. Pas de jargon botanique, pas de tableaux complexes — juste une photo, et l'app s'occupe du reste. Des milliers de débutants ont déjà transformé leur appartement en vraie jungle grâce à nous.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Comment fonctionne l'identification par IA ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Prenez simplement une photo de votre plante. Notre intelligence artificielle analyse la forme des feuilles, les couleurs et les caractéristiques visuelles pour identifier l'espèce en moins de 2 secondes. Elle génère ensuite automatiquement un calendrier d'arrosage adapté à votre pièce et à la luminosité de chez vous.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Je tue toutes mes plantes. StudioPlantes peut vraiment m'aider ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "C'est exactement pour vous qu'on l'a fait ! La plupart des plantes meurent par excès d'eau ou manque de lumière — deux problèmes que StudioPlantes anticipe. L'app vous envoie des rappels d'arrosage personnalisés et adapte ses conseils à votre intérieur spécifique.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Le Docteur Plante, comment ça marche ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Votre plante a une feuille jaune ? Des taches suspectes ? Photographiez-la, et notre IA botanique analyse les symptômes pour poser un diagnostic et vous proposer un plan de sauvetage concret — rempotage, traitement, changement d'exposition.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Est-ce que StudioPlantes est gratuit ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Oui, l'application est accessible gratuitement. Créez votre compte, ajoutez vos plantes et commencez à construire votre jungle urbaine sans débourser un centime.",
+      },
+    },
+  ],
+};
+
+const appSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "StudioPlantes",
+  operatingSystem: "Web, iOS, Android",
+  applicationCategory: "LifestyleApplication",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "EUR",
+  },
+  description:
+    "Application de soin des plantes d'intérieur avec identification IA, suivi d'arrosage personnalisé et diagnostic des maladies.",
+  url: "https://studioplantes.app",
+};
+
+const faqItems = [
+  {
+    question: "StudioPlantes, c'est fait pour les débutants ?",
+    answer:
+      "Absolument. On a conçu StudioPlantes pour ceux qui aiment les plantes mais ne savent pas trop comment s'en occuper. Pas de jargon botanique, pas de tableaux complexes — juste une photo, et l'app s'occupe du reste. Des milliers de débutants ont déjà transformé leur appartement en vraie jungle grâce à nous.",
+  },
+  {
+    question: "Comment fonctionne l'identification par IA ?",
+    answer:
+      "Prenez simplement une photo de votre plante. Notre intelligence artificielle analyse la forme des feuilles, les couleurs et les caractéristiques visuelles pour identifier l'espèce en moins de 2 secondes. Elle génère ensuite automatiquement un calendrier d'arrosage adapté à votre pièce et à la luminosité de chez vous.",
+  },
+  {
+    question: "Je tue toutes mes plantes. StudioPlantes peut vraiment m'aider ?",
+    answer:
+      "C'est exactement pour vous qu'on l'a fait ! La plupart des plantes meurent par excès d'eau ou manque de lumière — deux problèmes que StudioPlantes anticipe. L'app vous envoie des rappels d'arrosage personnalisés et adapte ses conseils à votre intérieur spécifique.",
+  },
+  {
+    question: "Le Docteur Plante, comment ça marche ?",
+    answer:
+      "Votre plante a une feuille jaune ? Des taches suspectes ? Photographiez-la, et notre IA botanique analyse les symptômes pour poser un diagnostic et vous proposer un plan de sauvetage concret — rempotage, traitement, changement d'exposition.",
+  },
+  {
+    question: "Est-ce que StudioPlantes est gratuit ?",
+    answer:
+      "Oui, l'application est accessible gratuitement. Créez votre compte, ajoutez vos plantes et commencez à construire votre jungle urbaine sans débourser un centime.",
+  },
+];
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 relative">
-      
-      {/* 🟢 FONDS & TEXTURES */}
-      <div 
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+      />
+
+      {/* FONDS & TEXTURES */}
+      <div
         className="absolute inset-0 z-0 pointer-events-none opacity-50"
         style={{
-          backgroundImage: 'radial-gradient(#a8a29e 2px, transparent 2px)',
-          backgroundSize: '32px 32px',
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)'
+          backgroundImage: "radial-gradient(#a8a29e 2px, transparent 2px)",
+          backgroundSize: "32px 32px",
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)",
         }}
       />
-      {/* Halos lumineux globaux */}
       <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none z-0" />
       <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-amber-300/20 blur-[120px] rounded-full pointer-events-none z-0" />
 
-      {/* 🟢 HEADER */}
+      {/* HEADER */}
       <header className="absolute top-0 w-full px-6 py-6 flex items-center justify-between z-50 max-w-6xl left-1/2 -translate-x-1/2">
         <div className="flex items-center gap-2 text-emerald-800 font-bold text-xl tracking-tight">
           <Leaf className="w-6 h-6 text-emerald-500" />
-          StudioPlant
+          StudioPlantes
         </div>
-        <Button 
-          className="font-bold bg-white text-stone-700 border border-stone-200/60 shadow-sm hover:shadow-md hover:bg-stone-50 hover:text-emerald-700 rounded-full px-6 h-10 transition-all active:scale-95" 
+        <Button
+          className="font-bold bg-white text-stone-700 border border-stone-200/60 shadow-sm hover:shadow-md hover:bg-stone-50 hover:text-emerald-700 rounded-full px-6 h-10 transition-all active:scale-95"
           asChild
         >
           <Link href="/auth/login">Connexion</Link>
         </Button>
       </header>
 
-      {/* 🟢 CONTENU PRINCIPAL */}
       <main className="relative z-10">
-        
-        {/* 🟢 BANNIÈRE HERO EN 2 COLONNES */}
-        <section className="max-w-6xl mx-auto px-6 pt-32 pb-16 md:pt-40 md:pb-24">
+
+        {/* HERO */}
+        <section
+          className="max-w-6xl mx-auto px-6 pt-32 pb-16 md:pt-40 md:pb-24"
+          aria-label="Introduction"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            
-            {/* COLONNE GAUCHE : TEXTE */}
+
             <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left animate-in fade-in slide-in-from-bottom-8 duration-700">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé par l'IA
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé
+                par l'IA
               </div>
-              
-              <h1 className="text-5xl lg:text-[4rem] font-extrabold text-stone-900 tracking-tight leading-[1.05] mb-6 drop-shadow-sm">
-                Ne laissez plus vos plantes <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">mourir de soif.</span>
+
+              <h1 className="text-4xl lg:text-[3.5rem] font-extrabold text-stone-900 tracking-tight leading-[1.1] mb-4 drop-shadow-sm">
+                L'application qui prend soin de vos plantes d'intérieur —{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
+                  même si vous avez la main noire.
+                </span>
               </h1>
-              
+
               <p className="text-lg md:text-xl text-stone-600 mb-10 max-w-xl leading-relaxed font-medium">
-                Prenez une photo. L'IA identifie votre plante, s'adapte à votre intérieur et crée son calendrier d'arrosage sur-mesure. C'est aussi simple que ça.
+                Scannez, identifiez, arrosez. StudioPlantes crée un suivi
+                personnalisé pour chaque plante selon votre appartement. Même
+                les cactus vous remercieront.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto h-14 px-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-lg shadow-xl shadow-emerald-900/20 transition-all active:scale-95" asChild>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto h-14 px-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-lg shadow-xl shadow-emerald-900/20 transition-all active:scale-95"
+                  asChild
+                >
                   <Link href="/auth/login">
                     Créer ma jungle <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/80 backdrop-blur-sm border-stone-200 text-stone-700 font-bold text-lg hover:bg-white transition-all active:scale-95 shadow-sm" asChild>
-                  <Link href="#features">
-                    Découvrir
-                  </Link>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/80 backdrop-blur-sm border-stone-200 text-stone-700 font-bold text-lg hover:bg-white transition-all active:scale-95 shadow-sm"
+                  asChild
+                >
+                  <Link href="#features">Découvrir</Link>
                 </Button>
               </div>
             </div>
 
-            {/* COLONNE DROITE : TÉLÉPHONE */}
-            {/* L'image a une hauteur fixée pour forcer sa présence au-dessus de la ligne de flottaison */}
-            <div 
+            <div
               className="lg:col-span-5 relative w-full h-[450px] sm:h-[550px] lg:h-[650px] flex justify-center lg:justify-end items-center animate-in fade-in slide-in-from-right-12 duration-1000 fill-mode-both"
               style={{ animationDelay: "200ms" }}
             >
-              {/* Le halo décoratif qui encadre le téléphone */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-gradient-to-tr from-emerald-200/40 to-sky-200/40 rounded-full blur-3xl z-0" />
-              
               <div className="relative w-[85%] max-w-[340px] lg:max-w-[420px] h-full z-10 drop-shadow-[0_30px_60px_rgba(16,185,129,0.2)]">
-                <Image 
+                <Image
                   src="/app-mockup.png"
-                  alt="Aperçu de l'application StudioPlant"
+                  alt="Aperçu de l'application StudioPlantes sur mobile"
                   fill
                   className="object-contain object-center lg:object-right"
                   priority
@@ -96,73 +264,119 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 🟢 SUITE DU SITE */}
         <div className="max-w-5xl mx-auto px-6 pb-24 md:pb-32 relative z-20 bg-[#FDFCF8] pt-12 md:pt-16 mt-[-1px]">
 
-          <section>
-            <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm relative z-20">
+          {/* STATS */}
+          <section aria-label="Chiffres clés">
+            <div className="bg-white/60 backdrop-blur-xl border border-stone-200/50 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-stone-200/60">
                 <div className="flex flex-col items-center text-center pt-4 md:pt-0">
                   <div className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full mb-3">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
-                  <h4 className="text-3xl font-black text-stone-800 mb-1">98%</h4>
-                  <p className="text-sm font-medium text-stone-500">De survie après 1 an pour<br/>les utilisateurs actifs</p>
+                  <p className="text-3xl font-black text-stone-800 mb-1">98%</p>
+                  <p className="text-sm font-medium text-stone-500">
+                    De survie après 1 an pour
+                    <br />
+                    les utilisateurs actifs
+                  </p>
                 </div>
                 <div className="flex flex-col items-center text-center pt-8 md:pt-0">
                   <div className="flex items-center justify-center w-10 h-10 bg-amber-50 text-amber-500 rounded-full mb-3">
                     <Timer className="w-5 h-5" />
                   </div>
-                  <h4 className="text-3xl font-black text-stone-800 mb-1">2 sec</h4>
-                  <p className="text-sm font-medium text-stone-500">Le temps moyen pour identifier<br/>votre nouvelle plante</p>
+                  <p className="text-3xl font-black text-stone-800 mb-1">2 sec</p>
+                  <p className="text-sm font-medium text-stone-500">
+                    Le temps moyen pour identifier
+                    <br />
+                    votre nouvelle plante
+                  </p>
                 </div>
                 <div className="flex flex-col items-center text-center pt-8 md:pt-0">
                   <div className="flex items-center justify-center w-10 h-10 bg-sky-50 text-sky-500 rounded-full mb-3">
                     <Users className="w-5 h-5" />
                   </div>
-                  <h4 className="text-3xl font-black text-stone-800 mb-1">10k+</h4>
-                  <p className="text-sm font-medium text-stone-500">Diagnostics médicaux réalisés<br/>par notre IA botanique</p>
+                  <p className="text-3xl font-black text-stone-800 mb-1">10k+</p>
+                  <p className="text-sm font-medium text-stone-500">
+                    Diagnostics médicaux réalisés
+                    <br />
+                    par notre IA botanique
+                  </p>
                 </div>
               </div>
             </div>
           </section>
 
-          <section id="features" className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-20">
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-sky-100"></div>
-              <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
-                <Camera className="w-7 h-7" />
+          {/* FEATURES */}
+          <section id="features" className="mt-24 relative z-20">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-stone-900 text-center mb-10 tracking-tight">
+              Tout ce dont vos plantes ont besoin, sans être botaniste
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-sky-100" />
+                <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                  <Camera className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">
+                  Reconnaissance IA
+                </h3>
+                <p className="text-stone-500 leading-relaxed font-medium relative z-10">
+                  Scannez n'importe quelle plante en un clic. L'IA retrouve son
+                  nom et ses besoins spécifiques instantanément.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Reconnaissance IA</h3>
-              <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-                Scannez n'importe quelle plante en un clic. L'IA retrouve son nom et ses besoins spécifiques instantanément.
-              </p>
-            </div>
 
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-emerald-100"></div>
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
-                <Droplets className="w-7 h-7" />
+              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-emerald-100" />
+                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                  <Droplets className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">
+                  Arrosage millimétré
+                </h3>
+                <p className="text-stone-500 leading-relaxed font-medium relative z-10">
+                  Fini les oublis et les noyades. Suivez en temps réel les
+                  besoins en eau de votre jungle urbaine.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Arrosage millimétré</h3>
-              <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-                Fini les oublis et les noyades. Suivez en temps réel les besoins en eau de votre jungle urbaine.
-              </p>
-            </div>
 
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group md:col-span-1 sm:col-span-2">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-rose-100"></div>
-              <div className="w-14 h-14 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-6 relative z-10">
-                <Stethoscope className="w-7 h-7" />
+              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-stone-200/40 border border-stone-100/60 relative overflow-hidden group md:col-span-1 sm:col-span-2">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-colors group-hover:bg-rose-100" />
+                <div className="w-14 h-14 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                  <Stethoscope className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">
+                  Docteur Plante
+                </h3>
+                <p className="text-stone-500 leading-relaxed font-medium relative z-10">
+                  Une feuille jaune ? Une tache suspecte ? Prenez une photo et
+                  obtenez un diagnostic médical et un plan de sauvetage.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">Docteur Plante</h3>
-              <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-                Une feuille jaune ? Une tache suspecte ? Prenez une photo et obtenez un diagnostic médical et un plan de sauvetage.
-              </p>
             </div>
           </section>
 
-          <section className="mt-32 max-w-3xl mx-auto text-center px-4 relative z-20">
+          {/* CONTENU SÉMANTIQUE */}
+          <section className="mt-16 max-w-3xl mx-auto" aria-label="À propos de StudioPlantes">
+            <p className="text-stone-400 text-sm leading-relaxed text-center">
+              StudioPlantes est une application de soin des plantes d'intérieur
+              conçue pour les amateurs et les débutants qui rêvent d'une jungle
+              urbaine chez eux. Grâce à l'intelligence artificielle, identifiez
+              instantanément vos plantes — pothos, monstera, ficus, calathea,
+              succulentes — et recevez des conseils d'entretien personnalisés
+              selon la luminosité et l'humidité de chaque pièce de votre
+              appartement. Arrosage, fertilisation, rempotage, diagnostic des
+              maladies : StudioPlantes devient le carnet de santé de chaque
+              plante de votre collection.
+            </p>
+          </section>
+
+          {/* TÉMOIGNAGES */}
+          <section className="mt-24 max-w-3xl mx-auto text-center px-4 relative z-20">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-stone-900 mb-8 tracking-tight">
+              Ils ont arrêté de tuer leurs plantes
+            </h2>
             <div className="flex items-center justify-center gap-1 mb-6 text-amber-400">
               <Star className="w-6 h-6 fill-current" />
               <Star className="w-6 h-6 fill-current" />
@@ -171,33 +385,69 @@ export default function Home() {
               <Star className="w-6 h-6 fill-current" />
             </div>
             <blockquote className="text-2xl md:text-3xl font-semibold text-stone-800 leading-tight mb-6">
-              "Je tuais même mes cactus. Depuis que j'utilise StudioPlant, mon appartement ressemble enfin à une vraie jungle urbaine."
+              "Je tuais même mes cactus. Depuis que j'utilise StudioPlantes,
+              mon appartement ressemble enfin à une vraie jungle urbaine."
             </blockquote>
             <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-sm">S</div>
+              <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-sm">
+                S
+              </div>
               <div className="text-left">
                 <p className="text-sm font-bold text-stone-800">Sarah M.</p>
-                <p className="text-xs text-stone-500 font-medium">Débutante repentie</p>
+                <p className="text-xs text-stone-500 font-medium">
+                  Débutante repentie
+                </p>
               </div>
             </div>
           </section>
 
+          {/* FAQ */}
+          <section className="mt-24 max-w-3xl mx-auto relative z-20">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-stone-900 text-center mb-10 tracking-tight">
+              Vous avez des questions ? Vos plantes aussi.
+            </h2>
+            <dl className="flex flex-col gap-4">
+              {faqItems.map((item) => (
+                <div
+                  key={item.question}
+                  className="bg-white border border-stone-100 rounded-2xl p-6 shadow-sm"
+                >
+                  <dt className="font-bold text-stone-800 mb-2">
+                    {item.question}
+                  </dt>
+                  <dd className="text-stone-500 leading-relaxed font-medium">
+                    {item.answer}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          {/* CTA FINAL */}
           <section className="mt-24 bg-emerald-950 rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-2xl shadow-emerald-900/20 z-20">
-            <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full"></div>
-            
+            <div
+              className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              }}
+            />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full" />
+
             <div className="relative z-10 max-w-xl mx-auto">
               <Leaf className="w-12 h-12 text-emerald-400 mx-auto mb-6" />
               <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
                 Prêt à avoir la main verte ?
               </h2>
               <p className="text-emerald-100/80 mb-10 text-lg font-medium">
-                Rejoignez l'application et transformez votre intérieur en un véritable écosystème végétal.
+                Rejoignez l'application et transformez votre intérieur en un
+                véritable écosystème végétal.
               </p>
-              <Button size="lg" className="w-full sm:w-auto h-14 px-10 rounded-full bg-white text-emerald-950 hover:bg-stone-100 hover:scale-105 font-extrabold text-lg transition-all active:scale-95 shadow-xl" asChild>
-                <Link href="/auth/login">
-                  Démarrer gratuitement
-                </Link>
+              <Button
+                size="lg"
+                className="w-full sm:w-auto h-14 px-10 rounded-full bg-white text-emerald-950 hover:bg-stone-100 hover:scale-105 font-extrabold text-lg transition-all active:scale-95 shadow-xl"
+                asChild
+              >
+                <Link href="/auth/login">Démarrer gratuitement</Link>
               </Button>
             </div>
           </section>
@@ -206,7 +456,35 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-stone-200/50 py-8 text-center text-stone-400 text-sm font-medium relative z-20 bg-[#FDFCF8]">
-        <p>© {new Date().getFullYear()} StudioPlant. Conçu avec amour et beaucoup d'eau.</p>
+        <p className="mb-3">
+          © {new Date().getFullYear()} StudioPlantes. Conçu avec amour et
+          beaucoup d'eau.
+        </p>
+        <nav
+          className="flex items-center justify-center gap-4 text-xs"
+          aria-label="Liens légaux"
+        >
+          <Link
+            href="/privacy"
+            className="hover:text-stone-600 transition-colors"
+          >
+            Politique de confidentialité
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/contact"
+            className="hover:text-stone-600 transition-colors"
+          >
+            Contact
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/legal"
+            className="hover:text-stone-600 transition-colors"
+          >
+            Mentions légales
+          </Link>
+        </nav>
       </footer>
     </div>
   );
