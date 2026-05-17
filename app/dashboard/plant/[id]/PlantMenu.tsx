@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Sparkles, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { MoreVertical, Sparkles, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon, Camera, GalleryHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -21,6 +21,7 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isPendingImage, startTransitionImage] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -66,6 +67,7 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
     setImagePreview(null);
     setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const handleConfirmImage = () => {
@@ -165,10 +167,20 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
           </Button>
         </div>
 
+        {/* input galerie */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        {/* input caméra directe */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
           onChange={handleFileChange}
           className="hidden"
         />
@@ -179,26 +191,27 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
             onClick={() => fileInputRef.current?.click()}
           >
             <Image src={imagePreview} alt="Prévisualisation" fill style={{ objectFit: "cover" }} />
+            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] font-medium px-2 py-1 rounded-full">
+              Appuyer pour changer
+            </div>
           </div>
         ) : (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full aspect-video rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 flex flex-col items-center justify-center gap-3 hover:border-emerald-300 hover:bg-emerald-50 transition-colors"
-          >
-            <ImageIcon className="w-8 h-8 text-stone-300" />
-            <span className="text-sm font-medium text-stone-400">Appuyer pour choisir une photo</span>
-          </button>
-        )}
-
-        {!imagePreview && (
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            variant="outline"
-            className="w-full h-12 rounded-2xl border-stone-200 text-stone-600 font-semibold"
-          >
-            <ImageIcon className="w-4 h-4 mr-2" />
-            Choisir une photo
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="aspect-square rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 flex flex-col items-center justify-center gap-2 hover:border-emerald-300 hover:bg-emerald-50 transition-colors"
+            >
+              <Camera className="w-7 h-7 text-emerald-400" />
+              <span className="text-xs font-semibold text-stone-500">Prendre une photo</span>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="aspect-square rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 flex flex-col items-center justify-center gap-2 hover:border-stone-300 hover:bg-stone-100 transition-colors"
+            >
+              <GalleryHorizontal className="w-7 h-7 text-stone-400" />
+              <span className="text-xs font-semibold text-stone-500">Depuis la galerie</span>
+            </button>
+          </div>
         )}
 
         <Button
