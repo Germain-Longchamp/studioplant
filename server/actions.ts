@@ -1418,3 +1418,64 @@ export async function deleteGrowthPhoto(
     return { error: 'Une erreur inattendue est survenue.' };
   }
 }
+
+// METTRE À JOUR LA PHOTO PRINCIPALE D'UNE PLANTE
+export async function updatePlantImage(
+  plantId: string,
+  formData: FormData
+): Promise<{ success?: true; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Non autorisé' };
+
+    const imageFile = formData.get('image') as File;
+    if (!imageFile || imageFile.size === 0) return { error: 'Aucune image fournie.' };
+
+    // Récupérer l'image_path actuelle pour suppression ultérieure
+    const { data: plant } = await supabase
+      .from('plants')
+      .select('image_path')
+      .eq('id', plantId)
+      .eq('user_id', user.id)
+      .single();
+
+    const ext = imageFile.name.split('.').pop() || 'jpg';
+    const fileName = `${user.id}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('plant-images')
+      .upload(fileName, imageFile);
+    if (uploadError) return { error: 'Erreur lors de la sauvegarde de l\'image.' };
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('plant-images')
+      .getPublicUrl(fileName);
+
+    const { error: dbError } = await supabase
+      .from('plants')
+      .update({ image_path: publicUrl })
+      .eq('id', plantId)
+      .eq('user_id', user.id);
+
+    if (dbError) {
+      await supabase.storage.from('plant-images').remove([fileName]);
+      return { error: 'Erreur lors de la mise à jour en base de données.' };
+    }
+
+    // Supprimer l'ancienne image si elle existait
+    if (plant?.image_path) {
+      const oldFileName = plant.image_path.split('/').pop();
+      if (oldFileName) {
+        await supabase.storage.from('plant-images').remove([oldFileName]);
+      }
+    }
+
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('updatePlantImage error:', error);
+    return { error: 'Une erreur inattendue est survenue.' };
+  }
+}
