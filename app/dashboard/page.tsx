@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets } from "lucide-react";
+import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets, User } from "lucide-react";
 import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import QuickAnalysis from "./QuickAnalysis";
@@ -72,10 +72,17 @@ export default async function DashboardPage() {
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2"></div>
 
         <div className="max-w-md mx-auto relative z-10">
-          <header className="flex items-center mb-8">
+          <header className="flex items-center justify-between mb-8">
             <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
               <Leaf className="w-6 h-6 text-emerald-300" />
             </div>
+            <Link
+              href="/dashboard/profile"
+              aria-label="Mon profil"
+              className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl text-emerald-200 hover:text-white hover:bg-white/15 transition-colors active:scale-95"
+            >
+              <User className="w-6 h-6" />
+            </Link>
           </header>
 
           <div>
@@ -121,7 +128,7 @@ export default async function DashboardPage() {
             </Link>
 
             {/* 2. Widget : À arroser */}
-            <Link href="/dashboard/urgent" className="block focus:outline-none">
+            <Link href="/dashboard/plants?filter=to-water" className="block focus:outline-none">
               <div className={`bg-white rounded-[1.5rem] p-5 shadow-sm border flex flex-col justify-between aspect-[4/3] active:scale-[0.97] transition-all duration-200 ${
                 urgentCount > 0 ? 'border-rose-100 active:bg-rose-50/50' : 'border-stone-100 active:bg-stone-50'
               }`}>

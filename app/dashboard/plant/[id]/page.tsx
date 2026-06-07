@@ -20,10 +20,15 @@ import WateringFrequencyDialog from "@/components/WateringFrequencyDialog";
 
 export default async function PlantDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
+  const backHref =
+    from === "to-water" ? "/dashboard/plants?filter=to-water" : "/dashboard/plants";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -100,7 +105,7 @@ export default async function PlantDetailPage({
               className="w-[34px] h-[34px] text-white rounded-full border backdrop-blur-md transition-all active:scale-95"
               style={{ background: 'rgba(0,0,0,0.28)', borderColor: 'rgba(255,255,255,0.22)' }}
             >
-              <Link href="/dashboard/plants">
+              <Link href={backHref}>
                 <ArrowLeft className="w-4 h-4" />
               </Link>
             </Button>

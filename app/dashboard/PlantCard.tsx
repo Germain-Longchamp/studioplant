@@ -5,10 +5,13 @@ import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import WaterButton from "./WaterButton";
 import CardSnoozeButton from "./CardSnoozeButton";
 
-export default function PlantCard({ plant }: { plant: any }) {
+export default function PlantCard({ plant, from }: { plant: any; from?: string }) {
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
   const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
+  const detailHref = from
+    ? `/dashboard/plant/${plant.id}?from=${from}`
+    : `/dashboard/plant/${plant.id}`;
 
   let timeText = status.text;
   if (timeText.toLowerCase() === "aujourd'hui") {
@@ -24,7 +27,7 @@ export default function PlantCard({ plant }: { plant: any }) {
 
   return (
     <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm shadow-stone-200/60 border border-stone-100/80 flex items-stretch transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]">
-      <Link href={`/dashboard/plant/${plant.id}`} className="absolute inset-0 z-10" />
+      <Link href={detailHref} className="absolute inset-0 z-10" />
 
       {/* IMAGE — left square */}
       <div className="relative w-24 shrink-0 bg-stone-100">

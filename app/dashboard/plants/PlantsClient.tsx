@@ -1,50 +1,74 @@
 "use client";
 
 import { useState } from "react";
-import { Leaf, Droplets, Plus, MapPin, Sprout } from "lucide-react";
+import { Leaf, Droplets, Plus, MapPin, Sprout, CheckCircle } from "lucide-react";
 import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function PlantsClient({ plants, userRooms }: { plants: any[], userRooms: any[] }) {
-  const [filter, setFilter] = useState("Toutes");
+const WATER_FILTER = "to-water";
 
-  // 🟢 1. On extrait les noms des pièces configurées par l'utilisateur
-  const configuredRooms = userRooms.map(r => r.name);
-  
-  // 🟢 2. On récupère les pièces des plantes qui n'existent pas (ou plus) dans la configuration (anciennes pièces)
-  const plantRooms = Array.from(new Set(plants.map(p => p.room).filter(Boolean)));
-  const orphanedRooms = plantRooms
-    .filter(r => !configuredRooms.includes(r as string))
-    .sort((a, b) => (a as string).localeCompare(b as string, 'fr', { sensitivity: 'base' }));
+export default function PlantsClient({
+  plants,
+  userRooms,
+  initialFilter = "Toutes",
+}: {
+  plants: any[];
+  userRooms: any[];
+  initialFilter?: string;
+}) {
+  const [filter, setFilter] = useState(initialFilter);
 
-  // 🟢 3. On combine pour avoir la liste finale des filtres
-  const filters = ["Toutes", ...configuredRooms, ...orphanedRooms];
-
-  // On applique le filtre ET on trie les plantes par ordre alphabétique
-  const filteredPlants = (filter === "Toutes" ? [...plants] : plants.filter(p => p.room === filter))
-    .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
-
-  // Calcul des statistiques pour l'en-tête
-  const totalCount = plants.length;
-  const urgentCount = plants.filter((plant) => {
-    const snoozeDays = plant.snooze_days || 0;
-    const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
+  const isUrgent = (plant: any) => {
+    const status = getWateringStatus(
+      plant.last_watered_at,
+      getActiveWateringFrequency(plant),
+      plant.snooze_days || 0
+    );
     return status.urgent;
-  }).length;
+  };
+  const nextWateringTime = (plant: any) => {
+    const d = new Date(plant.last_watered_at);
+    d.setDate(d.getDate() + getActiveWateringFrequency(plant) + (plant.snooze_days || 0));
+    return d.getTime();
+  };
+
+  const configuredRooms = userRooms.map((r) => r.name);
+  const plantRooms = Array.from(new Set(plants.map((p) => p.room).filter(Boolean)));
+  const orphanedRooms = plantRooms
+    .filter((r) => !configuredRooms.includes(r as string))
+    .sort((a, b) => (a as string).localeCompare(b as string, "fr", { sensitivity: "base" }));
+
+  const filters = ["Toutes", WATER_FILTER, ...configuredRooms, ...orphanedRooms];
+
+  const totalCount = plants.length;
+  const urgentCount = plants.filter(isUrgent).length;
+
+  const alpha = (a: any, b: any) =>
+    a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
+
+  let filteredPlants: any[];
+  if (filter === WATER_FILTER) {
+    filteredPlants = plants
+      .filter(isUrgent)
+      .sort((a, b) => nextWateringTime(a) - nextWateringTime(b));
+  } else if (filter === "Toutes") {
+    filteredPlants = [...plants].sort(alpha);
+  } else {
+    filteredPlants = plants.filter((p) => p.room === filter).sort(alpha);
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
-      
-      {/* HEADER VERT PLUS COMPACT */}
+
+      {/* HEADER */}
       <div className="bg-emerald-900 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-b-[2.5rem] pb-10 pt-6 px-5 relative shadow-xl shadow-emerald-900/20 overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="max-w-md mx-auto relative z-10">
           <header className="flex items-center justify-between mb-8">
             <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
-              {/* 🟢 2. C'est ici ! Remplacement de LayoutGrid par Sprout */}
               <Sprout className="w-6 h-6 text-emerald-300" />
             </div>
           </header>
@@ -54,11 +78,11 @@ export default function PlantsClient({ plants, userRooms }: { plants: any[], use
             </h1>
             <div className="flex items-center gap-2 mt-2 text-emerald-200/90 text-sm font-medium">
               <span className="flex items-center gap-1.5">
-                <Leaf className="w-3.5 h-3.5 opacity-80" /> {totalCount} plante{totalCount > 1 ? 's' : ''}
+                <Leaf className="w-3.5 h-3.5 opacity-80" /> {totalCount} plante{totalCount > 1 ? "s" : ""}
               </span>
               <span className="opacity-50">•</span>
-              <span className={`flex items-center gap-1.5 ${urgentCount > 0 ? 'text-rose-300 font-bold' : ''}`}>
-                <Droplets className="w-3.5 h-3.5 opacity-80" /> {urgentCount} arrosage{urgentCount > 1 ? 's' : ''}
+              <span className={`flex items-center gap-1.5 ${urgentCount > 0 ? "text-rose-300 font-bold" : ""}`}>
+                <Droplets className="w-3.5 h-3.5 opacity-80" /> {urgentCount} arrosage{urgentCount > 1 ? "s" : ""}
               </span>
             </div>
           </div>
@@ -66,9 +90,8 @@ export default function PlantsClient({ plants, userRooms }: { plants: any[], use
       </div>
 
       <main className="max-w-md mx-auto px-5 mt-6 relative z-20 space-y-6">
-        
+
         {plants.length === 0 ? (
-          // 🟢 ÉTAT VIDE : Affiché s'il n'y a aucune plante dans le compte
           <div className="bg-white border border-stone-100 shadow-sm rounded-[2rem] p-10 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500 mt-8">
             <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-5 border border-emerald-100/50 shadow-inner">
               <Leaf className="w-10 h-10 text-emerald-500 opacity-80" />
@@ -87,55 +110,75 @@ export default function PlantsClient({ plants, userRooms }: { plants: any[], use
             </Button>
           </div>
         ) : (
-          // 🟢 LISTE DES PLANTES
           <>
-            {/* BARRE DE FILTRES AVEC NOUVEAU DESIGN */}
-            {filters.length > 1 && (
-              <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
-                {filters.map((f: string) => {
-                  const count = f === "Toutes" ? totalCount : plants.filter(p => p.room === f).length;
-                  
-                  return (
-                    <button 
-                      key={f}
-                      onClick={() => setFilter(f)} 
-                      className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
-                        filter === f 
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
-                          : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+            {/* BARRE DE FILTRES */}
+            <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
+              {filters.map((f: string) => {
+                const isWater = f === WATER_FILTER;
+                const label = f === "Toutes" ? "Toutes" : isWater ? "À arroser" : f;
+                const count =
+                  f === "Toutes" ? totalCount : isWater ? urgentCount : plants.filter((p) => p.room === f).length;
+
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
+                      filter === f
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                        : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    {isWater && (
+                      <Droplets className={`w-3.5 h-3.5 ${filter === f ? "text-emerald-500" : "text-stone-400"}`} />
+                    )}
+                    {!isWater && f !== "Toutes" && (
+                      <MapPin className={`w-3.5 h-3.5 ${filter === f ? "text-emerald-500" : "text-stone-400"}`} />
+                    )}
+                    <span>{label}</span>
+                    <span
+                      className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
+                        filter === f ? "bg-emerald-200/50 text-emerald-800" : "bg-stone-100 text-stone-500"
                       }`}
                     >
-                      {f !== "Toutes" && <MapPin className={`w-3.5 h-3.5 ${filter === f ? 'text-emerald-500' : 'text-stone-400'}`} />}
-                      <span>{f}</span>
-                      <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
-                        filter === f 
-                          ? 'bg-emerald-200/50 text-emerald-800' 
-                          : 'bg-stone-100 text-stone-500'
-                      }`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
             {/* LISTE FILTRÉE */}
             <div className="flex flex-col gap-3">
               {filteredPlants.length === 0 ? (
-                // Sous-état vide si un filtre ne retourne rien
-                <div className="text-center py-10 animate-in fade-in">
-                  <p className="text-stone-500 font-medium">Aucune plante dans cet emplacement.</p>
-                </div>
+                filter === WATER_FILTER ? (
+                  <div className="bg-white rounded-[2rem] border border-stone-100 p-8 flex flex-col items-center justify-center text-center shadow-sm mt-2">
+                    <div className="p-4 bg-emerald-50 rounded-full mb-3">
+                      <CheckCircle className="w-8 h-8 text-emerald-600" />
+                    </div>
+                    <h3 className="font-bold text-stone-800 text-lg">Tout va bien !</h3>
+                    <p className="text-sm text-stone-500 mt-1">
+                      Aucune de vos plantes n'a soif actuellement.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-10 animate-in fade-in">
+                    <p className="text-stone-500 font-medium">Aucune plante dans cet emplacement.</p>
+                  </div>
+                )
               ) : (
                 filteredPlants.map((plant) => (
-                  <PlantCard key={plant.id} plant={plant} />
+                  <PlantCard
+                    key={plant.id}
+                    plant={plant}
+                    from={filter === WATER_FILTER ? WATER_FILTER : undefined}
+                  />
                 ))
               )}
             </div>
           </>
         )}
-        
+
       </main>
 
       <BottomNav />
