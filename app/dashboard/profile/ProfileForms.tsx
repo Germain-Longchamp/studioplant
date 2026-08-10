@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useRef, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,12 @@ import { updateSecurity } from "@/server/actions";
 
 export default function ProfileForms({ user }: { user: any }) {
   const [isPendingSecurity, startTransitionSecurity] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleSecuritySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     startTransitionSecurity(async () => {
       const result = await updateSecurity(formData);
       if (result?.error) {
@@ -24,6 +25,7 @@ export default function ProfileForms({ user }: { user: any }) {
         if (formData.get("email") !== user.email) {
           toast.info("Vérifiez votre boîte mail pour confirmer la nouvelle adresse.");
         }
+        formRef.current?.reset();
       }
     });
   };
@@ -39,7 +41,7 @@ export default function ProfileForms({ user }: { user: any }) {
         </div>
       </div>
 
-      <form onSubmit={handleSecuritySubmit} className="space-y-5 relative z-10">
+      <form ref={formRef} onSubmit={handleSecuritySubmit} className="space-y-5 relative z-10">
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
             <Mail className="w-4 h-4 text-stone-400" /> Adresse Email
@@ -52,6 +54,14 @@ export default function ProfileForms({ user }: { user: any }) {
             <Lock className="w-4 h-4 text-stone-400" /> Nouveau mot de passe
           </Label>
           <Input type="password" name="password" placeholder="Laisser vide pour ne pas changer" className="h-12 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 placeholder:text-stone-300" />
+        </div>
+
+        <div className="space-y-2 pt-3 border-t border-stone-100">
+          <Label className="flex items-center gap-2 text-stone-700 font-semibold ml-1">
+            <Lock className="w-4 h-4 text-stone-400" /> Mot de passe actuel
+          </Label>
+          <Input type="password" name="currentPassword" placeholder="Requis pour confirmer ces changements" required className="h-12 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 placeholder:text-stone-300" />
+          <p className="text-[11px] text-stone-400 ml-1">Nécessaire pour valider toute modification de votre email ou mot de passe.</p>
         </div>
 
         <Button type="submit" disabled={isPendingSecurity} variant="outline" className="w-full h-12 rounded-[1.25rem] border-stone-200 text-stone-700 hover:bg-stone-50 font-bold active:scale-95 transition-all mt-2">

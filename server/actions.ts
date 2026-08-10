@@ -1026,19 +1026,66 @@ export async function updateProfileContext(formData: FormData) {
 }
 
 // METTRE À JOUR LA SÉCURITÉ (EMAIL / MDP)
+// 🟢 Le mot de passe actuel est revérifié avant toute modification : évite qu'une session
+// déjà ouverte (appareil partagé, session volée) permette de changer les identifiants
+// sans connaître le mot de passe actuel.
 export async function updateSecurity(formData: FormData) {
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !user.email) return { error: "Session invalide." };
+
+    const currentPassword = formData.get("currentPassword") as string;
+    if (!currentPassword) {
+      return { error: "Merci de renseigner votre mot de passe actuel." };
+    }
+
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (verifyError) {
+      return { error: "Mot de passe actuel incorrect." };
+    }
+
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     const updates: any = {};
-    if (email) updates.email = email;
+    if (email && email !== user.email) updates.email = email;
     if (password) updates.password = password;
 
+    if (Object.keys(updates).length === 0) {
+      return { error: "Aucune modification à enregistrer." };
+    }
+
     const { error } = await supabase.auth.updateUser(updates);
-    
+
     if (error) return { error: error.message };
+    return { success: true };
+  } catch (error) {
+    return { error: "Erreur inattendue." };
+  }
+}
+
+// METTRE À JOUR LE MOT DE PASSE APRÈS UN LIEN DE RÉCUPÉRATION ("mot de passe oublié")
+// La session active à ce stade est la session de récupération créée par /auth/callback
+// à partir du lien reçu par email — pas besoin de redemander l'ancien mot de passe ici,
+// l'utilisateur vient de prouver la possession de sa boîte mail.
+export async function updatePasswordAfterRecovery(formData: FormData) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Session expirée. Merci de redemander un lien." };
+
+    const password = formData.get("password") as string;
+    if (!password || password.length < 6) {
+      return { error: "Le mot de passe doit contenir au moins 6 caractères." };
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { error: error.message };
+
     return { success: true };
   } catch (error) {
     return { error: "Erreur inattendue." };

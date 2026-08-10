@@ -151,12 +151,19 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6} 
+                minLength={6}
                 className="h-14 rounded-2xl bg-[#FDFCF8] border-stone-200 text-stone-800 focus:ring-emerald-500 focus:border-emerald-500 text-base px-5 tracking-widest placeholder:tracking-normal"
               />
+              {!isSignUp && (
+                <div className="text-right">
+                  <Link href="/auth/forgot-password" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
+              )}
             </div>
 
-            <Button 
+            <Button
               type="submit" 
               disabled={isLoading}
               className="w-full h-14 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-lg shadow-xl shadow-emerald-900/20 active:scale-95 transition-all mt-4 group"
