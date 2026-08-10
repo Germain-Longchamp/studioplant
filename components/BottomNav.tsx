@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutGrid, Sprout, Camera, Home, Droplets } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LayoutGrid, Sprout, Camera, Home, User } from "lucide-react";
 
-function NavContent({ pathname, isWatering }: { pathname: string; isWatering: boolean }) {
-  const onPlants = pathname === "/dashboard/plants";
+export default function BottomNav({ urgentCount = 0 }: { urgentCount?: number }) {
+  const pathname = usePathname();
+  const badgeLabel = urgentCount > 9 ? "9+" : String(urgentCount);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#FDFCF8]/95 backdrop-blur-xl border-t border-stone-200/60 pb-4 pt-2 px-1 flex justify-evenly items-end shadow-[0_-20px_40px_rgba(0,0,0,0.03)] md:hidden">
@@ -17,10 +17,10 @@ function NavContent({ pathname, isWatering }: { pathname: string; isWatering: bo
         <span className="text-[9px] font-bold uppercase tracking-wider">Accueil</span>
       </Link>
 
-      {/* 2 - Plantes */}
-      <Link href="/dashboard/plants" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${onPlants && !isWatering ? 'text-[var(--color-brand)]' : 'text-stone-400 hover:text-stone-600'}`}>
-        <Sprout className="w-5 h-5 mb-1" />
-        <span className="text-[9px] font-bold uppercase tracking-wider">Plantes</span>
+      {/* 2 - Profil */}
+      <Link href="/dashboard/profile" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${pathname === '/dashboard/profile' ? 'text-[var(--color-brand)]' : 'text-stone-400 hover:text-stone-600'}`}>
+        <User className="w-5 h-5 mb-1" />
+        <span className="text-[9px] font-bold uppercase tracking-wider">Profil</span>
       </Link>
 
       {/* 3 - Ajouter (FAB) */}
@@ -38,27 +38,19 @@ function NavContent({ pathname, isWatering }: { pathname: string; isWatering: bo
         <span className="text-[9px] font-bold uppercase tracking-wider">Ma Maison</span>
       </Link>
 
-      {/* 5 - Arrosages */}
-      <Link href="/dashboard/plants?filter=to-water" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${onPlants && isWatering ? 'text-[var(--color-brand)]' : 'text-stone-400 hover:text-stone-600'}`}>
-        <Droplets className="w-5 h-5 mb-1" />
-        <span className="text-[9px] font-bold uppercase tracking-wider">Arrosages</span>
+      {/* 5 - Plantes (avec badge d'arrosages en attente) */}
+      <Link href="/dashboard/plants" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${pathname === '/dashboard/plants' ? 'text-[var(--color-brand)]' : 'text-stone-400 hover:text-stone-600'}`}>
+        <div className="relative">
+          <Sprout className="w-5 h-5 mb-1" />
+          {urgentCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[8px] font-extrabold leading-none shadow-sm">
+              {badgeLabel}
+            </span>
+          )}
+        </div>
+        <span className="text-[9px] font-bold uppercase tracking-wider">Plantes</span>
       </Link>
 
     </div>
-  );
-}
-
-function BottomNavInner({ pathname }: { pathname: string }) {
-  const searchParams = useSearchParams();
-  const isWatering = searchParams.get("filter") === "to-water";
-  return <NavContent pathname={pathname} isWatering={isWatering} />;
-}
-
-export default function BottomNav() {
-  const pathname = usePathname();
-  return (
-    <Suspense fallback={<NavContent pathname={pathname} isWatering={false} />}>
-      <BottomNavInner pathname={pathname} />
-    </Suspense>
   );
 }

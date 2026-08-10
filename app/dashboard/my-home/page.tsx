@@ -5,7 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import EnvironmentForm from "./EnvironmentForm";
 import RoomsManager from "./RoomsManager"; 
 import EquipmentRecommendations from "../profile/EquipmentRecommendations";
-import { getEquipmentRecommendations, getUserRooms } from "@/server/actions"; 
+import { getEquipmentRecommendations, getUserRooms, getUrgentWateringCount } from "@/server/actions";
 
 export default async function MyHomePage() {
   const supabase = await createClient();
@@ -14,8 +14,11 @@ export default async function MyHomePage() {
   if (!user) redirect("/auth/login");
 
   const metadata = user.user_metadata || {};
-  const savedRecommendations = await getEquipmentRecommendations();
-  const rooms = await getUserRooms(); // On charge les pièces
+  const [savedRecommendations, rooms, urgentCount] = await Promise.all([
+    getEquipmentRecommendations(),
+    getUserRooms(), // On charge les pièces
+    getUrgentWateringCount(),
+  ]);
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
@@ -50,7 +53,7 @@ export default async function MyHomePage() {
         
       </main>
 
-      <BottomNav />
+      <BottomNav urgentCount={urgentCount} />
     </div>
   );
 }

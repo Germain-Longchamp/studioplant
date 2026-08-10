@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { GrowthPhoto } from "@/lib/types";
+import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -1165,6 +1166,32 @@ export async function getUserRooms() {
   } catch (error) {
     console.error("Erreur getUserRooms:", error);
     return [];
+  }
+}
+
+export async function getUrgentWateringCount(): Promise<number> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    const { data, error } = await supabase
+      .from("plants")
+      .select("last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days");
+
+    if (error) throw error;
+
+    return (data || []).filter((plant) => {
+      const status = getWateringStatus(
+        plant.last_watered_at,
+        getActiveWateringFrequency(plant),
+        plant.snooze_days || 0
+      );
+      return status.urgent;
+    }).length;
+  } catch (error) {
+    console.error("Erreur getUrgentWateringCount:", error);
+    return 0;
   }
 }
 

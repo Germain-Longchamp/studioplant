@@ -181,7 +181,7 @@ export default function PlantsClient({
 
       </main>
 
-      <BottomNav />
+      <BottomNav urgentCount={urgentCount} />
     </div>
   );
 }

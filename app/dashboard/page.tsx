@@ -175,7 +175,7 @@ export default async function DashboardPage() {
 
       </main>
 
-      <BottomNav />
+      <BottomNav urgentCount={urgentCount} />
 
       {/* AFFICHAGE CONDITIONNEL DES MODALES D'ONBOARDING */}
       <NewUserOnboarding show={isBrandNewUser} />

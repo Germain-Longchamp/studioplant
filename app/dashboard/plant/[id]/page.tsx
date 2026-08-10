@@ -13,7 +13,7 @@ import SnoozeButton from "./SnoozeButton";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
 import DoctorPlantBlock from "./DoctorPlantBlock";
 import CareGuideAccordion from "./CareGuideAccordion";
-import { getPlantDiagnostics, getGrowthPhotos } from "@/server/actions";
+import { getPlantDiagnostics, getGrowthPhotos, getUrgentWateringCount } from "@/server/actions";
 import GrowthJournal from "./components/GrowthJournal";
 import LocationSection from "./LocationSection";
 import WateringFrequencyDialog from "@/components/WateringFrequencyDialog";
@@ -51,9 +51,10 @@ export default async function PlantDetailPage({
     status.color === 'orange' ? 'text-amber-600 bg-amber-50 border-amber-100' :
                                 'text-emerald-700 bg-emerald-50 border-emerald-100';
 
-  const [initialDiagnoses, growthResult] = await Promise.all([
+  const [initialDiagnoses, growthResult, urgentCount] = await Promise.all([
     getPlantDiagnostics(plant.id),
     getGrowthPhotos(plant.id),
+    getUrgentWateringCount(),
   ]);
   const initialPhotos = growthResult.success ? (growthResult.data ?? []) : [];
 
@@ -241,7 +242,7 @@ export default async function PlantDetailPage({
         </div>
       </main>
 
-      <BottomNav />
+      <BottomNav urgentCount={urgentCount} />
     </div>
   );
 }

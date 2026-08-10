@@ -4,7 +4,7 @@ import { User, LogOut, Bell } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileForms from "./ProfileForms";
 import { Button } from "@/components/ui/button";
-import { logOut } from "@/server/actions";
+import { logOut, getUrgentWateringCount } from "@/server/actions";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 export default async function ProfilePage() {
@@ -12,6 +12,8 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
+
+  const urgentCount = await getUrgentWateringCount();
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
@@ -66,7 +68,7 @@ export default async function ProfilePage() {
 
       </main>
 
-      <BottomNav />
+      <BottomNav urgentCount={urgentCount} />
     </div>
   );
 }
