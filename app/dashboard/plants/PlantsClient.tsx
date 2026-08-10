@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Leaf, Droplets, Plus, MapPin, Sprout, CheckCircle } from "lucide-react";
+import { Leaf, Droplets, Plus, Sprout, CheckCircle } from "lucide-react";
 import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
@@ -110,60 +110,52 @@ export default function PlantsClient({
           </div>
         ) : (
           <>
-            {/* BARRE DE FILTRES — deux facettes combinables : statut d'arrosage + pièce */}
-            <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
+            {/* BARRE DE FILTRES — switch pour le statut (binaire), pastilles pour le lieu (multi-choix) */}
+            <div className="flex items-center overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
 
-              {/* Facette statut : toggle "À arroser" */}
+              {/* Facette statut : switch "À arroser" */}
               <button
                 onClick={() => setUrgentOnly((u) => !u)}
-                className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
-                  urgentOnly
-                    ? "border-rose-400 bg-rose-50 text-rose-700"
-                    : "border-rose-200/70 bg-white text-rose-500 hover:bg-rose-50/50"
+                role="switch"
+                aria-checked={urgentOnly}
+                aria-label="Afficher uniquement les plantes à arroser"
+                className={`shrink-0 relative w-[46px] h-[26px] rounded-full transition-colors ${
+                  urgentOnly ? "bg-rose-500" : "bg-stone-200"
                 }`}
               >
-                <Droplets className={`w-3.5 h-3.5 ${urgentOnly ? "text-rose-500" : "text-rose-400"}`} />
-                <span>À arroser</span>
                 <span
-                  className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
-                    urgentOnly ? "bg-rose-200/60 text-rose-800" : "bg-rose-100 text-rose-600"
+                  className={`absolute top-0.5 left-0.5 w-[22px] h-[22px] rounded-full bg-white shadow-sm transition-transform ${
+                    urgentOnly ? "translate-x-5" : "translate-x-0"
                   }`}
-                >
-                  {urgentCount}
-                </span>
+                />
               </button>
+              <span
+                onClick={() => setUrgentOnly((u) => !u)}
+                className={`shrink-0 flex items-center gap-1 text-[13px] font-medium cursor-pointer select-none ${
+                  urgentOnly ? "text-rose-600" : "text-stone-500"
+                }`}
+              >
+                <Droplets className="w-3.5 h-3.5" />
+                À arroser
+              </span>
 
               {/* Séparateur entre les deux facettes */}
-              <div className="w-px bg-stone-200 shrink-0 rounded-full" />
+              <div className="w-px h-5 bg-stone-200 shrink-0 mx-1" />
 
               {/* Facette lieu : pastilles de pièces */}
-              {roomFilters.map((room) => {
-                const count = room === "Toutes" ? totalCount : plants.filter((p) => p.room === room).length;
-
-                return (
-                  <button
-                    key={room}
-                    onClick={() => setRoomFilter(room)}
-                    className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
-                      roomFilter === room
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                    }`}
-                  >
-                    {room !== "Toutes" && (
-                      <MapPin className={`w-3.5 h-3.5 ${roomFilter === room ? "text-emerald-500" : "text-stone-400"}`} />
-                    )}
-                    <span>{room}</span>
-                    <span
-                      className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
-                        roomFilter === room ? "bg-emerald-200/50 text-emerald-800" : "bg-stone-100 text-stone-500"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+              {roomFilters.map((room) => (
+                <button
+                  key={room}
+                  onClick={() => setRoomFilter(room)}
+                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
+                    roomFilter === room
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "text-stone-500 hover:bg-stone-50"
+                  }`}
+                >
+                  {room}
+                </button>
+              ))}
             </div>
 
             {/* LISTE FILTRÉE */}
