@@ -8,7 +8,7 @@ export default async function PlantsPage({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const { filter } = await searchParams;
-  const initialFilter = filter === "to-water" ? "to-water" : "Toutes";
+  const initialUrgentOnly = filter === "to-water";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -30,8 +30,8 @@ export default async function PlantsPage({
 
   return (
     <PlantsClient
-      key={initialFilter}
-      initialFilter={initialFilter}
+      key={initialUrgentOnly ? "urgent" : "all"}
+      initialUrgentOnly={initialUrgentOnly}
       plants={plants || []}
       userRooms={userRooms || []}
     />

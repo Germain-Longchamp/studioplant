@@ -13,13 +13,14 @@ const WATER_FILTER = "to-water";
 export default function PlantsClient({
   plants,
   userRooms,
-  initialFilter = "Toutes",
+  initialUrgentOnly = false,
 }: {
   plants: any[];
   userRooms: any[];
-  initialFilter?: string;
+  initialUrgentOnly?: boolean;
 }) {
-  const [filter, setFilter] = useState(initialFilter);
+  const [roomFilter, setRoomFilter] = useState("Toutes");
+  const [urgentOnly, setUrgentOnly] = useState(initialUrgentOnly);
 
   const isUrgent = (plant: any) => {
     const status = getWateringStatus(
@@ -41,7 +42,7 @@ export default function PlantsClient({
     .filter((r) => !configuredRooms.includes(r as string))
     .sort((a, b) => (a as string).localeCompare(b as string, "fr", { sensitivity: "base" }));
 
-  const filters = ["Toutes", WATER_FILTER, ...configuredRooms, ...orphanedRooms];
+  const roomFilters = ["Toutes", ...configuredRooms, ...orphanedRooms];
 
   const totalCount = plants.length;
   const urgentCount = plants.filter(isUrgent).length;
@@ -49,16 +50,14 @@ export default function PlantsClient({
   const alpha = (a: any, b: any) =>
     a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
 
-  let filteredPlants: any[];
-  if (filter === WATER_FILTER) {
-    filteredPlants = plants
-      .filter(isUrgent)
-      .sort((a, b) => nextWateringTime(a) - nextWateringTime(b));
-  } else if (filter === "Toutes") {
-    filteredPlants = [...plants].sort(alpha);
-  } else {
-    filteredPlants = plants.filter((p) => p.room === filter).sort(alpha);
-  }
+  let filteredPlants = plants.filter((p) => {
+    const roomMatch = roomFilter === "Toutes" || p.room === roomFilter;
+    const urgentMatch = !urgentOnly || isUrgent(p);
+    return roomMatch && urgentMatch;
+  });
+  filteredPlants = urgentOnly
+    ? filteredPlants.sort((a, b) => nextWateringTime(a) - nextWateringTime(b))
+    : filteredPlants.sort(alpha);
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">
@@ -111,34 +110,53 @@ export default function PlantsClient({
           </div>
         ) : (
           <>
-            {/* BARRE DE FILTRES */}
+            {/* BARRE DE FILTRES — deux facettes combinables : statut d'arrosage + pièce */}
             <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-5 px-5">
-              {filters.map((f: string) => {
-                const isWater = f === WATER_FILTER;
-                const label = f === "Toutes" ? "Toutes" : isWater ? "À arroser" : f;
-                const count =
-                  f === "Toutes" ? totalCount : isWater ? urgentCount : plants.filter((p) => p.room === f).length;
+
+              {/* Facette statut : toggle "À arroser" */}
+              <button
+                onClick={() => setUrgentOnly((u) => !u)}
+                className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
+                  urgentOnly
+                    ? "border-rose-400 bg-rose-50 text-rose-700"
+                    : "border-rose-200/70 bg-white text-rose-500 hover:bg-rose-50/50"
+                }`}
+              >
+                <Droplets className={`w-3.5 h-3.5 ${urgentOnly ? "text-rose-500" : "text-rose-400"}`} />
+                <span>À arroser</span>
+                <span
+                  className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
+                    urgentOnly ? "bg-rose-200/60 text-rose-800" : "bg-rose-100 text-rose-600"
+                  }`}
+                >
+                  {urgentCount}
+                </span>
+              </button>
+
+              {/* Séparateur entre les deux facettes */}
+              <div className="w-px bg-stone-200 shrink-0 rounded-full" />
+
+              {/* Facette lieu : pastilles de pièces */}
+              {roomFilters.map((room) => {
+                const count = room === "Toutes" ? totalCount : plants.filter((p) => p.room === room).length;
 
                 return (
                   <button
-                    key={f}
-                    onClick={() => setFilter(f)}
+                    key={room}
+                    onClick={() => setRoomFilter(room)}
                     className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm active:scale-95 ${
-                      filter === f
+                      roomFilter === room
                         ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                         : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                     }`}
                   >
-                    {isWater && (
-                      <Droplets className={`w-3.5 h-3.5 ${filter === f ? "text-emerald-500" : "text-stone-400"}`} />
+                    {room !== "Toutes" && (
+                      <MapPin className={`w-3.5 h-3.5 ${roomFilter === room ? "text-emerald-500" : "text-stone-400"}`} />
                     )}
-                    {!isWater && f !== "Toutes" && (
-                      <MapPin className={`w-3.5 h-3.5 ${filter === f ? "text-emerald-500" : "text-stone-400"}`} />
-                    )}
-                    <span>{label}</span>
+                    <span>{room}</span>
                     <span
                       className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] leading-none font-extrabold ${
-                        filter === f ? "bg-emerald-200/50 text-emerald-800" : "bg-stone-100 text-stone-500"
+                        roomFilter === room ? "bg-emerald-200/50 text-emerald-800" : "bg-stone-100 text-stone-500"
                       }`}
                     >
                       {count}
@@ -151,14 +169,16 @@ export default function PlantsClient({
             {/* LISTE FILTRÉE */}
             <div className="flex flex-col gap-3">
               {filteredPlants.length === 0 ? (
-                filter === WATER_FILTER ? (
+                urgentOnly ? (
                   <div className="bg-white rounded-[2rem] border border-stone-100 p-8 flex flex-col items-center justify-center text-center shadow-sm mt-2">
                     <div className="p-4 bg-emerald-50 rounded-full mb-3">
                       <CheckCircle className="w-8 h-8 text-emerald-600" />
                     </div>
                     <h3 className="font-bold text-stone-800 text-lg">Tout va bien !</h3>
                     <p className="text-sm text-stone-500 mt-1">
-                      Aucune de vos plantes n'a soif actuellement.
+                      {roomFilter === "Toutes"
+                        ? "Aucune de vos plantes n'a soif actuellement."
+                        : `Aucune plante n'a soif dans « ${roomFilter} ».`}
                     </p>
                   </div>
                 ) : (
@@ -171,7 +191,7 @@ export default function PlantsClient({
                   <PlantCard
                     key={plant.id}
                     plant={plant}
-                    from={filter === WATER_FILTER ? WATER_FILTER : undefined}
+                    from={urgentOnly ? WATER_FILTER : undefined}
                   />
                 ))
               )}
