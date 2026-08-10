@@ -20,9 +20,9 @@ export default function ForgotPasswordPage() {
 
     // On ignore volontairement le résultat : Supabase ne révèle jamais si l'email
     // existe ou non, et on ne veut pas nous-mêmes exposer cette information.
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
-    });
+    // Le lien envoyé par email est entièrement construit par le template "Reset Password"
+    // côté Supabase (voir /auth/confirm) — pas besoin de redirectTo ici.
+    await supabase.auth.resetPasswordForEmail(email);
 
     setSent(true);
     setIsLoading(false);

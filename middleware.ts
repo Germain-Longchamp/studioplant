@@ -49,13 +49,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // Règle B : Si l'utilisateur EST connecté et essaie d'aller sur la page de Login ou Auth
-  // Exception : /auth/reset-password doit rester accessible même connecté, car on y arrive
-  // via une session de récupération (lien "mot de passe oublié") — sans cette exception,
-  // l'utilisateur serait renvoyé au dashboard avant d'avoir pu choisir un nouveau mot de passe.
+  // Exceptions : /auth/reset-password (session de récupération, doit rester accessible pour
+  // choisir un nouveau mot de passe) et /auth/confirm (le lien de confirmation par email doit
+  // pouvoir aboutir même si l'utilisateur est déjà connecté dans ce navigateur, sinon il est
+  // renvoyé au dashboard avant que verifyOtp n'ait eu la chance de s'exécuter).
+  const AUTH_PATHS_EXEMPT_WHEN_LOGGED_IN = ["/auth/reset-password", "/auth/confirm"];
   if (
     user &&
     request.nextUrl.pathname.startsWith("/auth") &&
-    request.nextUrl.pathname !== "/auth/reset-password"
+    !AUTH_PATHS_EXEMPT_WHEN_LOGGED_IN.includes(request.nextUrl.pathname)
   ) {
     // Pas besoin de se reconnecter, direction le dashboard
     return NextResponse.redirect(new URL("/dashboard", request.url));
