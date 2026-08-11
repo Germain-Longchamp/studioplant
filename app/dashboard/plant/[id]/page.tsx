@@ -113,9 +113,9 @@ export default async function PlantDetailPage({
             <PlantMenu plantId={plant.id} imageUrl={plant.image_path} />
           </div>
 
-          {/* Agrandir la photo */}
+          {/* Agrandir la photo — remonté pour rester au-dessus de la carte identité qui chevauche le bas de la photo (-mt-6, soit 24px) */}
           {plant.image_path && (
-            <div className="absolute bottom-3 right-3 z-10">
+            <div className="absolute bottom-9 right-3 z-10">
               <PlantPhotoLightbox imageUrl={plant.image_path} alt={plant.name} />
             </div>
           )}
