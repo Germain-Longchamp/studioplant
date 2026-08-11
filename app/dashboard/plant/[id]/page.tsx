@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout } from "lucide-react";
+import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout, MapPin } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus, getActiveWateringFrequency, formatRelativeDays, getFertilizingStatus } from "@/lib/utils";
@@ -79,14 +79,14 @@ export default async function PlantDetailPage({
     <div className="min-h-screen bg-[#F4F7F4] pb-32 font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-200">
       <main className="max-w-md mx-auto">
 
-        {/* ===== 1. HERO COMPACT ===== */}
-        <div className="relative w-full h-[72vw] max-h-[280px] bg-stone-900 overflow-hidden">
+        {/* ===== 1. HERO COMPACT — photo en pleine lumière, infos déportées dans une carte ===== */}
+        <div className="relative w-full h-[85vw] max-h-[380px] bg-stone-900 overflow-hidden">
           {plant.image_path ? (
             <Image
               src={plant.image_path}
               alt={plant.name}
               fill
-              className="object-cover opacity-90"
+              className="object-cover"
               priority
               sizes="100vw"
             />
@@ -95,7 +95,6 @@ export default async function PlantDetailPage({
               <Leaf className="w-12 h-12 text-white/50" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
           {/* Boutons haut */}
           <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-10">
@@ -112,17 +111,20 @@ export default async function PlantDetailPage({
             </Button>
             <PlantMenu plantId={plant.id} imageUrl={plant.image_path} />
           </div>
+        </div>
 
-          {/* Nom + méta */}
-          <div className="absolute bottom-3 left-4 right-4 z-10">
-            <h1 className="text-2xl font-black text-white tracking-tight leading-tight drop-shadow">
+        {/* Carte identité — chevauche le bas de la photo, toujours lisible quelle que soit la photo */}
+        <div className="relative z-10 -mt-6 px-4">
+          <div className="bg-white rounded-[1.75rem] shadow-[0_-6px_16px_rgba(0,0,0,0.05)] px-5 pt-4 pb-3.5">
+            <h1 className="text-2xl font-black text-stone-900 tracking-tight leading-tight">
               {plant.name}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-1">
-              <span className="text-xs italic text-white/65">{plant.species}</span>
+              <span className="text-xs italic text-stone-500">{plant.species}</span>
               {plant.room && (
-                <span className="text-[10px] text-white/75 bg-white/[0.13] border border-white/[0.18] px-2 py-0.5 rounded-full">
-                  📍 {plant.room}
+                <span className="flex items-center gap-1 text-[10px] font-medium text-stone-600 bg-stone-100 px-2 py-0.5 rounded-full">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {plant.room}
                 </span>
               )}
             </div>
@@ -130,7 +132,7 @@ export default async function PlantDetailPage({
         </div>
 
         {/* ===== CONTENU ===== */}
-        <div className="px-4 pt-4 space-y-3">
+        <div className="px-4 pt-3 space-y-3">
 
           {/* ===== 2. CARTE ARROSAGE ===== */}
           <div className="bg-white rounded-[1.5rem] border border-stone-100 shadow-sm p-4">
