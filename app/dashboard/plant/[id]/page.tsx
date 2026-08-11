@@ -8,6 +8,7 @@ import { getWateringStatus, getActiveWateringFrequency, formatRelativeDays, getF
 import FertilizeButton from "./FertilizeButton";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
+import PlantPhotoLightbox from "./PlantPhotoLightbox";
 import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
@@ -111,6 +112,13 @@ export default async function PlantDetailPage({
             </Button>
             <PlantMenu plantId={plant.id} imageUrl={plant.image_path} />
           </div>
+
+          {/* Agrandir la photo */}
+          {plant.image_path && (
+            <div className="absolute bottom-3 right-3 z-10">
+              <PlantPhotoLightbox imageUrl={plant.image_path} alt={plant.name} />
+            </div>
+          )}
         </div>
 
         {/* Carte identité — chevauche le bas de la photo, toujours lisible quelle que soit la photo */}
