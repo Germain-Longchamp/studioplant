@@ -73,7 +73,7 @@ export default function PlantsClient({
           </header>
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
-              Toutes mes plantes
+              Ma Jungle
             </h1>
             <div className="flex items-center gap-2 mt-2 text-emerald-200/90 text-sm font-medium">
               <span className="flex items-center gap-1.5">
