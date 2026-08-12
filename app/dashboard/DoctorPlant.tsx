@@ -187,7 +187,7 @@ export default function DoctorPlant() {
           {!isUnknown && (
             <Button
               onClick={handleAddToCollection}
-              className="w-full h-12 rounded-[1.25rem] bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all gap-2"
+              className="w-full h-12 rounded-[1.25rem] bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition-all gap-2"
             >
               <PlusCircle className="w-4 h-4" />
               Ajouter à ma collection →

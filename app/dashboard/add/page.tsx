@@ -223,7 +223,7 @@ export default function AddPlantPage() {
                   </p>
                   
                   <div className="flex flex-col gap-3 w-full max-w-[250px] relative z-10">
-                    <label className="cursor-pointer w-full bg-emerald-800 hover:bg-emerald-900 text-white px-6 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700">
+                    <label className="cursor-pointer w-full bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white px-6 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700">
                       <Camera className="w-5 h-5" /> Prendre une photo
                       <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} onClick={handleInputClick} />
                     </label>
@@ -239,8 +239,8 @@ export default function AddPlantPage() {
 
             {previewUrl && (
               <Button 
-                onClick={handleAnalyzePhoto} 
-                className="w-full h-14 rounded-2xl text-lg font-bold bg-emerald-800 hover:bg-emerald-900 text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700"
+                onClick={handleAnalyzePhoto}
+                className="w-full h-14 rounded-2xl text-lg font-bold bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700"
               >
                 <Sparkles className="w-5 h-5 mr-2 text-emerald-300" /> Identifier la plante
               </Button>
@@ -399,7 +399,7 @@ export default function AddPlantPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-14 mt-8 rounded-2xl text-lg font-bold bg-emerald-800 hover:bg-emerald-900 text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700" 
+                className="w-full h-14 mt-8 rounded-2xl text-lg font-bold bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-95 border border-emerald-700"
                 disabled={loadingState !== "idle"}
               >
                 Ajouter à ma jungle

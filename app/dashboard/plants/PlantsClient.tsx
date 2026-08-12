@@ -101,7 +101,7 @@ export default function PlantsClient({
             <p className="text-stone-500 font-medium text-sm mb-8 leading-relaxed max-w-[250px]">
               Vous n'avez pas encore de plante dans votre bibliothèque. Prenez votre première photo !
             </p>
-            <Button asChild className="h-14 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-8 shadow-lg shadow-emerald-900/20 active:scale-95 transition-all">
+            <Button asChild className="h-14 rounded-full bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white font-bold px-8 shadow-lg shadow-emerald-900/20 active:scale-95 transition-all">
               <Link href="/dashboard/add">
                 <Plus className="w-5 h-5 mr-2" />
                 Ajouter une plante

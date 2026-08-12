@@ -123,7 +123,7 @@ export default async function PlantDetailPage({
 
         {/* Carte identité — chevauche le bas de la photo, toujours lisible quelle que soit la photo */}
         <div className="relative z-10 -mt-6 px-4">
-          <div className="bg-white rounded-[1.75rem] shadow-[0_-6px_16px_rgba(0,0,0,0.05)] px-5 pt-4 pb-3.5">
+          <div className="bg-white rounded-[1.5rem] shadow-[0_-6px_16px_rgba(0,0,0,0.05)] px-5 pt-4 pb-3.5">
             <h1 className="text-2xl font-black text-stone-900 tracking-tight leading-tight">
               {plant.name}
             </h1>

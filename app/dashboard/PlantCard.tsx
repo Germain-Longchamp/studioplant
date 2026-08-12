@@ -13,11 +13,6 @@ export default function PlantCard({ plant, from }: { plant: any; from?: string }
     ? `/dashboard/plant/${plant.id}?from=${from}`
     : `/dashboard/plant/${plant.id}`;
 
-  let timeText = status.text;
-  if (timeText.toLowerCase() === "aujourd'hui") {
-    timeText = "Auj.";
-  }
-
   const statusBadge =
     status.color === "red"
       ? "text-rose-400"
@@ -68,7 +63,7 @@ export default function PlantCard({ plant, from }: { plant: any; from?: string }
           </div>
           <span className={`inline-flex items-center gap-0.5 mt-0.5 text-[10px] font-medium uppercase tracking-wide ${statusBadge}`}>
             <Droplets className={`w-2.5 h-2.5 ${status.urgent ? "animate-pulse" : ""}`} />
-            {timeText}
+            {status.text}
           </span>
         </div>
 
