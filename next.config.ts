@@ -6,7 +6,12 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
-  customWorkerSrc: "sw-push-handler.js",
+  // Doit pointer vers un DOSSIER contenant un index.{js,ts} — next-pwa fait un
+  // glob "{src/,}index.{ts,js}" avec ce chemin comme cwd. Avant, ça pointait vers
+  // le fichier public/sw-push-handler.js : le glob ne trouvait rien, buildCustomWorker()
+  // retournait undefined en silence, et le service worker généré (public/sw.js)
+  // ne contenait donc jamais les listeners push/notificationclick.
+  customWorkerSrc: "worker",
   workboxOptions: {
     disableDevLogs: true,
   },
