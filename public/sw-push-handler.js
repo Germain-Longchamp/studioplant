@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
     renotify: true,
     requireInteraction: false,
     data: {
-      url: data.url || "/dashboard/urgent",
+      url: data.url || "/dashboard/plants?filter=to-water",
     },
     actions: [
       { action: "open", title: "Voir mes plantes" },
@@ -29,7 +29,7 @@ self.addEventListener("notificationclick", (event) => {
 
   if (event.action === "dismiss") return;
 
-  const urlToOpen = event.notification.data?.url || "/dashboard/urgent";
+  const urlToOpen = event.notification.data?.url || "/dashboard/plants?filter=to-water";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {

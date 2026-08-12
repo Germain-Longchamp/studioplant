@@ -3,13 +3,52 @@ import webpush from "npm:web-push@3.6.7";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
-const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY")!;
-const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT")!;
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT");
 
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+// Timeout appliqué à chaque envoi individuel : un endpoint qui traîne (FCM, APNs...)
+// ne doit jamais faire échouer tout le batch ni risquer de dépasser le timeout de la fonction.
+const SEND_TIMEOUT_MS = 8000;
+
+async function sendWithTimeout(subscription: any, payload: string) {
+  return await Promise.race([
+    webpush.sendNotification(subscription, payload),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("send-timeout")), SEND_TIMEOUT_MS)
+    ),
+  ]);
+}
 
 Deno.serve(async (req) => {
+  // Validation défensive des secrets VAPID — avant, un secret manquant faisait planter
+  // setVapidDetails() au chargement du module (hors try/catch), donc en cold start,
+  // ce qui produisait un échec silencieux sans log exploitable (boot error / 500 muet).
+  // On vérifie maintenant explicitement et on répond proprement avec un message clair.
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) {
+    console.error("Missing VAPID secret(s)", {
+      hasPublic: !!VAPID_PUBLIC_KEY,
+      hasPrivate: !!VAPID_PRIVATE_KEY,
+      hasSubject: !!VAPID_SUBJECT,
+    });
+    return new Response(
+      JSON.stringify({
+        error: "VAPID secret(s) missing — check `supabase secrets list` for this project.",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  } catch (error) {
+    console.error("Invalid VAPID configuration:", error);
+    return new Response(
+      JSON.stringify({ error: "Invalid VAPID configuration." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -88,19 +127,19 @@ Deno.serve(async (req) => {
     const payload = JSON.stringify({
       title: `🌿 ${count} plante${count > 1 ? "s" : ""} à arroser`,
       body: `${plantList} ${count > 1 ? "attendent" : "attend"} leur arrosage aujourd'hui.`,
-      url: "/dashboard/urgent",
+      url: "/dashboard/plants?filter=to-water",
     });
 
     try {
-      await webpush.sendNotification(
+      await sendWithTimeout(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         payload
       );
       sent++;
     } catch (error: any) {
-      console.error(`Failed for user ${sub.user_id}:`, error.statusCode);
+      console.error(`Failed for user ${sub.user_id}:`, error?.statusCode ?? error?.message ?? error);
       failed++;
-      if (error.statusCode === 410) expiredEndpoints.push(sub.endpoint);
+      if (error?.statusCode === 410) expiredEndpoints.push(sub.endpoint);
     }
   }
 
