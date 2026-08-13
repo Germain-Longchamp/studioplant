@@ -690,25 +690,40 @@ export async function diagnosePlant(formData: FormData) {
     const contextPrompt = await getUserContextPrompt(user);
 
     const prompt = `
-      Tu es le "Docteur Plante", un botaniste expert en maladies des plantes d'intérieur.
+      Tu es le "Docteur Plante", phytopathologiste spécialisé en plantes d'intérieur avec 20 ans d'expérience de diagnostic terrain.
       ${plant
         ? `L'utilisateur consulte pour une plante de sa Jungle.`
         : `L'utilisateur te montre la photo d'une plante malade, potentiellement hors de sa Jungle. Identifie-la si possible.`
       }
 
+      MÉTHODE D'ANALYSE DE LA PHOTO (à suivre systématiquement avant de conclure) :
+      1. Feuillage : couleur et localisation des taches/jaunissements (bords, entre les nervures, pointes, généralisé), texture (croustillante, molle, translucide), déformations ou enroulement.
+      2. Tiges et base : fermeté (une base molle ou noircie évoque une pourriture racinaire), présence de moisissure.
+      3. Signes de parasites : cotonneux blanc (cochenilles farineuses), toiles fines (araignées rouges), points collants/miellat (cochenilles à bouclier, pucerons), petits insectes volants près du terreau (moucherons du terreau).
+      4. Terreau visible : détrempé, craquelé et sec, présence de moisissure en surface.
+      5. Port général de la plante : affaissement (peut signifier autant un excès qu'un manque d'eau — ne tranche jamais sans croiser avec le contexte d'arrosage ci-dessous).
+
+      PRIORITÉ DES SOURCES EN CAS DE CONTRADICTION : les réponses aux questions rapides (observation du jour) priment sur les données d'entretien stockées, qui priment elles-mêmes sur des suppositions générales à partir de la seule photo.
+
       ${plantContextPrompt}
       ${answersPrompt}
       ${contextPrompt}
 
-      Prends en compte TOUTES ces données pour affiner le diagnostic : un arrosage trop fréquent, une exposition inadaptée, un substrat inadéquat ou un évènement récent signalé par l'utilisateur peuvent directement causer les symptômes visibles.
-      Analyse attentivement cette photo de la plante.
+      GRILLE DE CALIBRATION DE L'URGENCE (applique-la strictement, ne surestime ni ne sous-estime) :
+      - "Haute" : risque de mort de la plante sous quelques jours si rien n'est fait (pourriture racinaire avancée, infestation sévère et étendue, base noircie et molle, dépérissement généralisé rapide).
+      - "Moyenne" : problème réel nécessitant une action sous 1-2 semaines, mais la plante n'est pas en danger de mort immédiat (parasites localisés, carence nutritionnelle, stress hydrique modéré, brûlure partielle).
+      - "Faible" : désagrément cosmétique ou stress mineur sans risque pour la survie (quelques pointes brunes, une feuille jaunie isolée, adaptation à un nouvel environnement).
+
+      Si la photo est trop floue, trop sombre, ou ne montre pas clairement de plante, dis-le honnêtement dans le diagnostic plutôt que d'inventer un problème — propose de reprendre une photo nette, cadrée sur les feuilles ou la zone qui inquiète, dans "action". Ne conclus jamais à un diagnostic précis si les preuves visuelles sont insuffisantes.
+
+      Sois concret et actionnable dans "action" : donne des indications chiffrées quand c'est pertinent (fréquence, quantité, délai) plutôt que des conseils génériques comme "arrosez moins".
 
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
         ${plant ? "" : `"name": "Nom de la plante (si identifiable, sinon 'Plante inconnue')",`}
         "diagnosis": "Un diagnostic précis mais formulé de manière simple et rassurante (2 phrases max).",
-        "urgency": "Faible", // Choisir STRICTEMENT parmi: Faible, Moyenne, Haute
-        "action": "Une instruction claire, étape par étape (avec des tirets -), de ce qu'il faut faire immédiatement pour la sauver."
+        "urgency": "Faible", // Choisir STRICTEMENT parmi: Faible, Moyenne, Haute — selon la grille de calibration ci-dessus
+        "action": "Une instruction claire, étape par étape (avec des tirets -), concrète et si possible chiffrée, de ce qu'il faut faire immédiatement pour la sauver."
       }
     `;
 
