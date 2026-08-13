@@ -25,10 +25,15 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
   const targetUser = targetUserData.user;
 
-  const [{ data: plants }, { data: rooms }] = await Promise.all([
+  const [{ data: plants }, { data: rooms }, { data: activity }] = await Promise.all([
     supabaseAdmin.from("plants").select("id, name, image_path, created_at, room").eq("user_id", id).order("created_at", { ascending: false }),
     supabaseAdmin.from("rooms").select("id, name, created_at").eq("user_id", id).order("created_at", { ascending: false }),
+    supabaseAdmin.from("user_activity").select("last_seen_at").eq("user_id", id).maybeSingle(),
   ]);
+
+  // Activité réelle (chargement de page) — fallback sur last_sign_in_at si l'utilisateur
+  // n'a encore jamais chargé de page depuis le déploiement de ce suivi.
+  const lastActive = activity?.last_seen_at ?? targetUser.last_sign_in_at ?? null;
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-20">
@@ -57,7 +62,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             id: targetUser.id,
             email: targetUser.email,
             created_at: targetUser.created_at,
-            last_sign_in_at: targetUser.last_sign_in_at ?? null,
+            last_seen_at: lastActive,
             role: (targetUser.app_metadata?.role as string | undefined) ?? null,
           }}
           plants={plants ?? []}

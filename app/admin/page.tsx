@@ -37,6 +37,17 @@ export default async function AdminDashboard() {
     .select("*")
     .order("created_at", { ascending: false })
     .limit(50);
+  const { data: allActivity } = await supabaseAdmin
+    .from("user_activity")
+    .select("user_id, last_seen_at");
+
+  // Activité réelle (chargement de page) — plus fiable que last_sign_in_at,
+  // qui ne bouge pas tant que la session reste persistante (voir migration
+  // create_user_activity_tracking). On retombe sur last_sign_in_at seulement
+  // si l'utilisateur n'a encore jamais chargé de page depuis le déploiement.
+  const lastSeenMap = new Map((allActivity ?? []).map((a) => [a.user_id, a.last_seen_at]));
+  const getLastActive = (u: { id: string; last_sign_in_at?: string | null }) =>
+    lastSeenMap.get(u.id) ?? u.last_sign_in_at ?? null;
 
   // ENRICHED USERS
   const enrichedUsers = allUsers.map((u) => ({
@@ -45,6 +56,7 @@ export default async function AdminDashboard() {
     created_at: u.created_at,
     plantsCount: allPlants?.filter((p) => p.user_id === u.id).length ?? 0,
     last_sign_in_at: u.last_sign_in_at,
+    last_seen_at: getLastActive(u),
     roomsCount: allRooms?.filter((r) => r.user_id === u.id).length ?? 0,
   })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as EnrichedUser[];
 
@@ -58,9 +70,9 @@ export default async function AdminDashboard() {
   const now = Date.now();
   const ms  = (days: number) => days * 24 * 3600 * 1000;
 
-  const DAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(1)).length;
-  const WAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(7)).length;
-  const MAU = allUsers.filter(u => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(30)).length;
+  const DAU = allUsers.filter(u => { const t = getLastActive(u); return t && now - new Date(t).getTime() < ms(1); }).length;
+  const WAU = allUsers.filter(u => { const t = getLastActive(u); return t && now - new Date(t).getTime() < ms(7); }).length;
+  const MAU = allUsers.filter(u => { const t = getLastActive(u); return t && now - new Date(t).getTime() < ms(30); }).length;
   const stickinessRatio = MAU > 0 ? Math.round((DAU / MAU) * 100) : 0;
 
   const usersWithPlant   = new Set(allPlants?.map(p => p.user_id) ?? []);
@@ -73,8 +85,9 @@ export default async function AdminDashboard() {
 
   const ghostUsers = allUsers.filter(u => {
     if (now - new Date(u.created_at).getTime() < ms(3)) return false;
-    if (!u.last_sign_in_at) return true;
-    return Math.abs(new Date(u.last_sign_in_at).getTime() - new Date(u.created_at).getTime()) < 60_000;
+    const t = getLastActive(u);
+    if (!t) return true;
+    return Math.abs(new Date(t).getTime() - new Date(u.created_at).getTime()) < 60_000;
   }).length;
 
   const powerUsers = allUsers.filter(u => {
@@ -92,7 +105,9 @@ export default async function AdminDashboard() {
   const plantsPerActiveUser = (() => {
     const count = allPlants?.filter(p => {
       const u = allUsers.find(u => u.id === p.user_id);
-      return u?.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < ms(30);
+      if (!u) return false;
+      const t = getLastActive(u);
+      return t && now - new Date(t).getTime() < ms(30);
     }).length ?? 0;
     return MAU > 0 ? Math.round((count / MAU) * 10) / 10 : 0;
   })();
@@ -103,7 +118,8 @@ export default async function AdminDashboard() {
       const month = u.created_at.slice(0, 7);
       if (!cohorts[month]) cohorts[month] = { total: 0, retained: 0 };
       cohorts[month].total += 1;
-      if (u.last_sign_in_at && new Date(u.last_sign_in_at) >= thirtyDaysAgo) {
+      const t = getLastActive(u);
+      if (t && new Date(t) >= thirtyDaysAgo) {
         cohorts[month].retained += 1;
       }
     });

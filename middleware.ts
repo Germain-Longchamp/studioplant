@@ -1,7 +1,7 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, type NextFetchEvent } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // 1. On prépare la réponse par défaut (continuer la requête)
   let response = NextResponse.next({
     request: {
@@ -46,6 +46,23 @@ export async function middleware(request: NextRequest) {
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     // Hop, direction le login
     return NextResponse.redirect(new URL("/auth/login", request.url));
+  }
+
+  // Suivi d'activité réelle : on marque un "vu à" à chaque page /dashboard chargée
+  // par un utilisateur connecté. Contrairement à last_sign_in_at (qui ne bouge
+  // qu'à une ré-authentification complète), ça reflète l'usage réel même avec
+  // une session persistante qui ne redemande jamais de login. Fire-and-forget :
+  // une erreur ici ne doit jamais bloquer la navigation de l'utilisateur.
+  if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    event.waitUntil(
+      Promise.resolve(
+        supabase
+          .from("user_activity")
+          .upsert({ user_id: user.id, last_seen_at: new Date().toISOString() })
+      ).then(({ error }) => {
+        if (error) console.error("user_activity upsert failed:", error.message);
+      })
+    );
   }
 
   // Règle B : Si l'utilisateur EST connecté et essaie d'aller sur la page de Login ou Auth

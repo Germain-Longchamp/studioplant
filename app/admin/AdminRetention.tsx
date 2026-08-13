@@ -105,19 +105,19 @@ export default function AdminRetention({
             label="DAU"
             value={DAU}
             sublabel="actifs 24h"
-            tooltip="Utilisateurs connectés dans les dernières 24h"
+            tooltip="Utilisateurs ayant ouvert l'app dans les dernières 24h"
           />
           <MetricCard
             label="WAU"
             value={WAU}
             sublabel="actifs 7j"
-            tooltip="Utilisateurs connectés dans les 7 derniers jours"
+            tooltip="Utilisateurs ayant ouvert l'app dans les 7 derniers jours"
           />
           <MetricCard
             label="MAU"
             value={MAU}
             sublabel="actifs 30j"
-            tooltip="Utilisateurs connectés dans les 30 derniers jours"
+            tooltip="Utilisateurs ayant ouvert l'app dans les 30 derniers jours"
           />
         </div>
         <StickinessGauge ratio={stickinessRatio} />
@@ -267,7 +267,7 @@ export default function AdminRetention({
           ) : (
             <>
               <p className="text-xs text-stone-400 font-medium mb-4">
-                % d'utilisateurs encore actifs (connectés dans les 30 derniers jours) par mois d'inscription
+                % d'utilisateurs encore actifs (app ouverte dans les 30 derniers jours) par mois d'inscription
               </p>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={cohortData} barSize={28} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>

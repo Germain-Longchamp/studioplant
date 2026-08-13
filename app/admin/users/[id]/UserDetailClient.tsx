@@ -29,7 +29,7 @@ interface UserDetailClientProps {
     id: string;
     email: string | undefined;
     created_at: string;
-    last_sign_in_at: string | null;
+    last_seen_at: string | null;
     role: string | null;
   };
   plants: Plant[];
@@ -105,10 +105,10 @@ export default function UserDetailClient({ user, plants, rooms }: UserDetailClie
             />
             <InfoRow
               icon={<Clock className="w-4 h-4 text-stone-400" />}
-              label="Dernière connexion"
+              label="Dernière activité"
               value={
-                user.last_sign_in_at
-                  ? new Date(user.last_sign_in_at).toLocaleString("fr-FR", {
+                user.last_seen_at
+                  ? new Date(user.last_seen_at).toLocaleString("fr-FR", {
                       day: "numeric", month: "short", year: "numeric",
                       hour: "2-digit", minute: "2-digit",
                     })

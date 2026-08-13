@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { deleteUserAccount } from "./actions";
 import type { EnrichedUser } from "./types";
 
-type SortKey = "created_at" | "last_sign_in_at" | "plantsCount" | "roomsCount";
+type SortKey = "created_at" | "last_seen_at" | "plantsCount" | "roomsCount";
 type SortDir = "asc" | "desc";
 type FilterKey = "all" | "active" | "inactive";
 
@@ -44,7 +44,7 @@ export default function AdminTable({ users }: { users: EnrichedUser[] }) {
     return users
       .filter((u) => {
         const matchesSearch = search === "" || (u.email ?? "").toLowerCase().includes(search.toLowerCase());
-        const isActive = u.last_sign_in_at && new Date(u.last_sign_in_at).getTime() > thirtyDaysAgo;
+        const isActive = u.last_seen_at && new Date(u.last_seen_at).getTime() > thirtyDaysAgo;
         const matchesFilter =
           filter === "all" ||
           (filter === "active" && isActive) ||
@@ -134,11 +134,11 @@ export default function AdminTable({ users }: { users: EnrichedUser[] }) {
                 </th>
                 <th
                   className="px-6 py-4 cursor-pointer hover:text-stone-800 select-none"
-                  onClick={() => handleSort("last_sign_in_at")}
+                  onClick={() => handleSort("last_seen_at")}
                 >
                   <span className="inline-flex items-center">
-                    Dernière connexion
-                    <SortIcon column="last_sign_in_at" sortKey={sortKey} sortDir={sortDir} />
+                    Dernière activité
+                    <SortIcon column="last_seen_at" sortKey={sortKey} sortDir={sortDir} />
                   </span>
                 </th>
                 <th
@@ -164,7 +164,7 @@ export default function AdminTable({ users }: { users: EnrichedUser[] }) {
             </thead>
             <tbody className="divide-y divide-stone-100">
               {filtered.map((user) => {
-                const isActive = user.last_sign_in_at && new Date(user.last_sign_in_at).getTime() > thirtyDaysAgo;
+                const isActive = user.last_seen_at && new Date(user.last_seen_at).getTime() > thirtyDaysAgo;
                 return (
                   <tr
                     key={user.id}
@@ -190,8 +190,8 @@ export default function AdminTable({ users }: { users: EnrichedUser[] }) {
                       })}
                     </td>
                     <td className="px-6 py-4 text-stone-500 font-medium">
-                      {user.last_sign_in_at ? (
-                        new Date(user.last_sign_in_at).toLocaleDateString("fr-FR", {
+                      {user.last_seen_at ? (
+                        new Date(user.last_seen_at).toLocaleDateString("fr-FR", {
                           day: "numeric", month: "short", year: "numeric",
                           hour: "2-digit", minute: "2-digit",
                         }).replace(":", "h")

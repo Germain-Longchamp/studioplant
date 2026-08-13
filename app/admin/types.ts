@@ -3,6 +3,9 @@ export interface EnrichedUser {
   email: string | undefined;
   created_at: string;
   last_sign_in_at: string | null | undefined;
+  /** Dernière activité réelle (chargement d'une page /dashboard) — voir public.user_activity.
+   *  Plus fiable que last_sign_in_at qui ne bouge pas tant que la session reste valide. */
+  last_seen_at: string | null;
   plantsCount: number;
   roomsCount: number;
 }
