@@ -169,7 +169,15 @@ export default async function DashboardPage() {
           <QuickAnalysis />
 
           <div className="mt-6">
-            <DoctorPlant />
+            <DoctorPlant
+              plants={(plants ?? []).map((p) => ({
+                id: p.id,
+                name: p.name,
+                species: p.species,
+                image_path: p.image_path,
+                room: p.room,
+              }))}
+            />
           </div>
         </section>
 
