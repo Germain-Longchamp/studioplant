@@ -727,7 +727,18 @@ export async function diagnosePlant(formData: FormData) {
       }
     `;
 
-    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+    // thinkingBudget: 0 — gemini-2.5-flash a un "thinking" interne activé par défaut
+    // (budget automatique, le modèle décide seul combien de temps "réfléchir" avant
+    // de répondre). Le prompt ci-dessus lui demande explicitement de suivre une
+    // méthode d'analyse en plusieurs étapes avant de conclure, ce qui le pousse à
+    // beaucoup plus réfléchir en interne que les autres prompts de l'app (identification,
+    // etc.) qui n'ont pas ce genre de consigne — d'où un temps de réponse qui explose
+    // et dépasse le timeout de la fonction. On désactive ce budget de réflexion pour
+    // retrouver une latence comparable aux autres appels IA de l'app.
+    const model = genAI.getGenerativeModel({
+      model: AI_MODEL,
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+    });
     const result = await model.generateContent([
       prompt,
       { inlineData: { data: base64Image, mimeType } }
