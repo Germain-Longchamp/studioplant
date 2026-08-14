@@ -689,52 +689,34 @@ export async function diagnosePlant(formData: FormData) {
     // 🟢 Super Contexte (maison, pièces)
     const contextPrompt = await getUserContextPrompt(user);
 
+    // Prompt volontairement court — une version plus détaillée (méthode d'analyse pas
+    // à pas, grille de calibration) a fait exploser le temps de réponse de gemini-2.5-flash
+    // (son "thinking" interne s'emballe sur les consignes de raisonnement multi-étapes),
+    // au point de dépasser le timeout même avec thinkingBudget désactivé. On revient à un
+    // prompt proche de l'original, en gardant le contexte plante + les réponses aux
+    // questions rapides qui sont le vrai apport de cette feature.
     const prompt = `
-      Tu es le "Docteur Plante", phytopathologiste spécialisé en plantes d'intérieur avec 20 ans d'expérience de diagnostic terrain.
+      Tu es un botaniste expert en maladies des plantes d'intérieur.
       ${plant
-        ? `L'utilisateur consulte pour une plante de sa Jungle.`
+        ? `L'utilisateur consulte pour une plante de sa Jungle : ${plant.name} (${plant.species || "espèce non précisée"}).`
         : `L'utilisateur te montre la photo d'une plante malade, potentiellement hors de sa Jungle. Identifie-la si possible.`
       }
-
-      MÉTHODE D'ANALYSE DE LA PHOTO (à suivre systématiquement avant de conclure) :
-      1. Feuillage : couleur et localisation des taches/jaunissements (bords, entre les nervures, pointes, généralisé), texture (croustillante, molle, translucide), déformations ou enroulement.
-      2. Tiges et base : fermeté (une base molle ou noircie évoque une pourriture racinaire), présence de moisissure.
-      3. Signes de parasites : cotonneux blanc (cochenilles farineuses), toiles fines (araignées rouges), points collants/miellat (cochenilles à bouclier, pucerons), petits insectes volants près du terreau (moucherons du terreau).
-      4. Terreau visible : détrempé, craquelé et sec, présence de moisissure en surface.
-      5. Port général de la plante : affaissement (peut signifier autant un excès qu'un manque d'eau — ne tranche jamais sans croiser avec le contexte d'arrosage ci-dessous).
-
-      PRIORITÉ DES SOURCES EN CAS DE CONTRADICTION : les réponses aux questions rapides (observation du jour) priment sur les données d'entretien stockées, qui priment elles-mêmes sur des suppositions générales à partir de la seule photo.
 
       ${plantContextPrompt}
       ${answersPrompt}
       ${contextPrompt}
 
-      GRILLE DE CALIBRATION DE L'URGENCE (applique-la strictement, ne surestime ni ne sous-estime) :
-      - "Haute" : risque de mort de la plante sous quelques jours si rien n'est fait (pourriture racinaire avancée, infestation sévère et étendue, base noircie et molle, dépérissement généralisé rapide).
-      - "Moyenne" : problème réel nécessitant une action sous 1-2 semaines, mais la plante n'est pas en danger de mort immédiat (parasites localisés, carence nutritionnelle, stress hydrique modéré, brûlure partielle).
-      - "Faible" : désagrément cosmétique ou stress mineur sans risque pour la survie (quelques pointes brunes, une feuille jaunie isolée, adaptation à un nouvel environnement).
-
-      Si la photo est trop floue, trop sombre, ou ne montre pas clairement de plante, dis-le honnêtement dans le diagnostic plutôt que d'inventer un problème — propose de reprendre une photo nette, cadrée sur les feuilles ou la zone qui inquiète, dans "action". Ne conclus jamais à un diagnostic précis si les preuves visuelles sont insuffisantes.
-
-      Sois concret et actionnable dans "action" : donne des indications chiffrées quand c'est pertinent (fréquence, quantité, délai) plutôt que des conseils génériques comme "arrosez moins".
+      Prends en compte ces données pour affiner le diagnostic : un arrosage trop fréquent, une exposition inadaptée, un substrat inadéquat ou un évènement récent signalé par l'utilisateur peuvent directement causer les symptômes visibles. Analyse attentivement la photo.
 
       Retourne UNIQUEMENT un objet JSON valide avec la structure exacte suivante (SANS balises markdown ni code autour) :
       {
         ${plant ? "" : `"name": "Nom de la plante (si identifiable, sinon 'Plante inconnue')",`}
         "diagnosis": "Un diagnostic précis mais formulé de manière simple et rassurante (2 phrases max).",
-        "urgency": "Faible", // Choisir STRICTEMENT parmi: Faible, Moyenne, Haute — selon la grille de calibration ci-dessus
-        "action": "Une instruction claire, étape par étape (avec des tirets -), concrète et si possible chiffrée, de ce qu'il faut faire immédiatement pour la sauver."
+        "urgency": "Faible", // Choisir STRICTEMENT parmi: Faible, Moyenne, Haute
+        "action": "Une instruction claire, étape par étape (avec des tirets -), de ce qu'il faut faire immédiatement pour la sauver."
       }
     `;
 
-    // thinkingBudget: 0 — gemini-2.5-flash a un "thinking" interne activé par défaut
-    // (budget automatique, le modèle décide seul combien de temps "réfléchir" avant
-    // de répondre). Le prompt ci-dessus lui demande explicitement de suivre une
-    // méthode d'analyse en plusieurs étapes avant de conclure, ce qui le pousse à
-    // beaucoup plus réfléchir en interne que les autres prompts de l'app (identification,
-    // etc.) qui n'ont pas ce genre de consigne — d'où un temps de réponse qui explose
-    // et dépasse le timeout de la fonction. On désactive ce budget de réflexion pour
-    // retrouver une latence comparable aux autres appels IA de l'app.
     const model = genAI.getGenerativeModel({
       model: AI_MODEL,
       generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
