@@ -73,8 +73,13 @@ export default async function DashboardPage() {
 
         <div className="max-w-md mx-auto relative z-10">
           <header className="flex items-center justify-between mb-8">
-            <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
-              <Leaf className="w-6 h-6 text-emerald-300" />
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl">
+                <Leaf className="w-6 h-6 text-emerald-300" />
+              </div>
+              <span className="text-white font-extrabold text-lg tracking-tight">
+                StudioPlantes
+              </span>
             </div>
             <Link
               href="/dashboard/profile"

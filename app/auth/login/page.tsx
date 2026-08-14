@@ -108,15 +108,18 @@ export default function LoginPage() {
         
         {/* EN-TÊTE */}
         <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-3xl shadow-xl shadow-stone-200/50 border border-stone-100/60 mb-6 rotate-3">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-3xl shadow-xl shadow-stone-200/50 border border-stone-100/60 mb-4 rotate-3">
             <Leaf className="w-8 h-8 text-emerald-500 -rotate-3" />
           </div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2">
+            StudioPlantes
+          </p>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 tracking-tight mb-2">
             {isSignUp ? "Créer un compte" : "Bon retour"}
           </h1>
           <p className="text-stone-500 font-medium">
-            {isSignUp 
-              ? "Rejoignez la communauté StudioPlant." 
+            {isSignUp
+              ? "Rejoignez la communauté StudioPlantes."
               : "Connectez-vous à votre jungle urbaine."}
           </p>
         </div>
