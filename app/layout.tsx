@@ -3,6 +3,12 @@ import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
+// Durée max des fonctions serverless (Server Actions incluses) pour toute l'app.
+// Par défaut Vercel coupe à 10s, ce qui suffisait à peine pour les appels Gemini
+// (identification, diagnostic, Docteur Plante...) et a commencé à sauter dès que
+// les prompts sont devenus plus longs/détaillés. 60s laisse la marge nécessaire.
+export const maxDuration = 60;
+
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
