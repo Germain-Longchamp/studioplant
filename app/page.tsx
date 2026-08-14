@@ -77,10 +77,10 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "Comment fonctionne l'identification par IA ?",
+      name: "Comment fonctionne l'identification des plantes ?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Prenez simplement une photo de votre plante. Notre intelligence artificielle analyse la forme des feuilles, les couleurs et les caractéristiques visuelles pour identifier l'espèce en moins de 2 secondes. Elle génère ensuite automatiquement un calendrier d'arrosage adapté à votre pièce et à la luminosité de chez vous.",
+        text: "Prenez simplement une photo de votre plante. StudioPlantes reconnaît son espèce en quelques secondes à partir de la forme des feuilles et de ses caractéristiques visuelles, puis vous propose aussitôt un calendrier d'arrosage adapté à votre pièce et à sa luminosité.",
       },
     },
     {
@@ -96,7 +96,7 @@ const faqSchema = {
       name: "Le Docteur Plante, comment ça marche ?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Votre plante a une feuille jaune ? Des taches suspectes ? Photographiez-la, et notre IA botanique analyse les symptômes pour poser un diagnostic et vous proposer un plan de sauvetage concret — rempotage, traitement, changement d'exposition.",
+        text: "Votre plante a une feuille jaune ? Des taches suspectes ? Photographiez-la : StudioPlantes analyse les symptômes et vous propose un plan de sauvetage concret — rempotage, traitement, changement d'exposition — pour la remettre sur pied rapidement.",
       },
     },
     {
@@ -135,9 +135,9 @@ const faqItems = [
       "Absolument. On a conçu StudioPlantes pour ceux qui aiment les plantes mais ne savent pas trop comment s'en occuper. Pas de jargon botanique, pas de tableaux complexes — juste une photo, et l'app s'occupe du reste. Des milliers de débutants ont déjà transformé leur appartement en vraie jungle grâce à nous.",
   },
   {
-    question: "Comment fonctionne l'identification par IA ?",
+    question: "Comment fonctionne l'identification des plantes ?",
     answer:
-      "Prenez simplement une photo de votre plante. Notre intelligence artificielle analyse la forme des feuilles, les couleurs et les caractéristiques visuelles pour identifier l'espèce en moins de 2 secondes. Elle génère ensuite automatiquement un calendrier d'arrosage adapté à votre pièce et à la luminosité de chez vous.",
+      "Prenez simplement une photo de votre plante. StudioPlantes reconnaît son espèce en quelques secondes à partir de la forme des feuilles et de ses caractéristiques visuelles, puis vous propose aussitôt un calendrier d'arrosage adapté à votre pièce et à sa luminosité.",
   },
   {
     question: "Je tue toutes mes plantes. StudioPlantes peut vraiment m'aider ?",
@@ -147,7 +147,7 @@ const faqItems = [
   {
     question: "Le Docteur Plante, comment ça marche ?",
     answer:
-      "Votre plante a une feuille jaune ? Des taches suspectes ? Photographiez-la, et notre IA botanique analyse les symptômes pour poser un diagnostic et vous proposer un plan de sauvetage concret — rempotage, traitement, changement d'exposition.",
+      "Votre plante a une feuille jaune ? Des taches suspectes ? Photographiez-la : StudioPlantes analyse les symptômes et vous propose un plan de sauvetage concret — rempotage, traitement, changement d'exposition — pour la remettre sur pied rapidement.",
   },
   {
     question: "Est-ce que StudioPlantes est gratuit ?",
@@ -209,8 +209,8 @@ export default function Home() {
 
             <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left animate-in fade-in slide-in-from-bottom-8 duration-700">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-6 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Propulsé
-                par l'IA
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Fait pour
+                les débutants
               </div>
 
               <h1 className="text-4xl lg:text-[3.5rem] font-extrabold text-stone-900 tracking-tight leading-[1.1] mb-4 drop-shadow-sm">
@@ -322,11 +322,12 @@ export default function Home() {
                   <Camera className="w-7 h-7" />
                 </div>
                 <h3 className="text-xl font-bold text-stone-800 mb-3 relative z-10">
-                  Reconnaissance IA
+                  Identification instantanée
                 </h3>
                 <p className="text-stone-500 leading-relaxed font-medium relative z-10">
-                  Scannez n'importe quelle plante en un clic. L'IA retrouve son
-                  nom et ses besoins spécifiques instantanément.
+                  Scannez n'importe quelle plante en un clic. StudioPlantes
+                  retrouve son nom et ses besoins en quelques secondes, pour
+                  savoir tout de suite comment bien vous en occuper.
                 </p>
               </div>
 
@@ -365,13 +366,13 @@ export default function Home() {
             <p className="text-stone-400 text-sm leading-relaxed text-center">
               StudioPlantes est une application de soin des plantes d'intérieur
               conçue pour les amateurs et les débutants qui rêvent d'une jungle
-              urbaine chez eux. Grâce à l'intelligence artificielle, identifiez
-              instantanément vos plantes — pothos, monstera, ficus, calathea,
-              succulentes — et recevez des conseils d'entretien personnalisés
-              selon la luminosité et l'humidité de chaque pièce de votre
-              appartement. Arrosage, fertilisation, rempotage, diagnostic des
-              maladies : StudioPlantes devient le carnet de santé de chaque
-              plante de votre collection.
+              urbaine chez eux. Une simple photo suffit pour identifier vos
+              plantes — pothos, monstera, ficus, calathea, succulentes — et
+              recevoir des conseils d'entretien personnalisés selon la
+              luminosité et l'humidité de chaque pièce de votre appartement.
+              Arrosage, fertilisation, rempotage, diagnostic des maladies :
+              StudioPlantes devient le carnet de santé de chaque plante de
+              votre collection.
             </p>
           </section>
 
