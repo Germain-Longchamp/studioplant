@@ -74,11 +74,18 @@ export default function PlantCard({ plant, from }: { plant: any; from?: string }
               plantId={plant.id}
               history={history}
               urgent={status.urgent}
+              lastWateredAt={plant.last_watered_at ?? null}
+              snoozeDays={snoozeDays}
             />
           </div>
           {status.urgent && (
             <div className="shrink-0">
-              <CardSnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+              <CardSnoozeButton
+                plantId={plant.id}
+                snoozeDays={snoozeDays}
+                lastWateredAt={plant.last_watered_at ?? null}
+                history={history}
+              />
             </div>
           )}
         </div>

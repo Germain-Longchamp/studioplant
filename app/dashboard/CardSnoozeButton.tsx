@@ -3,14 +3,18 @@
 import { useTransition } from "react";
 import { Loader2, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { snoozeWatering } from "@/server/actions";
+import { snoozeWatering, restoreWateringState } from "@/server/actions";
 
 export default function CardSnoozeButton({
   plantId,
   snoozeDays,
+  lastWateredAt,
+  history,
 }: {
   plantId: string;
   snoozeDays: number;
+  lastWateredAt: string | null;
+  history: string[];
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -18,13 +22,32 @@ export default function CardSnoozeButton({
     // CRUCIAL : Empêche le clic de se propager à la balise <Link> parent de la carte
     e.preventDefault();
     e.stopPropagation();
-    
+
     startTransition(async () => {
       const result = await snoozeWatering(plantId, snoozeDays);
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Arrosage repoussé de 3 jours ! ⏳");
+        toast.success("Arrosage repoussé de 3 jours ! ⏳", {
+          duration: 5000,
+          action: {
+            label: "Annuler",
+            onClick: () => {
+              startTransition(async () => {
+                const undoResult = await restoreWateringState(plantId, {
+                  lastWateredAt: lastWateredAt,
+                  wateringHistory: history,
+                  snoozeDays: snoozeDays,
+                });
+                if (undoResult?.error) {
+                  toast.error(undoResult.error);
+                } else {
+                  toast.info("Report annulé");
+                }
+              });
+            },
+          },
+        });
       }
     });
   };

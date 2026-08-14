@@ -164,10 +164,20 @@ export default async function PlantDetailPage({
             </div>
             <div className="flex gap-2 mt-3">
               <div className="flex-1">
-                <DetailWaterButton plantId={plant.id} history={history} />
+                <DetailWaterButton
+                  plantId={plant.id}
+                  history={history}
+                  lastWateredAt={plant.last_watered_at ?? null}
+                  snoozeDays={snoozeDays}
+                />
               </div>
               <div className="flex-1">
-                <SnoozeButton plantId={plant.id} snoozeDays={snoozeDays} />
+                <SnoozeButton
+                  plantId={plant.id}
+                  snoozeDays={snoozeDays}
+                  lastWateredAt={plant.last_watered_at ?? null}
+                  history={history}
+                />
               </div>
             </div>
             {lastWateredFormatted && (

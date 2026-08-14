@@ -4,17 +4,21 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Droplets, Loader2 } from "lucide-react"; // 🟢 Retrait de Calendar ici
 import { toast } from "sonner";
-import { waterPlant } from "@/server/actions";
+import { waterPlant, restoreWateringState } from "@/server/actions";
 import confetti from "canvas-confetti";
 
 export default function WaterButton({
   plantId,
   history,
   urgent,
+  lastWateredAt,
+  snoozeDays,
 }: {
   plantId: string;
   history: string[];
   urgent: boolean;
+  lastWateredAt: string | null;
+  snoozeDays: number;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -60,7 +64,26 @@ export default function WaterButton({
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Plante arrosée ! 💧");
+        toast.success("Plante arrosée ! 💧", {
+          duration: 5000,
+          action: {
+            label: "Annuler",
+            onClick: () => {
+              startTransition(async () => {
+                const undoResult = await restoreWateringState(plantId, {
+                  lastWateredAt: lastWateredAt,
+                  wateringHistory: history,
+                  snoozeDays: snoozeDays,
+                });
+                if (undoResult?.error) {
+                  toast.error(undoResult.error);
+                } else {
+                  toast.info("Arrosage annulé");
+                }
+              });
+            },
+          },
+        });
       }
     });
   };

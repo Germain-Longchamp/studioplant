@@ -945,6 +945,38 @@ export async function snoozeWatering(plantId: string, currentSnooze: number = 0)
   }
 }
 
+// ANNULER UN ARROSAGE OU UN REPORT (fenêtre d'annulation affichée dans le toast,
+// côté client ; cette action se contente de restaurer l'état d'avant l'action)
+export async function restoreWateringState(
+  plantId: string,
+  previous: { lastWateredAt: string | null; wateringHistory: string[]; snoozeDays: number }
+) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("plants")
+      .update({
+        last_watered_at: previous.lastWateredAt,
+        watering_history: previous.wateringHistory,
+        snooze_days: previous.snoozeDays,
+      })
+      .eq("id", plantId);
+
+    if (error) {
+      console.error("Erreur d'annulation:", error);
+      return { error: "Impossible d'annuler." };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur inattendue:", error);
+    return { error: "Impossible d'annuler." };
+  }
+}
+
 // SUPPRIMER LA PLANTE
 export async function deletePlant(plantId: string, imageUrl: string | null) {
   const supabase = await createClient();
