@@ -71,7 +71,13 @@ export async function analyzePlantForForm(formData: FormData) {
     const base64Data = buffer.toString("base64");
     const imagePart = { inlineData: { data: base64Data, mimeType: imageFile.type } };
 
-    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+    // thinkingBudget: 0 — désactive le mode "réflexion" de Gemini 2.5 Flash, qui peut
+    // faire dépasser le temps d'exécution de la Server Action (même correctif que sur
+    // le Docteur Plante, qui provoquait exactement ce genre de timeout silencieux).
+    const model = genAI.getGenerativeModel({
+      model: AI_MODEL,
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+    });
 
     const prompt = `
       Analyse cette photo pour identifier la plante d'intérieur.
@@ -357,7 +363,12 @@ export async function generateDeferredCareGuide(plantId: string) {
     if (!plant) return { error: "Plante introuvable" };
 
     const contextPrompt = await getUserContextPrompt(user);
-    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+    // thinkingBudget: 0 — même correctif que sur analyzePlantForForm/diagnosePlant,
+    // pour éviter les timeouts silencieux liés au mode "réflexion" de Gemini 2.5 Flash.
+    const model = genAI.getGenerativeModel({
+      model: AI_MODEL,
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+    });
 
     // On demande à Gemini TOUT le reste, basé sur la pièce et l'espèce
     const prompt = `
