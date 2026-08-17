@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PlantsClient from "./PlantsClient";
 
@@ -11,22 +11,25 @@ export default async function PlantsPage({
   const initialUrgentOnly = filter === "to-water";
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/auth/login");
   }
 
-  const { data: plants } = await supabase
-    .from("plants")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  const { data: userRooms } = await supabase
-    .from("rooms")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
+  // Les deux requêtes sont indépendantes (rooms ne dépend pas de plants) : on les
+  // lance en parallèle au lieu de les attendre l'une après l'autre.
+  const [{ data: plants }, { data: userRooms }] = await Promise.all([
+    supabase
+      .from("plants")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("rooms")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+  ]);
 
   return (
     <PlantsClient
