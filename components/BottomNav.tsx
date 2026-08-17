@@ -38,7 +38,7 @@ export default function BottomNav({ urgentCount = 0 }: { urgentCount?: number })
         {/* 4 - Ma Maison */}
         <Link href="/dashboard/my-home" className={`flex flex-col items-center p-1.5 transition-colors flex-1 ${pathname === '/dashboard/my-home' ? 'text-[var(--color-brand)]' : 'text-stone-400 hover:text-stone-600'}`}>
           <Home className="w-5 h-5 mb-1" />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Ma Maison</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider">Maison</span>
         </Link>
 
         {/* 5 - Plantes (avec badge d'arrosages en attente) */}
