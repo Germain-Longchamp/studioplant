@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Sparkles, MapPin, Sun, Sprout, CalendarClock, Leaf, SunDim, CloudSun, Cloud, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveOptimisticPlant, analyzePlantForForm, getUserRooms } from "@/server/actions";
+import { compressImage } from "@/lib/utils";
 
 // Typage mis à jour pour inclure le tableau de recommandations
 type PreliminaryData = {
@@ -48,12 +49,17 @@ export default function AddPlantPage() {
     e.currentTarget.value = "";
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
+      // Compression avant upload : les photos prises directement avec l'appareil
+      // photo du téléphone peuvent peser plusieurs Mo et dépasser la limite de la
+      // Server Action, ce qui provoquait une "erreur de connexion" silencieuse sur
+      // certains téléphones (photos plus lourdes que sur d'autres appareils).
+      const compressedFile = await compressImage(selectedFile);
+      setFile(compressedFile);
+      setPreviewUrl(URL.createObjectURL(compressedFile));
       setStep(1);
       setPreliminaryData(null);
     }

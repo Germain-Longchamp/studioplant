@@ -6,6 +6,7 @@ import type { PlantDiagnostic } from "@/server/actions";
 import DoctorPlantFlow from "../../DoctorPlantFlow";
 import DiagnosticDetailDrawer from "./DiagnosticDetailDrawer";
 import DiagnosticHistoryDrawer from "./DiagnosticHistoryDrawer";
+import { compressImage } from "@/lib/utils";
 
 function urgencyBadgeStyles(urgency: string) {
   if (urgency === "Haute")   return "bg-rose-50 text-rose-700 border border-rose-100";
@@ -32,10 +33,14 @@ export default function DoctorPlantBlock({
 
   const handleTriggerClick = () => fileInputRef.current?.click();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPicked({ file, previewUrl: URL.createObjectURL(file) });
+    // Photo de l'appareil photo compressée avant upload — évite de dépasser la
+    // limite de taille de la Server Action sur les téléphones qui prennent des
+    // photos très lourdes.
+    const compressedFile = await compressImage(file);
+    setPicked({ file: compressedFile, previewUrl: URL.createObjectURL(compressedFile) });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 

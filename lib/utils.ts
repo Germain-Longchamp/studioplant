@@ -5,6 +5,60 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Compresse/redimensionne une photo côté client avant upload (appareil photo mobile
+// = souvent 5-15 Mo selon le téléphone). Sans ça, un fichier trop lourd dépasse la
+// limite de la Server Action (bodySizeLimit) et échoue silencieusement côté client
+// avec une simple "erreur de connexion", sans jamais atteindre le serveur.
+// Client-only (utilise Image/canvas) — ne pas appeler côté serveur.
+export async function compressImage(file: File, maxDimension = 1600, quality = 0.82): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(file);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return resolve(file);
+          resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+
+    // En cas d'échec de lecture de l'image, on retombe sur le fichier original
+    // plutôt que de bloquer l'utilisateur.
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+
+    img.src = objectUrl;
+  });
+}
+
 export function cleanAIText(text: string): string {
   if (!text) return text;
   return text
