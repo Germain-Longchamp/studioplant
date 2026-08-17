@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout, MapPin } from "lucide-react";
@@ -32,7 +33,7 @@ export default async function PlantDetailPage({
     from === "to-water" ? "/dashboard/plants?filter=to-water" : "/dashboard/plants";
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
   if (!user) redirect("/auth/login");
 
   const { data: plant, error } = await supabase

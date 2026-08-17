@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -595,7 +595,7 @@ export interface PlantDiagnostic {
 // ── LIRE L'HISTORIQUE ───────────────────────────────────────────────
 export async function getPlantDiagnostics(plantId: string): Promise<PlantDiagnostic[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
   if (!user) return [];
   const { data } = await supabase
     .from("plant_diagnoses")
@@ -1312,7 +1312,7 @@ export async function getUserRooms() {
 export async function getUrgentWateringCount(): Promise<number> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getAuthenticatedUser();
     if (!user) return 0;
 
     const { data, error } = await supabase
@@ -1477,7 +1477,7 @@ export async function addGrowthPhoto(plantId: string, formData: FormData) {
 export async function getGrowthPhotos(plantId: string) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { error: 'Non autorisé' };
 
     const { data, error } = await supabase
