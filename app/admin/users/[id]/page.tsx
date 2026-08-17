@@ -26,7 +26,11 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   const targetUser = targetUserData.user;
 
   const [{ data: plants }, { data: rooms }, { data: activity }] = await Promise.all([
-    supabaseAdmin.from("plants").select("id, name, image_path, created_at, room").eq("user_id", id).order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("plants")
+      .select("id, name, image_path, created_at, room, last_watered_at, snooze_days, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false }),
     supabaseAdmin.from("rooms").select("id, name, created_at").eq("user_id", id).order("created_at", { ascending: false }),
     supabaseAdmin.from("user_activity").select("last_seen_at").eq("user_id", id).maybeSingle(),
   ]);

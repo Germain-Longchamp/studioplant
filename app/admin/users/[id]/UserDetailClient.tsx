@@ -9,6 +9,8 @@ import {
 import Image from "next/image";
 import { toast } from "sonner";
 import { deleteUserAccount } from "../../actions";
+import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
+import { Droplets } from "lucide-react";
 
 interface Plant {
   id: string;
@@ -16,7 +18,20 @@ interface Plant {
   image_path: string | null;
   created_at: string;
   room: string | null;
+  last_watered_at: string | null;
+  snooze_days: number | null;
+  watering_frequency: number | null;
+  watering_freq_spring: number | null;
+  watering_freq_summer: number | null;
+  watering_freq_autumn: number | null;
+  watering_freq_winter: number | null;
 }
+
+const wateringBadgeStyles: Record<string, string> = {
+  red: "bg-rose-50 text-rose-700",
+  orange: "bg-amber-50 text-amber-700",
+  green: "bg-emerald-50 text-emerald-700",
+};
 
 interface Room {
   id: string;
@@ -153,34 +168,52 @@ export default function UserDetailClient({ user, plants, rooms }: UserDetailClie
             </div>
           ) : (
             <ul className="divide-y divide-stone-100">
-              {plants.map((plant) => (
-                <li key={plant.id} className="flex items-center gap-4 px-6 py-3">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 shrink-0">
-                    {plant.image_path ? (
-                      <Image
-                        src={plant.image_path}
-                        alt={plant.name ?? "plante"}
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Sprout className="w-4 h-4 text-stone-300" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-stone-800 truncate">{plant.name ?? "Sans nom"}</p>
-                    <p className="text-[10px] text-stone-400 font-mono truncate">{plant.id}</p>
-                  </div>
-                  <p className="text-xs text-stone-400 shrink-0">
-                    {new Date(plant.created_at).toLocaleDateString("fr-FR", {
-                      day: "numeric", month: "short", year: "numeric",
-                    })}
-                  </p>
-                </li>
-              ))}
+              {plants.map((plant) => {
+                const status = plant.last_watered_at
+                  ? getWateringStatus(
+                      plant.last_watered_at,
+                      getActiveWateringFrequency(plant),
+                      plant.snooze_days || 0
+                    )
+                  : null;
+
+                return (
+                  <li key={plant.id} className="flex items-center gap-4 px-6 py-3">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 shrink-0">
+                      {plant.image_path ? (
+                        <Image
+                          src={plant.image_path}
+                          alt={plant.name ?? "plante"}
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Sprout className="w-4 h-4 text-stone-300" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-stone-800 truncate">{plant.name ?? "Sans nom"}</p>
+                      <p className="text-[10px] text-stone-400 font-mono truncate">{plant.id}</p>
+                    </div>
+                    <span
+                      className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md shrink-0 ${
+                        status ? wateringBadgeStyles[status.color] : "bg-stone-100 text-stone-400"
+                      }`}
+                    >
+                      <Droplets className="w-2.5 h-2.5" />
+                      {status ? status.text : "—"}
+                    </span>
+                    <p className="text-xs text-stone-400 shrink-0">
+                      {new Date(plant.created_at).toLocaleDateString("fr-FR", {
+                        day: "numeric", month: "short", year: "numeric",
+                      })}
+                    </p>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
