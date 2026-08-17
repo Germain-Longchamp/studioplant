@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
   // 1. Récupérer toutes les plantes
   const { data: plants, error: plantsError } = await supabase
     .from("plants")
-    .select("id, name, user_id, last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days");
+    .select("id, name, user_id, last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused");
 
   if (plantsError) {
     console.error("Error fetching plants:", plantsError);
@@ -68,6 +68,10 @@ Deno.serve(async (req) => {
   const urgentByUser: Record<string, string[]> = {};
 
   for (const plant of plants || []) {
+    // Rappels en pause : on ignore complètement cette plante, elle ne doit jamais
+    // déclencher de notification tant que l'utilisateur ne l'a pas réactivée.
+    if (plant.reminders_paused) continue;
+
     const snoozeDays = plant.snooze_days || 0;
 
     // Même logique que getActiveWateringFrequency côté client

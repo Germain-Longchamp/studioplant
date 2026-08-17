@@ -8,7 +8,7 @@ import CardSnoozeButton from "./CardSnoozeButton";
 export default function PlantCard({ plant, from }: { plant: any; from?: string }) {
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
-  const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
+  const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays, !!plant.reminders_paused);
   const detailHref = from
     ? `/dashboard/plant/${plant.id}?from=${from}`
     : `/dashboard/plant/${plant.id}`;
@@ -18,6 +18,8 @@ export default function PlantCard({ plant, from }: { plant: any; from?: string }
       ? "text-rose-400"
       : status.color === "orange"
       ? "text-amber-500"
+      : status.color === "neutral"
+      ? "text-stone-400"
       : "text-emerald-600";
 
   return (

@@ -53,7 +53,7 @@ export default async function DashboardPage() {
 
   const urgentPlants = sortedPlants?.filter((plant) => {
     const snoozeDays = plant.snooze_days || 0;
-    const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays);
+    const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays, !!plant.reminders_paused);
     return status.urgent;
   });
 

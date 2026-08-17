@@ -26,7 +26,8 @@ export default function PlantsClient({
     const status = getWateringStatus(
       plant.last_watered_at,
       getActiveWateringFrequency(plant),
-      plant.snooze_days || 0
+      plant.snooze_days || 0,
+      !!plant.reminders_paused
     );
     return status.urgent;
   };

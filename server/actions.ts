@@ -478,6 +478,34 @@ export async function updateWateringFrequency(plantId: string, newFrequency: num
   }
 }
 
+// METTRE EN PAUSE / REPRENDRE LES RAPPELS D'ARROSAGE
+// Cas d'usage : plantes qui tolèrent très mal l'arrosage régulier (ex: ZZ plant),
+// où même la fréquence la plus longue finit par redevenir "en retard". La pause
+// n'affecte que les rappels (badges, notifications) — l'arrosage manuel reste possible.
+export async function toggleRemindersPaused(plantId: string, paused: boolean) {
+  try {
+    const supabase = await createClient();
+    const user = await getAuthenticatedUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase
+      .from("plants")
+      .update({ reminders_paused: paused })
+      .eq("id", plantId)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/plants");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("toggleRemindersPaused error:", error);
+    return { error: "Impossible de mettre à jour les rappels." };
+  }
+}
+
 export async function updatePlantAdvice(plantId: string) {
   try {
     const supabase = await createClient();
@@ -1317,7 +1345,7 @@ export async function getUrgentWateringCount(): Promise<number> {
 
     const { data, error } = await supabase
       .from("plants")
-      .select("last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days");
+      .select("last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused");
 
     if (error) throw error;
 
@@ -1325,7 +1353,8 @@ export async function getUrgentWateringCount(): Promise<number> {
       const status = getWateringStatus(
         plant.last_watered_at,
         getActiveWateringFrequency(plant),
-        plant.snooze_days || 0
+        plant.snooze_days || 0,
+        !!plant.reminders_paused
       );
       return status.urgent;
     }).length;

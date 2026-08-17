@@ -25,12 +25,14 @@ interface Plant {
   watering_freq_summer: number | null;
   watering_freq_autumn: number | null;
   watering_freq_winter: number | null;
+  reminders_paused: boolean | null;
 }
 
 const wateringBadgeStyles: Record<string, string> = {
   red: "bg-rose-50 text-rose-700",
   orange: "bg-amber-50 text-amber-700",
   green: "bg-emerald-50 text-emerald-700",
+  neutral: "bg-stone-100 text-stone-500",
 };
 
 interface Room {
@@ -173,7 +175,8 @@ export default function UserDetailClient({ user, plants, rooms }: UserDetailClie
                   ? getWateringStatus(
                       plant.last_watered_at,
                       getActiveWateringFrequency(plant),
-                      plant.snooze_days || 0
+                      plant.snooze_days || 0,
+                      !!plant.reminders_paused
                     )
                   : null;
 

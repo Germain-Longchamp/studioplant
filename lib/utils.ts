@@ -117,7 +117,14 @@ export function getFertilizingStatus(lastFertilizedAt: string | null) {
   return               { text: `Engrais : il y a ${diffDays}j`, color: 'red' };
 }
 
-export function getWateringStatus(lastWateredAt: string, frequency: number, snoozeDays: number = 0) {
+export function getWateringStatus(lastWateredAt: string, frequency: number, snoozeDays: number = 0, paused: boolean = false) {
+  // Rappels en pause (ex: plantes qui tolèrent très mal l'arrosage régulier, type ZZ) :
+  // on court-circuite tout le calcul d'urgence, la plante ne doit jamais redevenir
+  // "à arroser" ni compter dans les badges/notifications tant qu'elle est en pause.
+  if (paused) {
+    return { urgent: false, text: "En pause", color: 'neutral' as const };
+  }
+
   const lastDate = new Date(lastWateredAt);
   const nextDate = new Date(lastDate);
   nextDate.setDate(lastDate.getDate() + frequency + snoozeDays);

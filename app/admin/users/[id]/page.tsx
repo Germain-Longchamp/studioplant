@@ -28,7 +28,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   const [{ data: plants }, { data: rooms }, { data: activity }] = await Promise.all([
     supabaseAdmin
       .from("plants")
-      .select("id, name, image_path, created_at, room, last_watered_at, snooze_days, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter")
+      .select("id, name, image_path, created_at, room, last_watered_at, snooze_days, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, reminders_paused")
       .eq("user_id", id)
       .order("created_at", { ascending: false }),
     supabaseAdmin.from("rooms").select("id, name, created_at").eq("user_id", id).order("created_at", { ascending: false }),

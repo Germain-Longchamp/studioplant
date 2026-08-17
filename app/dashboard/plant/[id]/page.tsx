@@ -13,6 +13,7 @@ import PlantPhotoLightbox from "./PlantPhotoLightbox";
 import DetailWaterButton from "./DetailWaterButton";
 import SnoozeButton from "./SnoozeButton";
 import PlantIdentityTrigger from "./PlantIdentityTrigger";
+import PauseRemindersToggle from "./PauseRemindersToggle";
 import DoctorPlantBlock from "./DoctorPlantBlock";
 import CareGuideAccordion from "./CareGuideAccordion";
 import { getPlantDiagnostics, getGrowthPhotos, getUrgentWateringCount } from "@/server/actions";
@@ -46,11 +47,12 @@ export default async function PlantDetailPage({
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
   const activeFreq = getActiveWateringFrequency(plant);
-  const status = getWateringStatus(plant.last_watered_at, activeFreq, snoozeDays);
+  const status = getWateringStatus(plant.last_watered_at, activeFreq, snoozeDays, !!plant.reminders_paused);
 
   const badgeColorClass =
     status.color === 'red'    ? 'text-rose-600 bg-rose-50 border-rose-100' :
     status.color === 'orange' ? 'text-amber-600 bg-amber-50 border-amber-100' :
+    status.color === 'neutral' ? 'text-stone-500 bg-stone-100 border-stone-200' :
                                 'text-emerald-700 bg-emerald-50 border-emerald-100';
 
   const [initialDiagnoses, growthResult, urgentCount] = await Promise.all([
@@ -151,16 +153,21 @@ export default async function PlantDetailPage({
                 <span>{status.text}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400">
-                  Tous les {activeFreq} j{plant.watering_frequency_custom && (
-                    <span className="ml-1 text-amber-500 font-medium">· Modifié</span>
-                  )}
-                </span>
-                <WateringFrequencyDialog
-                  plantId={plant.id}
-                  currentFrequency={activeFreq}
-                  isCustom={!!plant.watering_frequency_custom}
-                />
+                {!plant.reminders_paused && (
+                  <>
+                    <span className="text-xs text-stone-400">
+                      Tous les {activeFreq} j{plant.watering_frequency_custom && (
+                        <span className="ml-1 text-amber-500 font-medium">· Modifié</span>
+                      )}
+                    </span>
+                    <WateringFrequencyDialog
+                      plantId={plant.id}
+                      currentFrequency={activeFreq}
+                      isCustom={!!plant.watering_frequency_custom}
+                    />
+                  </>
+                )}
+                <PauseRemindersToggle plantId={plant.id} paused={!!plant.reminders_paused} />
               </div>
             </div>
             <div className="flex gap-2 mt-3">
