@@ -1190,7 +1190,7 @@ export async function updatePasswordAfterRecovery(formData: FormData) {
 export async function getEquipmentRecommendations() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getAuthenticatedUser();
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -1292,7 +1292,7 @@ export async function generateEquipmentRecommendations() {
 export async function getUserRooms() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getAuthenticatedUser();
     if (!user) return [];
 
     const { data, error } = await supabase

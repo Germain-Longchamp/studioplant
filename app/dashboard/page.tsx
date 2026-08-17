@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets, User } from "lucide-react";
@@ -22,14 +22,18 @@ const getSeasonInfo = () => {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) redirect("/auth/login");
 
-  const { data: plants } = await supabase.from("plants").select("*");
+  // Les plantes et les pièces sont indépendantes l'une de l'autre : on les charge
+  // en parallèle au lieu d'attendre l'une puis l'autre.
+  const [{ data: plants }, rooms] = await Promise.all([
+    supabase.from("plants").select("*"),
+    getUserRooms(),
+  ]);
 
   // VÉRIFICATION DES PIÈCES ET DES PLANTES POUR L'ONBOARDING
-  const rooms = await getUserRooms();
   const hasNoRooms = rooms.length === 0;
   const hasNoPlants = !plants || plants.length === 0;
 

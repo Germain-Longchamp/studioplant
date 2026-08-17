@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { User, LogOut, Bell } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -9,11 +9,15 @@ import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // getUrgentWateringCount() vérifie elle-même l'utilisateur (et renvoie 0 si non
+  // connecté) : on peut la lancer en parallèle de la vérification de la page sans
+  // risque, les deux partagent de toute façon le même appel mémoïsé.
+  const [user, urgentCount] = await Promise.all([
+    getAuthenticatedUser(),
+    getUrgentWateringCount(),
+  ]);
 
   if (!user) redirect("/auth/login");
-
-  const urgentCount = await getUrgentWateringCount();
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] font-sans pb-32 overflow-x-hidden">

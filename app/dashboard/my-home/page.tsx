@@ -1,15 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Home as HomeIcon } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import EnvironmentForm from "./EnvironmentForm";
-import RoomsManager from "./RoomsManager"; 
+import RoomsManager from "./RoomsManager";
 import EquipmentRecommendations from "../profile/EquipmentRecommendations";
 import { getEquipmentRecommendations, getUserRooms, getUrgentWateringCount } from "@/server/actions";
 
 export default async function MyHomePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) redirect("/auth/login");
 
