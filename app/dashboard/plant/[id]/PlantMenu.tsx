@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
 import { updatePlantAdvice, deletePlant, updatePlantImage } from "@/server/actions";
+import { compressImage } from "@/lib/utils";
 
 export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imageUrl: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,11 +55,14 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
     setShowConfirm(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setSelectedFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    // Photo compressée avant upload — évite de dépasser la limite de taille de la
+    // Server Action sur les photos prises en pleine résolution avec l'appareil photo.
+    const compressedFile = await compressImage(file);
+    setSelectedFile(compressedFile);
+    setImagePreview(URL.createObjectURL(compressedFile));
   };
 
   const closeImagePicker = () => {

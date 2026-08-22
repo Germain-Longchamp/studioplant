@@ -843,7 +843,12 @@ export async function quickAnalyzePlant(formData: FormData) {
       Si ce n'est pas une plante, retourne exactement : {"name": "Erreur", "species": "", "robustness": 0, "robustness_comment": "Ceci n'est pas une plante", "light": "", "water": "", "toxicity": "", "match_comment": ""}
     `;
 
-    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+    // thinkingBudget: 0 — même correctif que sur analyzePlantForForm/diagnosePlant :
+    // évite les timeouts silencieux liés au mode "réflexion" de Gemini 2.5 Flash.
+    const model = genAI.getGenerativeModel({
+      model: AI_MODEL,
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+    });
     const result = await model.generateContent([
       prompt,
       { inlineData: { data: base64Image, mimeType } }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScanLine, Loader2, X, ShieldCheck, Sun, Droplets, HeartPulse, Sparkles, History, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { quickAnalyzePlant, getQuickScansHistory } from "@/server/actions";
+import { compressImage } from "@/lib/utils";
 
 export default function QuickAnalysis() {
   const [isPending, startTransition] = useTransition();
@@ -28,8 +29,12 @@ export default function QuickAnalysis() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Photo compressée avant upload — même correctif que sur l'ajout de plante et
+    // Docteur Plante, pour éviter de dépasser la limite de taille de la Server Action.
+    const compressedFile = await compressImage(file);
+
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", compressedFile);
 
     startTransition(async () => {
       const result = await quickAnalyzePlant(formData);
