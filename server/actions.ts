@@ -1053,6 +1053,111 @@ export async function deletePlant(plantId: string, imageUrl: string | null) {
   redirect("/dashboard");
 }
 
+// MARQUER UNE PLANTE COMME MORTE (Jardin des souvenirs)
+export async function markPlantDeceased(plantId: string, reason: string | null) {
+  try {
+    const supabase = await createClient();
+    const user = await getAuthenticatedUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase
+      .from("plants")
+      .update({
+        is_deceased: true,
+        deceased_at: new Date().toISOString(),
+        deceased_reason: reason,
+      })
+      .eq("id", plantId)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/plants");
+    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/memorial");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("markPlantDeceased error:", error);
+    return { error: "Impossible de marquer cette plante comme morte." };
+  }
+}
+
+// RESTAURER UNE PLANTE (annuler le marquage "morte")
+export async function restorePlant(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const user = await getAuthenticatedUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase
+      .from("plants")
+      .update({
+        is_deceased: false,
+        deceased_at: null,
+        deceased_reason: null,
+      })
+      .eq("id", plantId)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/plants");
+    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/memorial");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("restorePlant error:", error);
+    return { error: "Impossible de restaurer cette plante." };
+  }
+}
+
+// JARDIN DES SOUVENIRS : liste des plantes décédées
+export async function getDeceasedPlants() {
+  try {
+    const supabase = await createClient();
+    const user = await getAuthenticatedUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("plants")
+      .select("id, name, species, image_path, deceased_at, deceased_reason")
+      .eq("user_id", user.id)
+      .eq("is_deceased", true)
+      .order("deceased_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("getDeceasedPlants error:", error);
+    return [];
+  }
+}
+
+// Compteur léger pour la page Profil (évite de charger toutes les lignes)
+export async function getDeceasedPlantsCount(): Promise<number> {
+  try {
+    const supabase = await createClient();
+    const user = await getAuthenticatedUser();
+    if (!user) return 0;
+
+    const { count, error } = await supabase
+      .from("plants")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_deceased", true);
+
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error("getDeceasedPlantsCount error:", error);
+    return 0;
+  }
+}
+
 // METTRE À JOUR L'ENVIRONNEMENT ET RÉGÉNÉRER L'AVIS
 export async function updatePlantEnvironmentWithAI(plantId: string, room: string, light: string) {
   try {
@@ -1350,7 +1455,8 @@ export async function getUrgentWateringCount(): Promise<number> {
 
     const { data, error } = await supabase
       .from("plants")
-      .select("last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused");
+      .select("last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused")
+      .eq("is_deceased", false);
 
     if (error) throw error;
 

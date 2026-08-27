@@ -23,6 +23,7 @@ export default async function PlantsPage({
     supabase
       .from("plants")
       .select("*")
+      .eq("is_deceased", false)
       .order("created_at", { ascending: false }),
     supabase
       .from("rooms")

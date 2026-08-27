@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   // Les plantes et les pièces sont indépendantes l'une de l'autre : on les charge
   // en parallèle au lieu d'attendre l'une puis l'autre.
   const [{ data: plants }, rooms] = await Promise.all([
-    supabase.from("plants").select("*"),
+    supabase.from("plants").select("*").eq("is_deceased", false),
     getUserRooms(),
   ]);
 

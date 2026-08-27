@@ -2,14 +2,24 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Sparkles, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon, Camera, GalleryHorizontal } from "lucide-react";
+import { MoreVertical, Sparkles, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon, Camera, GalleryHorizontal, HeartCrack, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
-import { updatePlantAdvice, deletePlant, updatePlantImage } from "@/server/actions";
+import { updatePlantAdvice, deletePlant, updatePlantImage, markPlantDeceased, restorePlant } from "@/server/actions";
 import { compressImage } from "@/lib/utils";
 
-export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imageUrl: string | null }) {
+const DECEASED_REASONS = [
+  "Chaleur extrême",
+  "Manque d'eau",
+  "Excès d'eau",
+  "Chute / accident",
+  "Gel",
+  "Parasites / maladie",
+  "Autre",
+];
+
+export default function PlantMenu({ plantId, imageUrl, isDeceased = false }: { plantId: string, imageUrl: string | null, isDeceased?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -23,6 +33,11 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
   const [isPendingImage, startTransitionImage] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const [showDeceasedModal, setShowDeceasedModal] = useState(false);
+  const [selectedReason, setSelectedReason] = useState<string | null>(null);
+  const [isPendingDeceased, startTransitionDeceased] = useTransition();
+  const [isPendingRestore, startTransitionRestore] = useTransition();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -53,6 +68,35 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
   const closeAll = () => {
     setIsOpen(false);
     setShowConfirm(false);
+  };
+
+  const closeDeceasedModal = () => {
+    setShowDeceasedModal(false);
+    setSelectedReason(null);
+  };
+
+  const executeMarkDeceased = () => {
+    startTransitionDeceased(async () => {
+      const result = await markPlantDeceased(plantId, selectedReason);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Plante ajoutée au Jardin des souvenirs 🕊️");
+        closeDeceasedModal();
+        setIsOpen(false);
+      }
+    });
+  };
+
+  const executeRestore = () => {
+    startTransitionRestore(async () => {
+      const result = await restorePlant(plantId);
+      if (result?.error) toast.error(result.error);
+      else {
+        toast.success("Plante restaurée dans votre jungle 🌱");
+        setIsOpen(false);
+      }
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +157,26 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
           Changer la photo
         </Button>
 
+        {isDeceased ? (
+          <Button
+            onClick={executeRestore}
+            disabled={isPendingRestore || isPendingUpdate || isPendingDelete}
+            className="w-full justify-start h-14 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold text-base transition-colors shadow-sm border border-emerald-100"
+          >
+            {isPendingRestore ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <Heart className="w-5 h-5 mr-3 text-emerald-500" />}
+            {isPendingRestore ? "Restauration..." : "Restaurer la plante"}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => { setShowDeceasedModal(true); setIsOpen(false); }}
+            disabled={isPendingUpdate || isPendingDelete}
+            className="w-full justify-start h-14 rounded-2xl bg-stone-50 text-stone-600 hover:bg-stone-100 font-semibold text-base transition-colors shadow-sm border border-stone-100"
+          >
+            <HeartCrack className="w-5 h-5 mr-3 text-stone-400" />
+            Marquer comme morte
+          </Button>
+        )}
+
         <Button onClick={() => setShowConfirm(true)} disabled={isPendingDelete || isPendingUpdate} className="w-full justify-start h-14 rounded-2xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-base transition-colors shadow-sm">
           <Trash2 className="w-5 h-5 mr-3" />
           Supprimer la plante
@@ -151,6 +215,65 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
             variant="ghost"
             onClick={() => setShowConfirm(false)}
             disabled={isPendingDelete}
+            className="w-full h-12 rounded-[1.25rem] text-stone-500 font-bold hover:bg-stone-100 hover:text-stone-700 active:scale-95 transition-all"
+          >
+            Annuler
+          </Button>
+        </div>
+
+      </div>
+    </div>
+  ) : null;
+
+  const deceasedModal = showDeceasedModal ? (
+    <div className="fixed inset-0 z-[210] flex items-end justify-center bg-stone-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={closeDeceasedModal}>
+      <div className="bg-[#FDFCF8] w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-8 duration-300" onClick={e => e.stopPropagation()}>
+
+        <div className="w-16 h-16 bg-stone-100 text-stone-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-sm border border-stone-200">
+          <HeartCrack className="w-8 h-8" />
+        </div>
+
+        <h3 className="font-extrabold text-stone-900 text-2xl tracking-tight mb-2 text-center">
+          Une pensée pour elle
+        </h3>
+        <p className="text-stone-500 text-sm mb-6 leading-relaxed font-medium text-center">
+          Cette plante rejoindra votre Jardin des souvenirs. Vous pourrez toujours la restaurer plus tard.
+        </p>
+
+        <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">
+          Raison (facultatif)
+        </p>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {DECEASED_REASONS.map((reason) => (
+            <button
+              key={reason}
+              type="button"
+              onClick={() => setSelectedReason(selectedReason === reason ? null : reason)}
+              className={`px-3 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                selectedReason === reason
+                  ? "bg-stone-800 text-white border-stone-800"
+                  : "bg-white text-stone-600 border-stone-200 hover:border-stone-300"
+              }`}
+            >
+              {reason}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <Button
+            onClick={executeMarkDeceased}
+            disabled={isPendingDeceased}
+            className="w-full h-14 rounded-[1.25rem] bg-stone-800 hover:bg-stone-900 text-white font-bold text-base shadow-lg shadow-stone-800/20 active:scale-95 transition-all"
+          >
+            {isPendingDeceased ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+            {isPendingDeceased ? "Enregistrement..." : "Confirmer"}
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={closeDeceasedModal}
+            disabled={isPendingDeceased}
             className="w-full h-12 rounded-[1.25rem] text-stone-500 font-bold hover:bg-stone-100 hover:text-stone-700 active:scale-95 transition-all"
           >
             Annuler
@@ -253,6 +376,7 @@ export default function PlantMenu({ plantId, imageUrl }: { plantId: string, imag
 
       {mounted && createPortal(menuModal, document.body)}
       {mounted && createPortal(confirmModal, document.body)}
+      {mounted && createPortal(deceasedModal, document.body)}
       {mounted && createPortal(imagePickerModal, document.body)}
     </>
   );

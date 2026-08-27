@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout, MapPin } from "lucide-react";
+import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout, MapPin, HeartCrack } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getWateringStatus, getActiveWateringFrequency, formatRelativeDays, getFertilizingStatus } from "@/lib/utils";
@@ -79,6 +79,12 @@ export default async function PlantDetailPage({
       }).replace('.', '')
     : null;
 
+  const deceasedAtFormatted = plant.deceased_at
+    ? new Date(plant.deceased_at).toLocaleDateString('fr-FR', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      })
+    : null;
+
   return (
     <div className="min-h-screen bg-[#F4F7F4] pb-32 font-sans text-stone-800 overflow-x-hidden selection:bg-emerald-200">
       <main className="max-w-md mx-auto">
@@ -90,7 +96,7 @@ export default async function PlantDetailPage({
               src={plant.image_path}
               alt={plant.name}
               fill
-              className="object-cover"
+              className={`object-cover ${plant.is_deceased ? 'grayscale' : ''}`}
               priority
               sizes="100vw"
             />
@@ -113,7 +119,7 @@ export default async function PlantDetailPage({
                 <ArrowLeft className="w-4 h-4" />
               </Link>
             </Button>
-            <PlantMenu plantId={plant.id} imageUrl={plant.image_path} />
+            <PlantMenu plantId={plant.id} imageUrl={plant.image_path} isDeceased={!!plant.is_deceased} />
           </div>
 
           {/* Agrandir la photo — remonté pour rester au-dessus de la carte identité qui chevauche le bas de la photo (-mt-6, soit 24px) */}
@@ -145,7 +151,26 @@ export default async function PlantDetailPage({
         {/* ===== CONTENU ===== */}
         <div className="px-4 pt-3 space-y-3">
 
+          {/* ===== BANNIÈRE SOUVENIR (plante décédée) ===== */}
+          {plant.is_deceased && (
+            <div className="bg-stone-100 border border-stone-200 rounded-[1.5rem] p-4 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-stone-200 text-stone-500 flex items-center justify-center shrink-0">
+                <HeartCrack className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-stone-700">
+                  Dans le Jardin des souvenirs
+                </p>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  {deceasedAtFormatted ? `Depuis le ${deceasedAtFormatted}` : "Cette plante n'est plus"}
+                  {plant.deceased_reason ? ` · ${plant.deceased_reason}` : ""}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ===== 2. CARTE ARROSAGE ===== */}
+          {!plant.is_deceased && (
           <div className="bg-white rounded-[1.5rem] border border-stone-100 shadow-sm p-4">
             <div className="flex items-center justify-between">
               <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${badgeColorClass}`}>
@@ -224,6 +249,7 @@ export default async function PlantDetailPage({
               <FertilizeButton plantId={plant.id} />
             </div>
           </div>
+          )}
 
           {/* ===== 3. GUIDE D'ENTRETIEN ===== */}
           <CareGuideAccordion plant={plant} />
@@ -232,7 +258,9 @@ export default async function PlantDetailPage({
           <GrowthJournal plantId={plant.id} initialPhotos={initialPhotos} />
 
           {/* ===== 5. DOCTEUR PLANTE ===== */}
-          <DoctorPlantBlock plantId={plant.id} plantName={plant.name} initialDiagnoses={initialDiagnoses} />
+          {!plant.is_deceased && (
+            <DoctorPlantBlock plantId={plant.id} plantName={plant.name} initialDiagnoses={initialDiagnoses} />
+          )}
 
           {/* ===== 6. EMPLACEMENT ===== */}
           <LocationSection plant={plant} />

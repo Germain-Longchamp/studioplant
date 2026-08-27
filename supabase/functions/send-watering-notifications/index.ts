@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
   // 1. Récupérer toutes les plantes
   const { data: plants, error: plantsError } = await supabase
     .from("plants")
-    .select("id, name, user_id, last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused");
+    .select("id, name, user_id, last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused, is_deceased")
+    .eq("is_deceased", false);
 
   if (plantsError) {
     console.error("Error fetching plants:", plantsError);

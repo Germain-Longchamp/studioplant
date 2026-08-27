@@ -1,10 +1,11 @@
 import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { User, LogOut, Bell } from "lucide-react";
+import Link from "next/link";
+import { User, LogOut, Bell, HeartCrack, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileForms from "./ProfileForms";
 import { Button } from "@/components/ui/button";
-import { logOut, getUrgentWateringCount } from "@/server/actions";
+import { logOut, getUrgentWateringCount, getDeceasedPlantsCount } from "@/server/actions";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 export default async function ProfilePage() {
@@ -12,9 +13,10 @@ export default async function ProfilePage() {
   // getUrgentWateringCount() vérifie elle-même l'utilisateur (et renvoie 0 si non
   // connecté) : on peut la lancer en parallèle de la vérification de la page sans
   // risque, les deux partagent de toute façon le même appel mémoïsé.
-  const [user, urgentCount] = await Promise.all([
+  const [user, urgentCount, deceasedCount] = await Promise.all([
     getAuthenticatedUser(),
     getUrgentWateringCount(),
+    getDeceasedPlantsCount(),
   ]);
 
   if (!user) redirect("/auth/login");
@@ -57,6 +59,20 @@ export default async function ProfilePage() {
 
         {/* Le formulaire allégé (Email / MDP) */}
         <ProfileForms user={user} />
+
+        {/* Jardin des souvenirs — discret, visible seulement s'il y a un historique */}
+        {deceasedCount > 0 && (
+          <Link
+            href="/dashboard/memorial"
+            className="flex items-center gap-3 px-1 py-1 text-stone-400 hover:text-stone-600 transition-colors"
+          >
+            <HeartCrack className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-xs font-medium flex-1">
+              Jardin des souvenirs · {deceasedCount} plante{deceasedCount > 1 ? "s" : ""}
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          </Link>
+        )}
 
         {/* Le gros bouton de déconnexion rouge et clair */}
         <form action={logOut}>
