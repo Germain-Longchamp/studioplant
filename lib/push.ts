@@ -33,7 +33,13 @@ export function isStandalone(): boolean {
 export function getPushAvailability(): PushAvailability {
   if (typeof window === "undefined") return "unsupported";
 
-  const hasApi = "serviceWorker" in navigator && "PushManager" in window;
+  // On teste aussi `Notification` : certains WebView / contextes non sécurisés
+  // exposent serviceWorker + PushManager mais pas Notification. Le déréférencer
+  // sans garde lèverait une ReferenceError dans un composant client → écran blanc.
+  const hasApi =
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
   if (hasApi) {
     return Notification.permission === "denied" ? "denied" : "ready";
   }
