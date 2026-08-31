@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from "recharts";
-import { Ghost, Sprout, Droplets, Zap, BarChart2 } from "lucide-react";
+import { Ghost, Sprout, Droplets, Zap, BarChart2, Target } from "lucide-react";
 import type { RetentionMetrics } from "./types";
 
 type AdminRetentionProps = RetentionMetrics;
@@ -26,6 +26,41 @@ function getHealthColor(value: number, goodThreshold: number, badThreshold: numb
   if (value >= goodThreshold) return "text-emerald-600";
   if (value >= badThreshold) return "text-amber-600";
   return "text-rose-600";
+}
+
+// Variante « plus c'est bas, mieux c'est » (ex : plantes négligées).
+function getInverseHealthColor(value: number, goodThreshold: number, badThreshold: number): string {
+  if (value <= goodThreshold) return "text-emerald-600";
+  if (value <= badThreshold) return "text-amber-600";
+  return "text-rose-600";
+}
+
+// Carte d'un levier de rétention : affiche le pourcentage ET l'effectif
+// (numérateur / dénominateur). Un pourcentage seul est trompeur à faible volume.
+// `rate === null` (dénominateur 0) → « — », jamais « 0 % ».
+function LeverCard({
+  label, rate, num, denom, denomUnit, color, tooltip,
+}: {
+  label: string;
+  rate: number | null;
+  num: number;
+  denom: number;
+  denomUnit: string;
+  color: string;
+  tooltip: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col gap-1" title={tooltip}>
+      <p className="text-stone-500 text-xs font-bold uppercase tracking-wider">{label}</p>
+      <p className={`text-3xl font-extrabold ${rate === null ? "text-stone-300" : color}`}>
+        {rate === null ? "—" : rate}
+        {rate !== null && <span className="text-lg font-bold ml-1">%</span>}
+      </p>
+      <p className="text-xs text-stone-400 font-medium">
+        {rate === null ? "aucune donnée" : `${num} / ${denom} ${denomUnit}`}
+      </p>
+    </div>
+  );
 }
 
 function MetricCard({
@@ -93,9 +128,46 @@ export default function AdminRetention({
   cohortData,
   activeWatererRate, abandonedRate, abandonedCount,
   avgAdherenceRatio, plantsWithHistoryCount, usersWithPlantsCount,
+  retentionLevers,
 }: AdminRetentionProps) {
   return (
     <div className="space-y-4">
+
+      {/* SECTION 0 — LEVIERS DE RÉTENTION (US-000) */}
+      <div className="space-y-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
+          <Target className="w-3.5 h-3.5" /> Leviers de rétention
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <LeverCard
+            label="Opt-in rappels"
+            rate={retentionLevers.optInRate}
+            num={retentionLevers.optInNum}
+            denom={retentionLevers.optInDenom}
+            denomUnit="utilisateurs"
+            color={getHealthColor(retentionLevers.optInRate ?? 0, 70, 40)}
+            tooltip="Utilisateurs ayant au moins un abonnement push, parmi ceux possédant au moins une plante. Cible > 70 %."
+          />
+          <LeverCard
+            label="Plantes négligées"
+            rate={retentionLevers.neglectedRate}
+            num={retentionLevers.neglectedNum}
+            denom={retentionLevers.neglectedDenom}
+            denomUnit="plantes suivies"
+            color={getInverseHealthColor(retentionLevers.neglectedRate ?? 0, 20, 40)}
+            tooltip="Plantes suivies (non décédées, rappels non en pause) dont la date d'arrosage théorique est strictement dépassée. Cible < 20 %."
+          />
+          <LeverCard
+            label="Maisons configurées"
+            rate={retentionLevers.configuredHomesRate}
+            num={retentionLevers.configuredHomesNum}
+            denom={retentionLevers.configuredHomesDenom}
+            denomUnit="utilisateurs"
+            color={getHealthColor(retentionLevers.configuredHomesRate ?? 0, 60, 30)}
+            tooltip="Utilisateurs ayant configuré au moins deux pièces, parmi ceux possédant au moins une plante. Cible > 60 %."
+          />
+        </div>
+      </div>
 
       {/* SECTION 1 — ACTIVITÉ */}
       <div className="space-y-3">

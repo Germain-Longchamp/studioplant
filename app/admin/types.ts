@@ -40,4 +40,22 @@ export interface RetentionMetrics {
   avgAdherenceRatio: number | null;
   plantsWithHistoryCount: number;
   usersWithPlantsCount: number;
+  // US-000 — leviers de rétention
+  // Chaque taux est `null` quand le dénominateur est 0 (afficher « — », jamais « 0 % »).
+  retentionLevers: {
+    /** Utilisateurs avec ≥1 abonnement push / utilisateurs avec ≥1 plante. */
+    optInRate: number | null;
+    optInNum: number;
+    optInDenom: number;
+    /** Plantes suivies (non décédées, rappels non en pause) dont la date d'arrosage
+     *  théorique est STRICTEMENT dépassée (`<`, minuit UTC) / plantes suivies.
+     *  Écart délibéré avec getWateringStatus().urgent (`<=`) : mesure la négligence, pas l'échéance. */
+    neglectedRate: number | null;
+    neglectedNum: number;
+    neglectedDenom: number;
+    /** Utilisateurs avec ≥2 pièces / utilisateurs avec ≥1 plante. */
+    configuredHomesRate: number | null;
+    configuredHomesNum: number;
+    configuredHomesDenom: number;
+  };
 }

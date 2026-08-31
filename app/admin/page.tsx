@@ -1,10 +1,31 @@
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import AdminLayout from "./AdminLayout";
 import type { EnrichedUser, RetentionMetrics } from "./types";
+import { getActiveWateringFrequency } from "@/lib/utils";
 import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan } from "lucide-react";
 import Link from "next/link";
+
+// Récupère TOUS les comptes auth en paginant. `listUsers()` sans argument plafonne
+// à 50 comptes (défaut GoTrue) : au-delà, toutes les métriques dérivées de `allUsers`
+// (DAU/WAU/MAU, activation, cohortes, leviers de rétention…) deviennent silencieusement
+// fausses. On boucle jusqu'à épuisement ; une erreur sur une page fait échouer tout le
+// rendu (via error.tsx) plutôt que d'afficher un total partiel présenté comme complet.
+async function listAllAuthUsers(
+  admin: Pick<ReturnType<typeof createClient>, "auth">
+): Promise<User[]> {
+  const perPage = 1000;
+  const all: User[] = [];
+  for (let page = 1; page <= 100; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`listUsers (page ${page}) : ${error.message}`);
+    all.push(...data.users);
+    if (data.users.length < perPage) break;
+  }
+  return all;
+}
 
 export default async function AdminDashboard() {
   const supabase = await createServerClient();
@@ -20,12 +41,13 @@ export default async function AdminDashboard() {
   );
 
   // FETCH
-  const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-  const allUsers = authData?.users || [];
+  const allUsers = await listAllAuthUsers(supabaseAdmin);
 
   const { data: allPlants } = await supabaseAdmin
     .from("plants")
-    .select("id, user_id, created_at, last_watered_at, watering_history, watering_frequency");
+    .select(
+      "id, user_id, created_at, last_watered_at, watering_history, watering_frequency, snooze_days, reminders_paused, is_deceased, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter"
+    );
   const { data: allRooms } = await supabaseAdmin
     .from("rooms")
     .select("id, user_id, created_at");
@@ -40,6 +62,10 @@ export default async function AdminDashboard() {
   const { data: allActivity } = await supabaseAdmin
     .from("user_activity")
     .select("user_id, last_seen_at");
+  // Uniquement `user_id` : les `endpoint` sont des URL de capacité, jamais exposées au back-office.
+  const { data: allPushSubs } = await supabaseAdmin
+    .from("push_subscriptions")
+    .select("user_id");
 
   // Activité réelle (chargement de page) — plus fiable que last_sign_in_at,
   // qui ne bouge pas tant que la session reste persistante (voir migration
@@ -173,6 +199,69 @@ export default async function AdminDashboard() {
     : null;
   // ───────────────────────────────────────────────────────────────────
 
+  // ── US-000 — LEVIERS DE RÉTENTION ──────────────────────────────────
+  // Dénominateur commun aux taux « opt-in » et « maisons configurées » :
+  // utilisateurs possédant au moins une plante. Un compte sans plante n'a rien à se
+  // faire rappeler ni de maison à configurer, l'inclure diluerait l'indicateur.
+  const usersWithPlantCount = usersWithPlant.size;
+
+  // Taux d'opt-in rappels — utilisateurs avec ≥1 abonnement push / users avec ≥1 plante.
+  // Multi-appareils (plusieurs lignes) → compté une fois. Une souscription expirée mais
+  // pas encore purgée (nettoyage 410 assuré par l'edge function à l'envoi) compte comme opt-in.
+  const pushUserIds = new Set((allPushSubs ?? []).map((s) => s.user_id));
+  const optInNum = [...usersWithPlant].filter((uid) => pushUserIds.has(uid)).length;
+  const optInRate =
+    usersWithPlantCount > 0 ? Math.round((optInNum / usersWithPlantCount) * 100) : null;
+
+  // Taux de maisons configurées — utilisateurs avec ≥2 pièces / users avec ≥1 plante.
+  // Seuil à 2 : l'onboarding force déjà la création d'une pièce, « ≥1 » ne mesurerait
+  // que le passage de l'onboarding et non un vrai effort de configuration.
+  const roomCountByUser = new Map<string, number>();
+  for (const r of allRooms ?? []) {
+    roomCountByUser.set(r.user_id, (roomCountByUser.get(r.user_id) ?? 0) + 1);
+  }
+  const configuredHomesNum = [...usersWithPlant].filter(
+    (uid) => (roomCountByUser.get(uid) ?? 0) >= 2
+  ).length;
+  const configuredHomesRate =
+    usersWithPlantCount > 0
+      ? Math.round((configuredHomesNum / usersWithPlantCount) * 100)
+      : null;
+
+  // Taux de plantes négligées — plantes suivies dont la date d'arrosage théorique est
+  // STRICTEMENT dépassée / plantes suivies. « Suivie » = non décédée ET rappels non en
+  // pause : une plante en pause est exclue des deux côtés du ratio. Une plante sans
+  // dernier arrosage connu n'est pas comptée comme négligée.
+  //
+  // Comparateur `<` strict délibéré (et non `getWateringStatus().urgent`, qui est un `<=`
+  // incluant l'échéance du jour) : cette métrique mesure la négligence, pas l'échéance —
+  // une plante due aujourd'hui n'est pas négligée, elle est dans les temps. Seule la
+  // logique de fréquence saisonnière est réutilisée (getActiveWateringFrequency), pas le
+  // calcul de statut. Troncature à minuit UTC, cohérente avec le comportement Vercel.
+  const nowNeglect = new Date();
+  const todayUtcMidnight = Date.UTC(
+    nowNeglect.getUTCFullYear(),
+    nowNeglect.getUTCMonth(),
+    nowNeglect.getUTCDate()
+  );
+  const followedPlants = (allPlants ?? []).filter(
+    (p) => !p.is_deceased && !p.reminders_paused
+  );
+  const neglectedDenom = followedPlants.length;
+  const neglectedNum = followedPlants.filter((p) => {
+    if (!p.last_watered_at) return false;
+    const last = new Date(p.last_watered_at);
+    const dueUtcMidnight = Date.UTC(
+      last.getUTCFullYear(),
+      last.getUTCMonth(),
+      last.getUTCDate() + getActiveWateringFrequency(p) + (p.snooze_days || 0)
+    );
+    return dueUtcMidnight < todayUtcMidnight;
+  }).length;
+  const neglectedRate =
+    neglectedDenom > 0 ? Math.round((neglectedNum / neglectedDenom) * 100) : null;
+  // ───────────────────────────────────────────────────────────────────
+
   const retention: RetentionMetrics = {
     DAU, WAU, MAU, stickinessRatio, totalUsers,
     activationRate, newActivationRate, ghostUsers,
@@ -184,6 +273,17 @@ export default async function AdminDashboard() {
     avgAdherenceRatio,
     plantsWithHistoryCount: adherenceScores.length,
     usersWithPlantsCount: usersWithAtLeastOnePlant.size,
+    retentionLevers: {
+      optInRate,
+      optInNum,
+      optInDenom: usersWithPlantCount,
+      neglectedRate,
+      neglectedNum,
+      neglectedDenom,
+      configuredHomesRate,
+      configuredHomesNum,
+      configuredHomesDenom: usersWithPlantCount,
+    },
   };
 
   return (
