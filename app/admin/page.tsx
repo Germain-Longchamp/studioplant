@@ -201,31 +201,38 @@ export default async function AdminDashboard() {
 
   // ── US-000 — LEVIERS DE RÉTENTION ──────────────────────────────────
   // Dénominateur commun aux taux « opt-in » et « maisons configurées » :
-  // utilisateurs possédant au moins une plante. Un compte sans plante n'a rien à se
-  // faire rappeler ni de maison à configurer, l'inclure diluerait l'indicateur.
-  const usersWithPlantCount = usersWithPlant.size;
+  // utilisateurs possédant au moins une plante VIVANTE. On n'utilise PAS le set
+  // `usersWithPlant` (qui inclut les plantes décédées et alimente `activationRate`,
+  // hors périmètre) : un utilisateur dont l'unique plante est au mémorial n'a plus
+  // rien à se faire rappeler ni de maison à configurer.
+  const usersWithLivePlant = new Set(
+    (allPlants ?? []).filter((p) => !p.is_deceased).map((p) => p.user_id)
+  );
+  const usersWithLivePlantCount = usersWithLivePlant.size;
 
-  // Taux d'opt-in rappels — utilisateurs avec ≥1 abonnement push / users avec ≥1 plante.
+  // Taux d'opt-in rappels — utilisateurs avec ≥1 abonnement push / users avec ≥1 plante vivante.
   // Multi-appareils (plusieurs lignes) → compté une fois. Une souscription expirée mais
   // pas encore purgée (nettoyage 410 assuré par l'edge function à l'envoi) compte comme opt-in.
   const pushUserIds = new Set((allPushSubs ?? []).map((s) => s.user_id));
-  const optInNum = [...usersWithPlant].filter((uid) => pushUserIds.has(uid)).length;
+  const optInNum = [...usersWithLivePlant].filter((uid) => pushUserIds.has(uid)).length;
   const optInRate =
-    usersWithPlantCount > 0 ? Math.round((optInNum / usersWithPlantCount) * 100) : null;
+    usersWithLivePlantCount > 0
+      ? Math.round((optInNum / usersWithLivePlantCount) * 100)
+      : null;
 
-  // Taux de maisons configurées — utilisateurs avec ≥2 pièces / users avec ≥1 plante.
+  // Taux de maisons configurées — utilisateurs avec ≥2 pièces / users avec ≥1 plante vivante.
   // Seuil à 2 : l'onboarding force déjà la création d'une pièce, « ≥1 » ne mesurerait
   // que le passage de l'onboarding et non un vrai effort de configuration.
   const roomCountByUser = new Map<string, number>();
   for (const r of allRooms ?? []) {
     roomCountByUser.set(r.user_id, (roomCountByUser.get(r.user_id) ?? 0) + 1);
   }
-  const configuredHomesNum = [...usersWithPlant].filter(
+  const configuredHomesNum = [...usersWithLivePlant].filter(
     (uid) => (roomCountByUser.get(uid) ?? 0) >= 2
   ).length;
   const configuredHomesRate =
-    usersWithPlantCount > 0
-      ? Math.round((configuredHomesNum / usersWithPlantCount) * 100)
+    usersWithLivePlantCount > 0
+      ? Math.round((configuredHomesNum / usersWithLivePlantCount) * 100)
       : null;
 
   // Taux de plantes négligées — plantes suivies dont la date d'arrosage théorique est
@@ -276,13 +283,13 @@ export default async function AdminDashboard() {
     retentionLevers: {
       optInRate,
       optInNum,
-      optInDenom: usersWithPlantCount,
+      optInDenom: usersWithLivePlantCount,
       neglectedRate,
       neglectedNum,
       neglectedDenom,
       configuredHomesRate,
       configuredHomesNum,
-      configuredHomesDenom: usersWithPlantCount,
+      configuredHomesDenom: usersWithLivePlantCount,
     },
   };
 
