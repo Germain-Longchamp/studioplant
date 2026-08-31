@@ -1324,6 +1324,29 @@ export async function updatePasswordAfterRecovery(formData: FormData) {
 }
 
 
+// REFUS DÉFINITIF DU "SOFT ASK" DES RAPPELS (US-001)
+// Mémorisé dans user_metadata (et non localStorage) pour suivre l'utilisateur d'un
+// appareil à l'autre : on ne re-propose plus après un refus explicite. Une simple
+// fermeture de l'écran (report) n'appelle pas cette action — elle est gérée côté
+// client et la proposition pourra réapparaître.
+export async function dismissPushSoftAsk() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase.auth.updateUser({
+      data: { push_softask_declined_at: new Date().toISOString() },
+    });
+    if (error) return { error: error.message };
+
+    return { success: true };
+  } catch (error) {
+    return { error: "Erreur inattendue." };
+  }
+}
+
+
 // LIRE LES RECOMMANDATIONS SAUVEGARDÉES
 export async function getEquipmentRecommendations() {
   try {

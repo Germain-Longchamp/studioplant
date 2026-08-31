@@ -20,6 +20,7 @@ import { getPlantDiagnostics, getGrowthPhotos, getUrgentWateringCount } from "@/
 import GrowthJournal from "./components/GrowthJournal";
 import LocationSection from "./LocationSection";
 import WateringFrequencyDialog from "@/components/WateringFrequencyDialog";
+import PushSoftAsk from "@/components/PushSoftAsk";
 
 export default async function PlantDetailPage({
   params,
@@ -55,12 +56,22 @@ export default async function PlantDetailPage({
     status.color === 'neutral' ? 'text-stone-500 bg-stone-100 border-stone-200' :
                                 'text-emerald-700 bg-emerald-50 border-emerald-100';
 
-  const [initialDiagnoses, growthResult, urgentCount] = await Promise.all([
+  const [initialDiagnoses, growthResult, urgentCount, livePlantsResult] = await Promise.all([
     getPlantDiagnostics(plant.id),
     getGrowthPhotos(plant.id),
     getUrgentWateringCount(),
+    supabase
+      .from("plants")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_deceased", false),
   ]);
   const initialPhotos = growthResult.success ? (growthResult.data ?? []) : [];
+
+  // Soft ask des rappels d'arrosage (US-001) : proposé au moment de valeur, quand
+  // l'utilisateur vient d'ajouter sa première plante (il en possède exactement une).
+  const isOnlyPlant = (livePlantsResult.count ?? 0) === 1;
+  const softAskDeclined = !!user.user_metadata?.push_softask_declined_at;
 
   const hasQuickInfos = !!(plant.origin || plant.robustness || plant.max_size || plant.ideal_substrate || plant.ideal_exposure);
 
@@ -299,6 +310,10 @@ export default async function PlantDetailPage({
       </main>
 
       <BottomNav urgentCount={urgentCount} />
+
+      {!plant.is_deceased && (
+        <PushSoftAsk isOnlyPlant={isOnlyPlant} declined={softAskDeclined} />
+      )}
     </div>
   );
 }

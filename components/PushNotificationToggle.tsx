@@ -1,96 +1,82 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Bell, BellOff, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const buffer = new ArrayBuffer(rawData.length);
-  const view = new Uint8Array(buffer);
-  for (let i = 0; i < rawData.length; i++) view[i] = rawData.charCodeAt(i);
-  return view;
-}
+import {
+  getPushAvailability,
+  getIsSubscribed,
+  subscribeToPush,
+  unsubscribeFromPush,
+  type PushAvailability,
+} from "@/lib/push";
 
 export default function PushNotificationToggle() {
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
+  const [availability, setAvailability] = useState<PushAvailability | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      setIsSupported(true);
-      navigator.serviceWorker.ready.then((registration) =>
-        registration.pushManager.getSubscription().then((sub) =>
-          setIsSubscribed(!!sub)
-        )
-      );
-    }
+    setAvailability(getPushAvailability());
+    getIsSubscribed().then(setIsSubscribed);
   }, []);
 
-  async function handleSubscribe() {
+  function handleSubscribe() {
     startTransition(async () => {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          toast.error("Notifications refusées par le navigateur.");
-          return;
-        }
-
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        });
-
-        const res = await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(subscription),
-        });
-
-        if (!res.ok) throw new Error("Erreur serveur");
-
+      const res = await subscribeToPush();
+      if (res.ok) {
         setIsSubscribed(true);
         toast.success("🌿 Notifications activées ! Vous serez alerté chaque matin.");
-      } catch (error) {
-        console.error("Subscribe error:", error);
+        return;
+      }
+      if (res.reason === "denied") {
+        setAvailability("denied");
+        toast.error("Notifications refusées par le navigateur.");
+      } else {
         toast.error("Impossible d'activer les notifications.");
       }
     });
   }
 
-  async function handleUnsubscribe() {
+  function handleUnsubscribe() {
     startTransition(async () => {
       try {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (!subscription) return;
-
-        const endpoint = subscription.endpoint;
-        await subscription.unsubscribe();
-
-        await fetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint }),
-        });
-
+        await unsubscribeFromPush();
         setIsSubscribed(false);
         toast.success("Notifications désactivées.");
-      } catch (error) {
-        console.error("Unsubscribe error:", error);
+      } catch {
         toast.error("Impossible de désactiver les notifications.");
       }
     });
   }
 
-  if (!isSupported) return null;
+  // On attend le premier effet client avant de décider quoi afficher.
+  if (availability === null) {
+    return (
+      <div className="flex items-center justify-center h-12 text-stone-300">
+        <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+
+  // Indisponible : on explique la raison au lieu de faire disparaître la section
+  // silencieusement (ancien `return null`).
+  if (!isSubscribed && availability !== "ready") {
+    const message =
+      availability === "denied"
+        ? "Les notifications sont bloquées dans les réglages de votre navigateur pour ce site. Réactivez-les depuis l'icône à gauche de l'adresse."
+        : availability === "ios-not-installed"
+        ? "Sur iPhone, ajoutez d'abord StudioPlantes à votre écran d'accueil (menu Partager → « Sur l'écran d'accueil ») pour activer les rappels."
+        : "Votre navigateur ne prend pas en charge les notifications push.";
+
+    return (
+      <div className="flex items-start gap-2.5 rounded-[1.25rem] bg-stone-100 px-4 py-3 text-xs font-medium text-stone-500">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
+        <span className="leading-relaxed">{message}</span>
+      </div>
+    );
+  }
 
   return (
     <Button
@@ -100,7 +86,7 @@ export default function PushNotificationToggle() {
       className={`w-full h-12 font-bold rounded-[1.25rem] transition-all active:scale-95 ${
         isSubscribed
           ? "border-stone-200 text-stone-600"
-          : "bg-emerald-600 hover:bg-emerald-700 text-white"
+          : "bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white shadow-lg shadow-emerald-900/20"
       }`}
     >
       {isPending ? (
