@@ -71,20 +71,58 @@ export function cleanAIText(text: string): string {
     .trim();
 }
 
-// Détermine QUEL intervalle promettre à une plante à l'instant où on la met à jour
-// (création, arrosage, réglage manuel — voir server/actions.ts). Depuis US-002,
-// cette valeur est FIGÉE en base (plants.promised_watering_interval_days) : cette
-// fonction n'est plus jamais appelée pour calculer une échéance déjà en cours, donc
-// une évolution ici ne peut plus faire bouger une date déjà annoncée à l'utilisateur.
-export function getActiveWateringFrequency(plant: any): number {
-  const month = new Date().getMonth();
+export type Season = "spring" | "summer" | "autumn" | "winter";
 
-  if (month >= 2 && month <= 4 && plant.watering_freq_spring) return plant.watering_freq_spring;
-  if (month >= 5 && month <= 7 && plant.watering_freq_summer) return plant.watering_freq_summer;
-  if (month >= 8 && month <= 10 && plant.watering_freq_autumn) return plant.watering_freq_autumn;
-  if ((month >= 11 || month <= 1) && plant.watering_freq_winter) return plant.watering_freq_winter;
+export const SEASON_LABEL_FR: Record<Season, string> = {
+  spring: "printemps",
+  summer: "été",
+  autumn: "automne",
+  winter: "hiver",
+};
 
-  return plant.promised_watering_interval_days || 7;
+// US-003 : bornes ASTRONOMIQUES fixes (équinoxes/solstices), et non plus le 1er du
+// mois calendaire. Dates fixes plutôt qu'un calcul astronomique exact : l'écart
+// d'une année sur l'autre est d'un jour au plus, sans portée agronomique.
+// C'est la vraie saison du jour — indépendante de tout consentement utilisateur.
+// À ne PAS confondre avec getEffectiveSeason() : celle-ci ne pilote aucun intervalle
+// promis, elle sert uniquement aux affichages qui doivent dire la vérité
+// calendaire (bandeau d'accueil, contexte du Docteur Plante).
+export function getAstronomicalSeason(date: Date = new Date()): Season {
+  const md = date.getUTCMonth() * 100 + date.getUTCDate(); // ex: 22 sept. → 822
+  if (md < 220) return "winter";   // avant le 20 mars
+  if (md < 521) return "spring";   // avant le 21 juin
+  if (md < 822) return "summer";   // avant le 22 septembre
+  if (md < 1121) return "autumn";  // avant le 21 décembre
+  return "winter";
+}
+
+// Fréquence de CETTE plante pour une saison donnée (repli sur l'intervalle promis
+// actuel, puis 7, si la valeur saisonnière est nulle/absente — mêmes règles qu'avant).
+export function getSeasonFrequency(plant: any, season: Season): number {
+  const bySeasonField: Record<Season, number | null | undefined> = {
+    spring: plant.watering_freq_spring,
+    summer: plant.watering_freq_summer,
+    autumn: plant.watering_freq_autumn,
+    winter: plant.watering_freq_winter,
+  };
+  return bySeasonField[season] || plant.promised_watering_interval_days || 7;
+}
+
+// La saison EFFECTIVE du compte (US-003) : celle que les 3 sites d'écriture
+// d'US-002 (création, arrosage, réglage manuel) utilisent pour calculer le
+// PROCHAIN intervalle promis — par opposition à la vraie saison du calendrier.
+// Un utilisateur qui a refusé un changement de saison reste sur son ancienne
+// saison effective jusqu'à ce qu'il accepte explicitement (cf. server/actions.ts,
+// applySeasonConsent / declineSeasonConsent). Repli sur la saison astronomique
+// si le compte n'a encore aucun enregistrement (nouveau compte post-US-003, ou
+// écriture jamais initialisée) : rien à protéger dans ce cas, aucune ancienne
+// promesse n'existe dont il faudrait le prémunir.
+export function getEffectiveSeason(user: { user_metadata?: Record<string, unknown> } | null | undefined): Season {
+  const stored = (user?.user_metadata?.season_consent as { effectiveSeason?: string } | undefined)?.effectiveSeason;
+  if (stored === "spring" || stored === "summer" || stored === "autumn" || stored === "winter") {
+    return stored;
+  }
+  return getAstronomicalSeason();
 }
 
 export function formatRelativeDays(isoDate: string): string {

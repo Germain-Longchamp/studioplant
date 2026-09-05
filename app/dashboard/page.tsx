@@ -2,7 +2,7 @@ import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Leaf, Sprout, Calendar, Snowflake, Sun, Flower2, CheckCircle, Droplets, User } from "lucide-react";
-import { getWateringStatus } from "@/lib/utils";
+import { getWateringStatus, getAstronomicalSeason } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import QuickAnalysis from "./QuickAnalysis";
 import DoctorPlant from "./DoctorPlant";
@@ -10,13 +10,16 @@ import DoctorPlant from "./DoctorPlant";
 // IMPORT DES COMPOSANTS D'ONBOARDING ET DE L'ACTION
 import RoomOnboarding from "./RoomOnboarding";
 import NewUserOnboarding from "./NewUserOnboarding";
-import { getUserRooms } from "@/server/actions";
+import SeasonConsentModal from "@/components/SeasonConsentModal";
+import { getUserRooms, getSeasonConsentStatus } from "@/server/actions";
 
+// US-003 : vraie saison astronomique (bornes fixes, cf. lib/utils.ts) — ce badge
+// informe, il ne pilote aucun intervalle promis, donc pas de gating par consentement.
 const getSeasonInfo = () => {
-  const month = new Date().getMonth();
-  if (month >= 2 && month <= 4) return { name: "Printemps", icon: Flower2, color: "text-rose-500", bg: "bg-rose-50" };
-  if (month >= 5 && month <= 7) return { name: "Été", icon: Sun, color: "text-amber-500", bg: "bg-amber-50" };
-  if (month >= 8 && month <= 10) return { name: "Automne", icon: Leaf, color: "text-orange-500", bg: "bg-orange-50" };
+  const season = getAstronomicalSeason();
+  if (season === "spring") return { name: "Printemps", icon: Flower2, color: "text-rose-500", bg: "bg-rose-50" };
+  if (season === "summer") return { name: "Été", icon: Sun, color: "text-amber-500", bg: "bg-amber-50" };
+  if (season === "autumn") return { name: "Automne", icon: Leaf, color: "text-orange-500", bg: "bg-orange-50" };
   return { name: "Hiver", icon: Snowflake, color: "text-sky-500", bg: "bg-sky-50" };
 };
 
@@ -26,11 +29,12 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/auth/login");
 
-  // Les plantes et les pièces sont indépendantes l'une de l'autre : on les charge
-  // en parallèle au lieu d'attendre l'une puis l'autre.
-  const [{ data: plants }, rooms] = await Promise.all([
+  // Les plantes, les pièces et le statut de consentement saisonnier sont
+  // indépendants : on les charge en parallèle au lieu de les attendre en série.
+  const [{ data: plants }, rooms, seasonConsent] = await Promise.all([
     supabase.from("plants").select("*").eq("is_deceased", false),
     getUserRooms(),
+    getSeasonConsentStatus(),
   ]);
 
   // VÉRIFICATION DES PIÈCES ET DES PLANTES POUR L'ONBOARDING
@@ -198,6 +202,9 @@ export default async function DashboardPage() {
       {/* AFFICHAGE CONDITIONNEL DES MODALES D'ONBOARDING */}
       <NewUserOnboarding show={isBrandNewUser} />
       <RoomOnboarding show={needsRoomMigration} />
+
+      {/* US-003 : proposition de changement de saison, sous consentement explicite */}
+      {seasonConsent?.show && <SeasonConsentModal status={seasonConsent} />}
 
     </div>
   );

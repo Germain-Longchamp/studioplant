@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout, MapPin, HeartCrack } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { getWateringStatus, formatRelativeDays, getFertilizingStatus } from "@/lib/utils";
+import { getWateringStatus, formatRelativeDays, getFertilizingStatus, getEffectiveSeason } from "@/lib/utils";
 import FertilizeButton from "./FertilizeButton";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
@@ -52,6 +52,10 @@ export default async function PlantDetailPage({
   // saison courante, sans quoi l'échéance affichée pourrait bouger toute seule.
   const activeFreq = plant.promised_watering_interval_days;
   const status = getWateringStatus(plant.last_watered_at, activeFreq, snoozeDays, !!plant.reminders_paused);
+  // US-003 : saison EFFECTIVE du compte (pas le mois calendaire brut) — pilote la
+  // pastille "active" plus bas, pour rester cohérente avec l'échéance affichée
+  // ci-dessus si l'utilisateur a refusé un changement de saison.
+  const effectiveSeason = getEffectiveSeason(user);
 
   const badgeColorClass =
     status.color === 'red'    ? 'text-rose-600 bg-rose-50 border-rose-100' :
@@ -239,10 +243,10 @@ export default async function PlantDetailPage({
             {(plant.watering_freq_spring || plant.watering_freq_summer || plant.watering_freq_autumn || plant.watering_freq_winter) && (
               <div className="grid grid-cols-4 gap-1.5 mt-3">
                 {[
-                  { label: "Printemps", emoji: "🌸", val: plant.watering_freq_spring, active: new Date().getMonth() >= 2 && new Date().getMonth() <= 4 },
-                  { label: "Été",       emoji: "☀️", val: plant.watering_freq_summer, active: new Date().getMonth() >= 5 && new Date().getMonth() <= 7 },
-                  { label: "Automne",   emoji: "🍂", val: plant.watering_freq_autumn, active: new Date().getMonth() >= 8 && new Date().getMonth() <= 10 },
-                  { label: "Hiver",     emoji: "❄️", val: plant.watering_freq_winter, active: new Date().getMonth() >= 11 || new Date().getMonth() <= 1 },
+                  { label: "Printemps", emoji: "🌸", val: plant.watering_freq_spring, active: effectiveSeason === "spring" },
+                  { label: "Été",       emoji: "☀️", val: plant.watering_freq_summer, active: effectiveSeason === "summer" },
+                  { label: "Automne",   emoji: "🍂", val: plant.watering_freq_autumn, active: effectiveSeason === "autumn" },
+                  { label: "Hiver",     emoji: "❄️", val: plant.watering_freq_winter, active: effectiveSeason === "winter" },
                 ].map(({ label, emoji, val, active }) => val ? (
                   <div key={label} className={`flex flex-col items-center gap-0.5 p-2 rounded-xl border text-center ${active ? 'bg-emerald-50 border-emerald-200' : 'bg-stone-50 border-stone-100'}`}>
                     <span className="text-sm leading-none">{emoji}</span>

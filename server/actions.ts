@@ -5,7 +5,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { GrowthPhoto } from "@/lib/types";
-import { getActiveWateringFrequency } from "@/lib/utils";
+import {
+  getAstronomicalSeason,
+  getSeasonFrequency,
+  getEffectiveSeason,
+  SEASON_LABEL_FR,
+  type Season,
+} from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -246,10 +252,12 @@ export async function addPlantWithAI(formData: FormData) {
       watering_freq_summer: plantData.watering_freq_summer,
       watering_freq_autumn: plantData.watering_freq_autumn,
       watering_freq_winter: plantData.watering_freq_winter,
-      // US-002 : intervalle promis figé dès la création, à partir de la cadence
-      // saisonnière que l'IA vient de renvoyer (déjà connue à cet instant, contrairement
-      // à saveOptimisticPlant où la génération est différée).
-      promised_watering_interval_days: getActiveWateringFrequency(plantData),
+      // US-002/US-003 : intervalle promis figé dès la création, à partir de la
+      // cadence de la saison EFFECTIVE du compte (pas forcément le mois calendaire :
+      // un utilisateur ayant refusé un changement de saison reste sur son ancienne
+      // saison tant qu'il n'accepte pas). Déjà connue à cet instant, contrairement
+      // à saveOptimisticPlant où la génération est différée.
+      promised_watering_interval_days: getSeasonFrequency(plantData, getEffectiveSeason(user)),
       exposure: light,
       room: room,
       description: "", 
@@ -697,11 +705,11 @@ export async function diagnosePlant(formData: FormData) {
       const { data } = await supabase.from("plants").select("*").eq("id", plantId).eq("user_id", user.id).single();
       plant = data;
       if (plant) {
-        const month = new Date().getMonth();
-        const currentSeason =
-          month >= 2 && month <= 4 ? "printemps" :
-          month >= 5 && month <= 7 ? "été" :
-          month >= 8 && month <= 10 ? "automne" : "hiver";
+        // US-003 : vraie saison astronomique — le Docteur Plante raisonne sur la
+        // biologie réelle, indépendamment du consentement de l'utilisateur au
+        // changement de cadence (qui ne concerne que ce qui est PROMIS, pas la
+        // saison réelle).
+        const currentSeason = SEASON_LABEL_FR[getAstronomicalSeason()];
 
         let daysSinceWatering = "inconnu";
         if (plant.last_watered_at) {
@@ -922,10 +930,13 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
 
     const newHistory = [now, ...currentHistory].slice(0, 3);
 
-    // US-002 : l'arrosage est l'un des 3 moments où l'intervalle promis se fige —
-    // on capture la cadence saisonnière ACTIVE maintenant, elle ne bougera plus tant
-    // que cette plante n'aura pas été arrosée à nouveau (même si la saison change,
-    // même si l'IA régénère ses conseils entre-temps).
+    // US-002/US-003 : l'arrosage est l'un des 3 moments où l'intervalle promis se
+    // fige — on capture la cadence de la saison EFFECTIVE du compte maintenant,
+    // elle ne bougera plus tant que cette plante n'aura pas été arrosée à nouveau
+    // (même si la saison change, même si l'IA régénère ses conseils entre-temps).
+    // La saison effective (et non le mois calendaire brut) est ce qui fait tenir
+    // un refus de changement de saison dans la durée — voir getEffectiveSeason().
+    const { data: { user } } = await supabase.auth.getUser();
     const { data: plant } = await supabase
       .from("plants")
       .select(
@@ -933,7 +944,7 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
       )
       .eq("id", plantId)
       .single();
-    const newPromisedInterval = plant ? getActiveWateringFrequency(plant) : 7;
+    const newPromisedInterval = plant ? getSeasonFrequency(plant, getEffectiveSeason(user)) : 7;
 
     const { error } = await supabase
       .from("plants")
@@ -1376,6 +1387,182 @@ export async function dismissPushSoftAsk() {
     return { success: true };
   } catch (error) {
     return { error: "Erreur inattendue." };
+  }
+}
+
+
+// ================================================================
+// CONSENTEMENT AU CHANGEMENT DE SAISON — US-003
+// ================================================================
+
+export interface SeasonConsentStatus {
+  show: boolean;
+  season: Season;
+  seasonLabel: string;
+  concernedCount: number;
+  avgBefore: number;
+  avgAfter: number;
+}
+
+const EMPTY_STATUS = (season: Season): SeasonConsentStatus => ({
+  show: false,
+  season,
+  seasonLabel: SEASON_LABEL_FR[season],
+  concernedCount: 0,
+  avgBefore: 0,
+  avgAfter: 0,
+});
+
+// Détermine si l'écran de proposition doit être affiché, avec les chiffres exacts
+// qu'il doit annoncer (nombre de plantes concernées, cadence moyenne avant/après).
+// Initialise silencieusement season_consent pour un compte qui n'en a encore
+// aucun (créé après cette US) : rien à lui proposer, aucune ancienne règle dont
+// le protéger — voir la note dans getEffectiveSeason().
+export async function getSeasonConsentStatus(): Promise<SeasonConsentStatus | null> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const season = getAstronomicalSeason();
+    const year = new Date().getUTCFullYear();
+    const consent = user.user_metadata?.season_consent as
+      | { effectiveSeason?: Season; effectiveYear?: number; lastAskedSeason?: Season; lastAskedYear?: number }
+      | undefined;
+
+    if (!consent) {
+      await supabase.auth.updateUser({
+        data: {
+          season_consent: {
+            effectiveSeason: season,
+            effectiveYear: year,
+            lastAskedSeason: season,
+            lastAskedYear: year,
+          },
+        },
+      });
+      return EMPTY_STATUS(season);
+    }
+
+    // Déjà répondu pour CETTE saison précise (année comprise, pour ne pas
+    // confondre l'automne 2026 et l'automne 2027) : on ne repose pas la question.
+    if (consent.lastAskedSeason === season && consent.lastAskedYear === year) {
+      return EMPTY_STATUS(season);
+    }
+
+    const { data: plants } = await supabase
+      .from("plants")
+      .select(
+        "promised_watering_interval_days, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter"
+      )
+      .eq("user_id", user.id)
+      .eq("watering_frequency_custom", false)
+      .eq("is_deceased", false);
+
+    const concerned = (plants ?? [])
+      .map((p) => ({ before: p.promised_watering_interval_days, after: getSeasonFrequency(p, season) }))
+      .filter((p) => p.before !== p.after);
+
+    if (concerned.length === 0) return EMPTY_STATUS(season);
+
+    const avgBefore = Math.round(concerned.reduce((sum, p) => sum + p.before, 0) / concerned.length);
+    const avgAfter = Math.round(concerned.reduce((sum, p) => sum + p.after, 0) / concerned.length);
+
+    return {
+      show: true,
+      season,
+      seasonLabel: SEASON_LABEL_FR[season],
+      concernedCount: concerned.length,
+      avgBefore,
+      avgAfter,
+    };
+  } catch (error) {
+    console.error("getSeasonConsentStatus error:", error);
+    return null;
+  }
+}
+
+// Accepter : rétroactivité CONSENTIE (et non subie, ce qu'US-002 interdit) —
+// l'utilisateur vient de dire oui sur un écran qui lui en a annoncé l'effet
+// chiffré. Recalcule immédiatement l'intervalle promis de toutes les plantes non
+// figées manuellement. Sans ce recalcul, la fonctionnalité serait inopérante :
+// chaque plante n'adopterait la nouvelle saison qu'à son prochain arrosage, soit
+// après la fin de la saison qu'on cherche justement à corriger.
+export async function applySeasonConsent() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const season = getAstronomicalSeason();
+    const year = new Date().getUTCFullYear();
+
+    const { data: plants } = await supabase
+      .from("plants")
+      .select(
+        "id, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, promised_watering_interval_days"
+      )
+      .eq("user_id", user.id)
+      .eq("watering_frequency_custom", false);
+
+    await Promise.all(
+      (plants ?? []).map((p) =>
+        supabase
+          .from("plants")
+          .update({ promised_watering_interval_days: getSeasonFrequency(p, season) })
+          .eq("id", p.id)
+      )
+    );
+
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        season_consent: {
+          effectiveSeason: season,
+          effectiveYear: year,
+          lastAskedSeason: season,
+          lastAskedYear: year,
+        },
+      },
+    });
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/plants");
+    return { success: true };
+  } catch (error) {
+    console.error("applySeasonConsent error:", error);
+    return { error: "Impossible d'appliquer le changement de saison." };
+  }
+}
+
+// Refuser : n'écrit RIEN sur les plantes. La saison effective du compte ne
+// bouge pas — seul le repère "déjà demandé" avance, pour ne pas reposer la
+// question deux fois pour la même saison.
+export async function declineSeasonConsent() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const season = getAstronomicalSeason();
+    const year = new Date().getUTCFullYear();
+    const existing = (user.user_metadata?.season_consent as Record<string, unknown>) ?? {};
+
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        season_consent: {
+          ...existing,
+          lastAskedSeason: season,
+          lastAskedYear: year,
+        },
+      },
+    });
+    if (error) return { error: error.message };
+
+    return { success: true };
+  } catch (error) {
+    console.error("declineSeasonConsent error:", error);
+    return { error: "Impossible d'enregistrer votre choix." };
   }
 }
 
