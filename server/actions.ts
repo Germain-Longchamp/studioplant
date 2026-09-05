@@ -430,12 +430,15 @@ export async function generateDeferredCareGuide(plantId: string) {
       return { error: "Erreur de format lors de la génération du carnet." };
     }
 
-    const deferredFreqFields = plant.watering_frequency_custom ? {} : {
+    // US-004 : on ne régénère les 4 cadences saisonnières que si la plante suit
+    // les saisons (identique en résultat à l'ancien gating watering_frequency_custom
+    // sur les données existantes, champ propre).
+    const deferredFreqFields = plant.follows_seasons ? {
       watering_freq_spring: plantData.watering_freq_spring,
       watering_freq_summer: plantData.watering_freq_summer,
       watering_freq_autumn: plantData.watering_freq_autumn,
       watering_freq_winter: plantData.watering_freq_winter,
-    };
+    } : {};
 
     // On met à jour la base de données avec les nouvelles infos
     const { error: updateError } = await supabase.from("plants").update({
@@ -467,24 +470,80 @@ export async function generateDeferredCareGuide(plantId: string) {
 
 
 // AJUSTER LA FRÉQUENCE D'ARROSAGE MANUELLEMENT
+// Bornes de cadence (US-004) : appliquées à la saisie directe ET aux 3 valeurs
+// propagées proportionnellement. 90 j couvre une dormance hivernale extrême sans
+// autoriser l'absurde ; le maximum réel du parc étant de 50 j, le plafond EST
+// atteignable en usage normal (doubler une cadence d'hiver de 50 j).
+const FREQ_MIN = 1;
+const FREQ_MAX = 90;
+const clampFreq = (n: number) => Math.max(FREQ_MIN, Math.min(FREQ_MAX, Math.round(n)));
+
 export async function updateWateringFrequency(plantId: string, newFrequency: number) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non autorisé" };
 
-    const { error } = await supabase.from("plants").update({
-      watering_freq_spring: newFrequency,
-      watering_freq_summer: newFrequency,
-      watering_freq_autumn: newFrequency,
-      watering_freq_winter: newFrequency,
-      watering_frequency_custom: true,
-      // US-002 : un réglage manuel est l'un des 3 moments où l'intervalle promis se
-      // fige — l'échéance doit être recalculée immédiatement, sans attendre le
-      // prochain arrosage (contrairement à un changement de saison).
-      promised_watering_interval_days: newFrequency,
-    }).eq("id", plantId).eq("user_id", user.id);
+    const clamped = clampFreq(newFrequency);
 
+    const { data: plant } = await supabase
+      .from("plants")
+      .select(
+        "follows_seasons, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter"
+      )
+      .eq("id", plantId)
+      .eq("user_id", user.id)
+      .single();
+    if (!plant) return { error: "Plante introuvable" };
+
+    // US-002 : un réglage manuel fige immédiatement l'intervalle promis (recalcul
+    // sans attendre le prochain arrosage — c'est une action délibérée, pas un
+    // changement subi).
+    let update: Record<string, number>;
+
+    if (!plant.follows_seasons) {
+      // US-004 : plus de forme saisonnière à préserver, la valeur s'applique telle quelle.
+      update = { promised_watering_interval_days: clamped };
+    } else {
+      // US-004 : on ajuste la cadence de la saison EFFECTIVE du compte (US-003 :
+      // pas forcément le mois calendaire), les 3 autres suivent proportionnellement.
+      const effSeason = getEffectiveSeason(user);
+      const seasonValues: Record<Season, number> = {
+        spring: plant.watering_freq_spring,
+        summer: plant.watering_freq_summer,
+        autumn: plant.watering_freq_autumn,
+        winter: plant.watering_freq_winter,
+      };
+      const oldActive = seasonValues[effSeason];
+
+      if (!oldActive || oldActive <= 0) {
+        // Dégénéré (aucune valeur de référence exploitable) : on aplatit les 4.
+        update = {
+          watering_freq_spring: clamped,
+          watering_freq_summer: clamped,
+          watering_freq_autumn: clamped,
+          watering_freq_winter: clamped,
+          promised_watering_interval_days: clamped,
+        };
+      } else {
+        const ratio = clamped / oldActive;
+        const scaled = (season: Season) =>
+          season === effSeason ? clamped : clampFreq(seasonValues[season] * ratio);
+        update = {
+          watering_freq_spring: scaled("spring"),
+          watering_freq_summer: scaled("summer"),
+          watering_freq_autumn: scaled("autumn"),
+          watering_freq_winter: scaled("winter"),
+          promised_watering_interval_days: clamped,
+        };
+      }
+    }
+
+    const { error } = await supabase
+      .from("plants")
+      .update(update)
+      .eq("id", plantId)
+      .eq("user_id", user.id);
     if (error) throw error;
 
     revalidatePath("/dashboard");
@@ -493,6 +552,100 @@ export async function updateWateringFrequency(plantId: string, newFrequency: num
   } catch (error) {
     console.error("updateWateringFrequency error:", error);
     return { error: "Impossible de mettre à jour la fréquence." };
+  }
+}
+
+// US-004 : désactiver la saisonnalité d'une plante — cadence constante toute
+// l'année (= l'intervalle promis actuel). Ne touche PAS promised_watering_interval_days
+// (US-002 : l'échéance en cours n'est pas déplacée). Réversible via reactivateSeasonality.
+// On maintient watering_frequency_custom en miroir (= !follows_seasons) le temps de la
+// bascule : un rollback du déploiement retrouve ainsi un état cohérent.
+export async function disableSeasonality(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { error } = await supabase
+      .from("plants")
+      .update({ follows_seasons: false, watering_frequency_custom: true })
+      .eq("id", plantId)
+      .eq("user_id", user.id);
+    if (error) throw error;
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("disableSeasonality error:", error);
+    return { error: "Impossible de désactiver la saisonnalité." };
+  }
+}
+
+// US-004 : réactiver la saisonnalité. Deux cas :
+//  - les 4 cadences sont DÉGÉNÉRÉES (toutes égales — plante figée avant US-004,
+//    valeurs d'origine perdues) → régénération IA obligatoire, l'appelant doit
+//    avoir prévenu l'utilisateur (perte de la valeur manuelle).
+//  - les 4 cadences sont INTACTES (plante désactivée via le nouveau réglage, qui
+//    ne les efface pas) → simple bascule du drapeau, ni IA ni perte.
+export async function reactivateSeasonality(plantId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non autorisé" };
+
+    const { data: plant } = await supabase
+      .from("plants")
+      .select("watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter")
+      .eq("id", plantId)
+      .eq("user_id", user.id)
+      .single();
+    if (!plant) return { error: "Plante introuvable" };
+
+    const degenerate =
+      plant.watering_freq_spring === plant.watering_freq_summer &&
+      plant.watering_freq_summer === plant.watering_freq_autumn &&
+      plant.watering_freq_autumn === plant.watering_freq_winter;
+
+    if (!degenerate) {
+      const { error } = await supabase
+        .from("plants")
+        .update({ follows_seasons: true, watering_frequency_custom: false })
+        .eq("id", plantId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      revalidatePath("/dashboard");
+      revalidatePath(`/dashboard/plant/${plantId}`);
+      return { success: true, regenerated: false };
+    }
+
+    // On bascule le drapeau AVANT la régénération pour que le gating de
+    // updatePlantAdvice (qui saute le recalcul saisonnier si follows_seasons=false)
+    // laisse passer les 4 nouvelles valeurs.
+    const { error: flagError } = await supabase
+      .from("plants")
+      .update({ follows_seasons: true, watering_frequency_custom: false })
+      .eq("id", plantId)
+      .eq("user_id", user.id);
+    if (flagError) throw flagError;
+
+    const advice = await updatePlantAdvice(plantId);
+    if (advice?.error) {
+      // Repli : ne jamais laisser une plante sans cadence exploitable.
+      await supabase
+        .from("plants")
+        .update({ follows_seasons: false, watering_frequency_custom: true })
+        .eq("id", plantId)
+        .eq("user_id", user.id);
+      return { error: "La régénération des cadences a échoué. Réessayez." };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/plant/${plantId}`);
+    return { success: true, regenerated: true };
+  } catch (error) {
+    console.error("reactivateSeasonality error:", error);
+    return { error: "Impossible de réactiver la saisonnalité." };
   }
 }
 
@@ -594,12 +747,15 @@ export async function updatePlantAdvice(plantId: string) {
       return { error: "Notre expert a formulé une réponse illisible. Veuillez réessayer." };
     }
 
-    const frequencyFields = plant.watering_frequency_custom ? {} : {
+    // US-004 : on ne régénère les 4 cadences saisonnières que si la plante suit
+    // les saisons. C'est aussi le chemin utilisé par reactivateSeasonality() pour
+    // les plantes historiques figées (elle passe follows_seasons=true au préalable).
+    const frequencyFields = plant.follows_seasons ? {
       watering_freq_spring: plantData.watering_freq_spring,
       watering_freq_summer: plantData.watering_freq_summer,
       watering_freq_autumn: plantData.watering_freq_autumn,
       watering_freq_winter: plantData.watering_freq_winter,
-    };
+    } : {};
 
     const { error } = await supabase.from("plants").update({
       ...frequencyFields,
@@ -1456,7 +1612,7 @@ export async function getSeasonConsentStatus(): Promise<SeasonConsentStatus | nu
         "promised_watering_interval_days, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter"
       )
       .eq("user_id", user.id)
-      .eq("watering_frequency_custom", false)
+      .eq("follows_seasons", true)
       .eq("is_deceased", false);
 
     const concerned = (plants ?? [])
@@ -1503,7 +1659,7 @@ export async function applySeasonConsent() {
         "id, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, promised_watering_interval_days"
       )
       .eq("user_id", user.id)
-      .eq("watering_frequency_custom", false);
+      .eq("follows_seasons", true);
 
     await Promise.all(
       (plants ?? []).map((p) =>

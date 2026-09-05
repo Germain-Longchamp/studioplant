@@ -56,6 +56,12 @@ export default async function PlantDetailPage({
   // pastille "active" plus bas, pour rester cohérente avec l'échéance affichée
   // ci-dessus si l'utilisateur a refusé un changement de saison.
   const effectiveSeason = getEffectiveSeason(user);
+  // US-004 : 4 cadences saisonnières toutes égales → réactiver la saisonnalité
+  // exigera une régénération IA (valeurs d'origine perdues), avec avertissement.
+  const seasonalValuesDegenerate =
+    plant.watering_freq_spring === plant.watering_freq_summer &&
+    plant.watering_freq_summer === plant.watering_freq_autumn &&
+    plant.watering_freq_autumn === plant.watering_freq_winter;
 
   const badgeColorClass =
     status.color === 'red'    ? 'text-rose-600 bg-rose-50 border-rose-100' :
@@ -199,14 +205,15 @@ export default async function PlantDetailPage({
                 {!plant.reminders_paused && (
                   <>
                     <span className="text-xs text-stone-400">
-                      Tous les {activeFreq} j{plant.watering_frequency_custom && (
-                        <span className="ml-1 text-amber-500 font-medium">· Modifié</span>
+                      Tous les {activeFreq} j{!plant.follows_seasons && (
+                        <span className="ml-1 text-amber-500 font-medium">· Fixe</span>
                       )}
                     </span>
                     <WateringFrequencyDialog
                       plantId={plant.id}
                       currentFrequency={activeFreq}
-                      isCustom={!!plant.watering_frequency_custom}
+                      followsSeasons={plant.follows_seasons}
+                      seasonalValuesDegenerate={seasonalValuesDegenerate}
                     />
                   </>
                 )}
