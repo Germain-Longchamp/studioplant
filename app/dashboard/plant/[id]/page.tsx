@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Info, Calendar, Globe2, ShieldCheck, Ruler, Leaf, Sprout, MapPin, HeartCrack } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { getWateringStatus, getActiveWateringFrequency, formatRelativeDays, getFertilizingStatus } from "@/lib/utils";
+import { getWateringStatus, formatRelativeDays, getFertilizingStatus } from "@/lib/utils";
 import FertilizeButton from "./FertilizeButton";
 import BottomNav from "@/components/BottomNav";
 import PlantMenu from "./PlantMenu";
@@ -47,7 +47,10 @@ export default async function PlantDetailPage({
 
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
-  const activeFreq = getActiveWateringFrequency(plant);
+  // US-002 : l'intervalle promis est figé en base au dernier arrosage (ou à la
+  // création / au dernier réglage manuel) — on ne le recalcule plus depuis la
+  // saison courante, sans quoi l'échéance affichée pourrait bouger toute seule.
+  const activeFreq = plant.promised_watering_interval_days;
   const status = getWateringStatus(plant.last_watered_at, activeFreq, snoozeDays, !!plant.reminders_paused);
 
   const badgeColorClass =
@@ -213,6 +216,7 @@ export default async function PlantDetailPage({
                   history={history}
                   lastWateredAt={plant.last_watered_at ?? null}
                   snoozeDays={snoozeDays}
+                  promisedIntervalDays={activeFreq}
                 />
               </div>
               <div className="flex-1">
@@ -221,6 +225,7 @@ export default async function PlantDetailPage({
                   snoozeDays={snoozeDays}
                   lastWateredAt={plant.last_watered_at ?? null}
                   history={history}
+                  promisedIntervalDays={activeFreq}
                 />
               </div>
             </div>

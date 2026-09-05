@@ -4,7 +4,6 @@ import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import AdminLayout from "./AdminLayout";
 import type { EnrichedUser, RetentionMetrics } from "./types";
-import { getActiveWateringFrequency } from "@/lib/utils";
 import { Users, Sprout, MapPin, ShieldAlert, ArrowLeft, Scan } from "lucide-react";
 import Link from "next/link";
 
@@ -43,10 +42,13 @@ export default async function AdminDashboard() {
   // FETCH
   const allUsers = await listAllAuthUsers(supabaseAdmin);
 
+  // US-002 : lecture depuis la vue plants_watering_status plutôt que `plants` — elle
+  // expose `is_urgent`/`due_date` déjà calculés (autorité unique, cf. lib/utils.ts),
+  // évite de réimplémenter la logique d'échéance ici une 5e fois.
   const { data: allPlants } = await supabaseAdmin
-    .from("plants")
+    .from("plants_watering_status")
     .select(
-      "id, user_id, created_at, last_watered_at, watering_history, watering_frequency, snooze_days, reminders_paused, is_deceased, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter"
+      "id, user_id, created_at, last_watered_at, watering_history, promised_watering_interval_days, snooze_days, reminders_paused, is_deceased, is_urgent, due_date"
     );
   const { data: allRooms } = await supabaseAdmin
     .from("rooms")
@@ -172,9 +174,9 @@ export default async function AdminDashboard() {
     : 0;
 
   const abandonedPlants = allPlants?.filter(p => {
-    if (!p.last_watered_at || !p.watering_frequency) return false;
+    if (!p.last_watered_at || !p.promised_watering_interval_days) return false;
     const daysSinceWatered = (Date.now() - new Date(p.last_watered_at).getTime()) / (24 * 3600 * 1000);
-    return daysSinceWatered > p.watering_frequency * 2;
+    return daysSinceWatered > p.promised_watering_interval_days * 2;
   }) ?? [];
   const totalPlantsCount = allPlants?.length ?? 0;
   const abandonedRate = totalPlantsCount > 0
@@ -184,7 +186,7 @@ export default async function AdminDashboard() {
   const adherenceScores = (allPlants ?? [])
     .filter(p => {
       const history = p.watering_history as string[] | null;
-      return Array.isArray(history) && history.length >= 2 && p.watering_frequency;
+      return Array.isArray(history) && history.length >= 2 && p.promised_watering_interval_days;
     })
     .map(p => {
       const history = (p.watering_history as string[])
@@ -192,7 +194,7 @@ export default async function AdminDashboard() {
         .map(d => new Date(d).getTime())
         .sort((a, b) => b - a);
       const avgGapMs = (history[0] - history[history.length - 1]) / (history.length - 1);
-      return (avgGapMs / (24 * 3600 * 1000)) / p.watering_frequency;
+      return (avgGapMs / (24 * 3600 * 1000)) / p.promised_watering_interval_days;
     });
   const avgAdherenceRatio = adherenceScores.length > 0
     ? Math.round((adherenceScores.reduce((a, b) => a + b, 0) / adherenceScores.length) * 100) / 100
@@ -240,11 +242,11 @@ export default async function AdminDashboard() {
   // pause : une plante en pause est exclue des deux côtés du ratio. Une plante sans
   // dernier arrosage connu n'est pas comptée comme négligée.
   //
-  // Comparateur `<` strict délibéré (et non `getWateringStatus().urgent`, qui est un `<=`
-  // incluant l'échéance du jour) : cette métrique mesure la négligence, pas l'échéance —
-  // une plante due aujourd'hui n'est pas négligée, elle est dans les temps. Seule la
-  // logique de fréquence saisonnière est réutilisée (getActiveWateringFrequency), pas le
-  // calcul de statut. Troncature à minuit UTC, cohérente avec le comportement Vercel.
+  // US-002 : `due_date` vient de la vue `plants_watering_status` (autorité unique,
+  // cf. lib/utils.ts) — on ne recalcule plus la fréquence saisonnière ici. Comparateur
+  // `<` strict délibéré (et non `is_urgent` de la vue, qui est un `<=` incluant
+  // l'échéance du jour) : cette métrique mesure la négligence, pas l'échéance — une
+  // plante due aujourd'hui n'est pas négligée, elle est dans les temps.
   const nowNeglect = new Date();
   const todayUtcMidnight = Date.UTC(
     nowNeglect.getUTCFullYear(),
@@ -256,14 +258,8 @@ export default async function AdminDashboard() {
   );
   const neglectedDenom = followedPlants.length;
   const neglectedNum = followedPlants.filter((p) => {
-    if (!p.last_watered_at) return false;
-    const last = new Date(p.last_watered_at);
-    const dueUtcMidnight = Date.UTC(
-      last.getUTCFullYear(),
-      last.getUTCMonth(),
-      last.getUTCDate() + getActiveWateringFrequency(p) + (p.snooze_days || 0)
-    );
-    return dueUtcMidnight < todayUtcMidnight;
+    if (!p.due_date) return false;
+    return new Date(p.due_date).getTime() < todayUtcMidnight;
   }).length;
   const neglectedRate =
     neglectedDenom > 0 ? Math.round((neglectedNum / neglectedDenom) * 100) : null;

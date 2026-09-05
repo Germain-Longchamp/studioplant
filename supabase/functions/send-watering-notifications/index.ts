@@ -50,51 +50,25 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
-  // 1. Récupérer toutes les plantes
+  // US-002 : la vue plants_watering_status est l'autorité UNIQUE de calcul de
+  // l'échéance (intervalle promis figé + fréquences saisonnières), lue à
+  // l'identique par l'app Next.js et le back-office. Cette fonction n'a plus à
+  // réimplémenter la logique de saison — elle ne fait plus que lire `is_urgent`.
   const { data: plants, error: plantsError } = await supabase
-    .from("plants")
-    .select("id, name, user_id, last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused, is_deceased")
-    .eq("is_deceased", false);
+    .from("plants_watering_status")
+    .select("id, name, user_id")
+    .eq("is_urgent", true);
 
   if (plantsError) {
     console.error("Error fetching plants:", plantsError);
     return new Response("Error fetching plants", { status: 500 });
   }
 
-  // 2. Calcul des urgences avec fréquences saisonnières
-  const month = new Date().getMonth();
   const urgentByUser: Record<string, string[]> = {};
-
   for (const plant of plants || []) {
-    // Rappels en pause : on ignore complètement cette plante, elle ne doit jamais
-    // déclencher de notification tant que l'utilisateur ne l'a pas réactivée.
-    if (plant.reminders_paused) continue;
-
-    const snoozeDays = plant.snooze_days || 0;
-
-    // Même logique que getActiveWateringFrequency côté client
-    let freq = plant.watering_frequency || 7;
-    if (month >= 2 && month <= 4 && plant.watering_freq_spring) freq = plant.watering_freq_spring;
-    else if (month >= 5 && month <= 7 && plant.watering_freq_summer) freq = plant.watering_freq_summer;
-    else if (month >= 8 && month <= 10 && plant.watering_freq_autumn) freq = plant.watering_freq_autumn;
-    else if ((month >= 11 || month <= 1) && plant.watering_freq_winter) freq = plant.watering_freq_winter;
-
-    const lastDate = new Date(plant.last_watered_at);
-    const nextWatering = new Date(lastDate);
-    nextWatering.setDate(lastDate.getDate() + freq + snoozeDays);
-    nextWatering.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.ceil(
-      (nextWatering.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (diffDays <= 0) {
-      if (!urgentByUser[plant.user_id]) urgentByUser[plant.user_id] = [];
-      urgentByUser[plant.user_id].push(plant.name);
-    }
+    if (!urgentByUser[plant.user_id]) urgentByUser[plant.user_id] = [];
+    urgentByUser[plant.user_id].push(plant.name);
   }
 
   const userIds = Object.keys(urgentByUser);

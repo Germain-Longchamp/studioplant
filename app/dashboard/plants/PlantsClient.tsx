@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Leaf, Droplets, Plus, Sprout, CheckCircle } from "lucide-react";
-import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
+import { getWateringStatus } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 import PlantCard from "../PlantCard";
 import Link from "next/link";
@@ -22,10 +22,11 @@ export default function PlantsClient({
   const [roomFilter, setRoomFilter] = useState("Toutes");
   const [urgentOnly, setUrgentOnly] = useState(initialUrgentOnly);
 
+  // US-002 : intervalle promis figé en base, plus de recalcul depuis la saison courante.
   const isUrgent = (plant: any) => {
     const status = getWateringStatus(
       plant.last_watered_at,
-      getActiveWateringFrequency(plant),
+      plant.promised_watering_interval_days,
       plant.snooze_days || 0,
       !!plant.reminders_paused
     );
@@ -33,7 +34,7 @@ export default function PlantsClient({
   };
   const nextWateringTime = (plant: any) => {
     const d = new Date(plant.last_watered_at);
-    d.setDate(d.getDate() + getActiveWateringFrequency(plant) + (plant.snooze_days || 0));
+    d.setDate(d.getDate() + plant.promised_watering_interval_days + (plant.snooze_days || 0));
     return d.getTime();
   };
 

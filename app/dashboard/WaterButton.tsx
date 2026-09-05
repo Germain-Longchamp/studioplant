@@ -13,12 +13,14 @@ export default function WaterButton({
   urgent,
   lastWateredAt,
   snoozeDays,
+  promisedIntervalDays,
 }: {
   plantId: string;
   history: string[];
   urgent: boolean;
   lastWateredAt: string | null;
   snoozeDays: number;
+  promisedIntervalDays: number;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -74,6 +76,7 @@ export default function WaterButton({
                   lastWateredAt: lastWateredAt,
                   wateringHistory: history,
                   snoozeDays: snoozeDays,
+                  promisedIntervalDays: promisedIntervalDays,
                 });
                 if (undoResult?.error) {
                   toast.error(undoResult.error);

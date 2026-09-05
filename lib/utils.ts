@@ -71,6 +71,11 @@ export function cleanAIText(text: string): string {
     .trim();
 }
 
+// Détermine QUEL intervalle promettre à une plante à l'instant où on la met à jour
+// (création, arrosage, réglage manuel — voir server/actions.ts). Depuis US-002,
+// cette valeur est FIGÉE en base (plants.promised_watering_interval_days) : cette
+// fonction n'est plus jamais appelée pour calculer une échéance déjà en cours, donc
+// une évolution ici ne peut plus faire bouger une date déjà annoncée à l'utilisateur.
 export function getActiveWateringFrequency(plant: any): number {
   const month = new Date().getMonth();
 
@@ -79,7 +84,7 @@ export function getActiveWateringFrequency(plant: any): number {
   if (month >= 8 && month <= 10 && plant.watering_freq_autumn) return plant.watering_freq_autumn;
   if ((month >= 11 || month <= 1) && plant.watering_freq_winter) return plant.watering_freq_winter;
 
-  return plant.watering_frequency || 7;
+  return plant.promised_watering_interval_days || 7;
 }
 
 export function formatRelativeDays(isoDate: string): string {

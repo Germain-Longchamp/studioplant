@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { GrowthPhoto } from "@/lib/types";
-import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
+import { getActiveWateringFrequency } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -246,6 +246,10 @@ export async function addPlantWithAI(formData: FormData) {
       watering_freq_summer: plantData.watering_freq_summer,
       watering_freq_autumn: plantData.watering_freq_autumn,
       watering_freq_winter: plantData.watering_freq_winter,
+      // US-002 : intervalle promis figé dès la création, à partir de la cadence
+      // saisonnière que l'IA vient de renvoyer (déjà connue à cet instant, contrairement
+      // à saveOptimisticPlant où la génération est différée).
+      promised_watering_interval_days: getActiveWateringFrequency(plantData),
       exposure: light,
       room: room,
       description: "", 
@@ -316,7 +320,10 @@ export async function saveOptimisticPlant(formData: FormData) {
       user_id: user.id,
       name: prefilledName || "Plante inconnue",
       species: prefilledSpecies || "Espèce inconnue",
-      watering_frequency: 7, // Valeur par défaut temporaire
+      // US-002 : intervalle promis, figé jusqu'au premier arrosage. Valeur d'attente
+      // (la génération IA différée ne le touchera jamais, voir generateDeferredCareGuide) —
+      // la vraie cadence saisonnière ne sera figée qu'au premier arrosage réel.
+      promised_watering_interval_days: 7,
       exposure: light,
       room: room,
       description: "",
@@ -459,12 +466,15 @@ export async function updateWateringFrequency(plantId: string, newFrequency: num
     if (!user) return { error: "Non autorisé" };
 
     const { error } = await supabase.from("plants").update({
-      watering_frequency: newFrequency,
       watering_freq_spring: newFrequency,
       watering_freq_summer: newFrequency,
       watering_freq_autumn: newFrequency,
       watering_freq_winter: newFrequency,
       watering_frequency_custom: true,
+      // US-002 : un réglage manuel est l'un des 3 moments où l'intervalle promis se
+      // fige — l'échéance doit être recalculée immédiatement, sans attendre le
+      // prochain arrosage (contrairement à un changement de saison).
+      promised_watering_interval_days: newFrequency,
     }).eq("id", plantId).eq("user_id", user.id);
 
     if (error) throw error;
@@ -703,7 +713,7 @@ export async function diagnosePlant(formData: FormData) {
           Cette plante fait partie de la Jungle de l'utilisateur : ${plant.name} (${plant.species || "espèce non précisée"}).
 
           DONNÉES D'ENTRETIEN DE CETTE PLANTE :
-          - Fréquence d'arrosage recommandée : tous les ${plant.watering_frequency || "?"} jours.
+          - Fréquence d'arrosage recommandée : tous les ${plant.promised_watering_interval_days || "?"} jours.
           - Dernier arrosage : il y a ${daysSinceWatering} (date : ${plant.last_watered_at || "inconnue"}).
           - Exposition actuelle : "${plant.exposure || "inconnue"}" / Exposition idéale : "${plant.ideal_exposure || "inconnue"}".
           - Substrat idéal : ${plant.ideal_substrate || "non précisé"}.
@@ -909,15 +919,29 @@ export async function waterPlant(plantId: string, currentHistory: string[] = [])
   try {
     const supabase = await createClient();
     const now = new Date().toISOString();
-    
+
     const newHistory = [now, ...currentHistory].slice(0, 3);
+
+    // US-002 : l'arrosage est l'un des 3 moments où l'intervalle promis se fige —
+    // on capture la cadence saisonnière ACTIVE maintenant, elle ne bougera plus tant
+    // que cette plante n'aura pas été arrosée à nouveau (même si la saison change,
+    // même si l'IA régénère ses conseils entre-temps).
+    const { data: plant } = await supabase
+      .from("plants")
+      .select(
+        "watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, promised_watering_interval_days"
+      )
+      .eq("id", plantId)
+      .single();
+    const newPromisedInterval = plant ? getActiveWateringFrequency(plant) : 7;
 
     const { error } = await supabase
       .from("plants")
       .update({
         last_watered_at: now,
         watering_history: newHistory,
-        snooze_days: 0
+        snooze_days: 0,
+        promised_watering_interval_days: newPromisedInterval,
       })
       .eq("id", plantId);
 
@@ -993,7 +1017,15 @@ export async function snoozeWatering(plantId: string, currentSnooze: number = 0)
 // côté client ; cette action se contente de restaurer l'état d'avant l'action)
 export async function restoreWateringState(
   plantId: string,
-  previous: { lastWateredAt: string | null; wateringHistory: string[]; snoozeDays: number }
+  previous: {
+    lastWateredAt: string | null;
+    wateringHistory: string[];
+    snoozeDays: number;
+    // US-002 : sans ce champ, annuler un arrosage laisserait la plante avec le
+    // NOUVEL intervalle promis tout en restaurant l'ANCIENNE date — un état
+    // incohérent que personne ne verrait venir avant le prochain arrosage.
+    promisedIntervalDays: number;
+  }
 ) {
   try {
     const supabase = await createClient();
@@ -1004,6 +1036,7 @@ export async function restoreWateringState(
         last_watered_at: previous.lastWateredAt,
         watering_history: previous.wateringHistory,
         snooze_days: previous.snoozeDays,
+        promised_watering_interval_days: previous.promisedIntervalDays,
       })
       .eq("id", plantId);
 
@@ -1476,22 +1509,16 @@ export async function getUrgentWateringCount(): Promise<number> {
     const user = await getAuthenticatedUser();
     if (!user) return 0;
 
-    const { data, error } = await supabase
-      .from("plants")
-      .select("last_watered_at, watering_frequency, watering_freq_spring, watering_freq_summer, watering_freq_autumn, watering_freq_winter, snooze_days, reminders_paused")
-      .eq("is_deceased", false);
+    // US-002 : compte directement `is_urgent` sur la vue plants_watering_status
+    // (autorité unique de calcul de l'échéance) au lieu de recharger chaque plante
+    // et de recalculer son statut ici.
+    const { count, error } = await supabase
+      .from("plants_watering_status")
+      .select("id", { count: "exact", head: true })
+      .eq("is_urgent", true);
 
     if (error) throw error;
-
-    return (data || []).filter((plant) => {
-      const status = getWateringStatus(
-        plant.last_watered_at,
-        getActiveWateringFrequency(plant),
-        plant.snooze_days || 0,
-        !!plant.reminders_paused
-      );
-      return status.urgent;
-    }).length;
+    return count || 0;
   } catch (error) {
     console.error("Erreur getUrgentWateringCount:", error);
     return 0;

@@ -9,7 +9,7 @@ import {
 import Image from "next/image";
 import { toast } from "sonner";
 import { deleteUserAccount } from "../../actions";
-import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
+import { getWateringStatus } from "@/lib/utils";
 import { Droplets } from "lucide-react";
 
 interface Plant {
@@ -20,7 +20,7 @@ interface Plant {
   room: string | null;
   last_watered_at: string | null;
   snooze_days: number | null;
-  watering_frequency: number | null;
+  promised_watering_interval_days: number | null;
   watering_freq_spring: number | null;
   watering_freq_summer: number | null;
   watering_freq_autumn: number | null;
@@ -174,7 +174,7 @@ export default function UserDetailClient({ user, plants, rooms }: UserDetailClie
                 const status = plant.last_watered_at
                   ? getWateringStatus(
                       plant.last_watered_at,
-                      getActiveWateringFrequency(plant),
+                      plant.promised_watering_interval_days ?? 7,
                       plant.snooze_days || 0,
                       !!plant.reminders_paused
                     )

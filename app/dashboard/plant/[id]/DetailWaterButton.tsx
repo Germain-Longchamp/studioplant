@@ -12,11 +12,13 @@ export default function DetailWaterButton({
   history,
   lastWateredAt,
   snoozeDays,
+  promisedIntervalDays,
 }: {
   plantId: string;
   history: string[];
   lastWateredAt: string | null;
   snoozeDays: number;
+  promisedIntervalDays: number;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -71,6 +73,7 @@ export default function DetailWaterButton({
                   lastWateredAt: lastWateredAt,
                   wateringHistory: history,
                   snoozeDays: snoozeDays,
+                  promisedIntervalDays: promisedIntervalDays,
                 });
                 if (undoResult?.error) {
                   toast.error(undoResult.error);

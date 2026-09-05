@@ -1,14 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Leaf, Droplets } from "lucide-react";
-import { getWateringStatus, getActiveWateringFrequency } from "@/lib/utils";
+import { getWateringStatus } from "@/lib/utils";
 import WaterButton from "./WaterButton";
 import CardSnoozeButton from "./CardSnoozeButton";
 
 export default function PlantCard({ plant, from }: { plant: any; from?: string }) {
   const snoozeDays = plant.snooze_days || 0;
   const history = plant.watering_history || [];
-  const status = getWateringStatus(plant.last_watered_at, getActiveWateringFrequency(plant), snoozeDays, !!plant.reminders_paused);
+  // US-002 : l'intervalle promis est figé en base, on ne le recalcule plus ici.
+  const promisedIntervalDays = plant.promised_watering_interval_days;
+  const status = getWateringStatus(plant.last_watered_at, promisedIntervalDays, snoozeDays, !!plant.reminders_paused);
   const detailHref = from
     ? `/dashboard/plant/${plant.id}?from=${from}`
     : `/dashboard/plant/${plant.id}`;
@@ -78,6 +80,7 @@ export default function PlantCard({ plant, from }: { plant: any; from?: string }
               urgent={status.urgent}
               lastWateredAt={plant.last_watered_at ?? null}
               snoozeDays={snoozeDays}
+              promisedIntervalDays={promisedIntervalDays}
             />
           </div>
           {status.urgent && (
@@ -87,6 +90,7 @@ export default function PlantCard({ plant, from }: { plant: any; from?: string }
                 snoozeDays={snoozeDays}
                 lastWateredAt={plant.last_watered_at ?? null}
                 history={history}
+                promisedIntervalDays={promisedIntervalDays}
               />
             </div>
           )}
